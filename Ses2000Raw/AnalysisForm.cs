@@ -1,0 +1,1929 @@
+﻿using OpenTK.Graphics.OpenGL;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using WeifenLuo.WinFormsUI.Docking;
+
+namespace Ses2000Raw
+{
+    public partial class AnalysisForm : DockContent
+    {
+        #region フィールド
+        private int[] m_bottomIdx;         // Pingごとのボトム（サンプルindex）
+        private bool m_bBottomDirty = true; // データ読込時や閾値変更時に再検出フラグ
+
+        // サンプル間隔[m]の半分を許容幅に（端数吸収用）
+        private double MeterTolerance() => (m_dZDistance / 100.0) * 0.5;
+
+        // MeasureStart の最小/最大[m]
+        private double m_dMinStartMeters;
+        private double m_dMaxStartMeters;
+
+        // 縦オフセット（各Pingの開始深度をpxへ変換）
+        private double[] m_offsetPxPerPing;
+        private double m_dMinOffsetPx, m_dMaxOffsetPx;
+
+        // 拡大率と比率
+        private double m_dZoom = 1.0;   // 共通ズーム倍率
+        private double m_dRatioX = 1.0; // 横方向の相対倍率（numScaleY）
+        private double m_dRatioY = 1.0; // 縦方向の相対倍率（numScaleZ）
+        private double m_dScaleX => m_dZoom * m_dRatioX;
+        private double m_dScaleY => m_dZoom * m_dRatioY;
+
+        // 距離（進行方向）
+        private double[] m_cumDistM;  // 累積距離[m]
+        private double m_dTotalDistM;  // 総距離[m]
+
+        // テキストラベルのテクスチャキャッシュ
+        private readonly Dictionary<string, (int tex, int w, int h)> _labelCache = new();
+
+        // ドラッグ・スクロール
+        private bool m_bDragging = false;
+        private Point m_dragStart;
+        private double m_dScrollStartX, m_dScrollStartY;
+        private double m_dScrollX; // 表示原点X（拡大後px）
+        private double m_dScrollY; // 表示原点Y（拡大後px）
+
+        // スクロールバー
+        private HScrollBar hScroll;
+        private VScrollBar vScroll;
+
+        // ビューポート（使うのは幅高のみ）
+        private int m_iVpW, m_iVpH;
+
+        // テクスチャ＆画像
+        private int m_iTexId = 0;
+        private int m_iTexWidth;   // = m_iPingNo
+        private int m_iTexHeight;  // = m_iSampleNo
+        private byte[] m_rgba;    // RGBA8
+        private byte[] m_lut;     // 256*4 RGBA LUT
+        private double[] m_attZ;  // 減衰係数Zごとのテーブル
+        private bool m_bTextureDirty = true;
+        private bool m_bLutDirty = true;
+
+        // データメタ
+        private int m_iPingNo;
+        private int m_iSampleNo;
+        private double m_dZDistance; // サンプル間隔[cm]
+
+        // ファイル
+        private FileHeader m_fileHeader;
+        private List<BlockHeader> m_blockHeaderList;
+        private List<DataBlock> m_dataBlockList;
+
+        // プロパティ
+        public FileHeader FileHeader
+        {
+            get { return m_fileHeader; }
+            set { m_fileHeader = value; }
+        }
+        public List<BlockHeader> BlockHeaderList
+        {
+            get { return m_blockHeaderList; }
+            set { m_blockHeaderList = value; }
+        }
+        public List<DataBlock> DataBlockList
+        {
+            get { return m_dataBlockList; }
+            set { m_dataBlockList = value; }
+        }
+
+
+        // GLコントロール状態
+        private bool m_bLoadTK = false;
+        private Channel m_channel;
+        #endregion
+
+        #region 初期化
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="title"></param>
+        public AnalysisForm(string title, Channel channel)
+        {
+            //bool bRet = ReadRaw(rawFile, out m_fileHeader, out m_blockHeaderList, out m_dataBlockList);
+            //if (!bRet) return;
+
+            //if (m_dataBlockList.Count == 0)
+            //    return;
+
+            //m_iPingNo = m_dataBlockList.Count;
+            //if (m_iPingNo == 0) return;
+
+            //var paramForm = new LoadParamForm(this);
+            //if (paramForm.ShowDialog(this) != DialogResult.OK) return;
+
+
+
+            InitializeComponent();
+            this.Text = title;
+
+            m_blockHeaderList = new List<BlockHeader>();
+            m_dataBlockList = new List<DataBlock>();
+
+            this.BackColor = Constant.BACKCOLOR;
+            this.ForeColor = Constant.FORECOLOR;
+
+            tabControl1.DrawMode = TabDrawMode.OwnerDrawFixed;
+            tabControl1.DrawItem += (s, e) =>
+            {
+                var tab = tabControl1.TabPages[e.Index];
+                var rect = e.Bounds;
+
+                // 背景色
+                using (var brush = new SolidBrush(Constant.BACKCOLOR))
+                {
+                    e.Graphics.FillRectangle(brush, rect);
+                }
+
+                // テキスト
+                TextRenderer.DrawText(
+                    e.Graphics,
+                    tab.Text,
+                    tab.Font,
+                    rect,
+                    Constant.FORECOLOR,
+                    TextFormatFlags.WordEllipsis | TextFormatFlags.VerticalCenter
+
+
+                );
+            };
+            tabControl1.DrawItem += tabControl1_DrawItem;
+            foreach (TabPage tab in this.tabControl1.TabPages)
+            {
+                tab.BackColor = Constant.BACKCOLOR;
+            }
+            this.grpBoxSignal.ForeColor = Constant.FORECOLOR;
+            this.grpBox3DFrustum.ForeColor = Constant.FORECOLOR;
+            this.grpBox3DMoving.ForeColor = Constant.FORECOLOR;
+            //this.groupBox3.ForeColor = Constant.FORECOLOR;
+            this.grpBoxColor.ForeColor = Constant.FORECOLOR;
+            this.grpBoxDisplay.ForeColor = Constant.FORECOLOR;
+            this.grpBoxSignal.ForeColor = Constant.FORECOLOR;
+            this.cmbColor.BackColor = Constant.COMBO_BACKCOLOR;
+            this.cmbColor.ForeColor = Constant.COMBO_FORECOLOR;
+            this.btnSignalProcessing.BackColor = Constant.BUTTON_BACKCOLOR;
+            this.btnChooseColor.BackColor = Constant.BUTTON_BACKCOLOR;
+            this.btnScaleSetting.BackColor = Constant.BUTTON_BACKCOLOR;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AnalysisForm_Load(object sender, EventArgs e)
+        {
+            double dSampleFreq = m_blockHeaderList[0].SampleFrequencyForLf; // Hz
+            double dSV = m_blockHeaderList[0].SoundVelocity;    // m/s
+            m_dZDistance = Method.CalcSampleInterval(dSampleFreq, dSV);
+            m_iSampleNo = (m_channel == Channel.LF) ? m_blockHeaderList[0].LfDataLength : m_blockHeaderList[0].HfDataLength;
+            m_iPingNo = m_blockHeaderList.Count;
+
+            this.lblHPF.Text = "0 kHz";
+            this.lblLPF.Text = $"{(int)(dSampleFreq / 1000 * 0.5)} kHz";
+
+            chkInvert.Checked = false;
+            numR.Value = numG.Value = numB.Value = 1.0M;
+            lblBackColor.BackColor = Color.Black;
+            cmbColor.SelectedIndex = (int)ColorMode.Royal;
+            cmbColor_SelectedIndexChanged(null, null);
+            numIntensity.Value = 0.00003M;
+            numAttDb.Value = 20;
+            numScaleX.Value = 1M;
+            numScaleY.Value = 1M;
+            numScaleZ.Value = 1M;
+
+            glControl2D.MouseWheel += glControl2D_MouseWheel;
+            glControl2D.MouseDown += glControl2D_MouseDown;
+            glControl2D.MouseMove += glControl2D_MouseMove;
+            glControl2D.MouseUp += glControl2D_MouseUp;
+
+            m_dRatioX = (double)numScaleY.Value;
+            m_dRatioY = (double)numScaleZ.Value;
+            //m_dZoom = 1.0;
+            m_dZoom = 0.7;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AnalysisForm_Shown(object sender, EventArgs e)
+        {
+            glControl2D.Visible = true;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void glControl2D_Load(object sender, EventArgs e)
+        {
+            m_bLoadTK = true;
+            glControl2D.MakeCurrent();
+
+            GL.ClearColor(Color.Black);
+
+            InitTexture();
+            UpdateViewportPreserveAspect();
+
+            BuildCumulativeTrackMeters();
+            m_bTextureDirty = true;
+            m_bBottomDirty = true;
+
+            CreateScrollBars();
+            SetupScreenOrtho();
+            RebuildOffsetsPerPing();
+            UpdateScrollRanges();
+
+            glControl2D.Refresh();
+
+
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void glControl2D_Resize(object sender, EventArgs e)
+        {
+            if (!m_bLoadTK) return;
+
+            UpdateViewportPreserveAspect();
+            SetupScreenOrtho();
+            UpdateScrollRanges();
+            glControl2D.Refresh();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void tabControl1_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            var tc = (TabControl)sender;
+            var tab = tc.TabPages[e.Index];
+            var rect = e.Bounds;
+            bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+
+            // 背景
+            //using (var bg = new SolidBrush(selected ? Color.FromArgb(200, 220, 255)
+            //                                        : Color.FromArgb(235, 235, 235)))
+            using (var bg = new SolidBrush(Constant.BUTTON_BACKCOLOR))
+                e.Graphics.FillRectangle(bg, rect);
+
+            // ボーダー
+            using (var pen = new Pen(Color.FromArgb(113, 96, 232)))
+                e.Graphics.DrawRectangle(pen, rect);
+
+            // アンチエイリアス等
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            // 文字（横書きのまま回転して中央に配置）
+            using (var fmt = new StringFormat
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center,
+                Trimming = StringTrimming.EllipsisCharacter
+            })
+            using (var font = new Font(tab.Font, FontStyle.Regular))
+            using (var brush = new SolidBrush(Constant.FORECOLOR))
+            {
+                // 中心を原点に移動して -90°回転（左タブ）
+                e.Graphics.TranslateTransform(rect.Left + rect.Width / 2f,
+                                              rect.Top + rect.Height / 2f);
+                e.Graphics.RotateTransform(-90f);
+
+                // 回転後の描画領域（幅<->高さが入れ替わる点がミソ）
+                var textRect = new RectangleF(-rect.Height / 2f, -rect.Width / 2f,
+                                               rect.Height, rect.Width);
+
+                e.Graphics.DrawString(tab.Text, font, brush, textRect, fmt);
+
+                // 変換を戻す
+                e.Graphics.ResetTransform();
+            }
+        }
+
+        #endregion
+
+        #region 描画
+
+        private void glControl2D_Paint(object sender, PaintEventArgs e)
+        {
+            if (!m_bLoadTK) return;
+            if (m_blockHeaderList == null || m_dataBlockList == null) return;
+            if (m_blockHeaderList.Count == 0 || m_dataBlockList.Count == 0) return;
+
+            glControl2D.MakeCurrent();
+            RebuildOffsetsPerPing();
+            SetupScreenOrtho();
+            UpdateScrollRanges();
+
+            GL.Disable(EnableCap.DepthTest);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            if (m_bLutDirty) { BuildPaletteLut(); m_bLutDirty = false; }
+            if (m_bTextureDirty)
+            {
+                if (m_bBottomDirty)
+                {
+                    //ComputeBottomIndices();
+                    /*
+                    ComputeBottomIndicesByStdDev(
+                        //winVar: 31,       // データが粗ければ広げる（例: 41～61）
+                        winVar: 61,       // データが粗ければ広げる（例: 41～61）
+                        startSkipM: 0.30, // 表層除外
+                        endGuardM: 0.50,  // 末尾ガード
+                        useAbs: true,
+                        medianW: 3
+                    );*/
+
+                    //        ComputeBottomIndicesByEnvelopePeak(
+                    //startSkipM: 0.1,       // 表層ノイズを避ける
+                    //guardBelowFB_M: 0.10,   // FB直下の乱れを避ける
+                    //searchDepth_M: 1.00,    // FBから下へ最大2mだけ見る（任意で調整）
+                    //envWin: 25,             // 包絡平滑窓（奇数）
+                    //sta: 15, lta: 50, staLtaThr: 3.0);
+
+
+                    /* これが一番まし*/
+                    ComputeBottomIndicesByDerivativeEdge(
+                                                            startSkipM: 0.20,   // 表層回避
+                                                            endGuardM: 0.50,   // 末尾ガード
+                                                            smoothWin: 25,     // 15〜31 で調整
+                                                            kMad: 3.0,    // 厳しめにしたい時は 4.5〜5.0
+                                                            ampPct: 0.85,   // 誤検知多いなら 0.75〜0.85
+                                                            refineWinM: 0.30,   // 到来点の直下0.3mでピークへ寄せる
+                                                            useAbsLF: true,
+                                                            applyHeaveInDetection: this.chkHeaveCorrection.Checked
+                                                        );
+                    /**/
+
+                    //ComputeBottomIndicesByDerivativeEdge_EdgeIsBottom(
+                    //    startSkipM: 0.20,
+                    //    endGuardM: 0.50,
+                    //    smoothWin: 19,
+                    //    kMad: 4.0,
+                    //    ampPct: 0.70,
+                    //    confirmLen: 2,
+                    //    minGapSamples: 8,
+                    //    useAbsLF: true
+                    //);
+                }
+
+                //EnsureAttenuationTable();
+                BuildRgbaImage();
+                UploadTexture();
+                m_bTextureDirty = false;
+            }
+
+            // コンテンツサイズ（拡大後）
+            double pxPerM_X = GetPixelsPerMeterX();
+            double contentW = (m_cumDistM != null && m_dTotalDistM > 0)
+                              ? m_dTotalDistM * pxPerM_X
+                              : m_iPingNo * m_dScaleX;
+            double contentH = m_iSampleNo * m_dScaleY;
+            double contentBottom = contentH + m_dMaxOffsetPx;
+
+            // スクロール反映
+            GL.PushMatrix();
+            GL.Translate(-m_dScrollX, -m_dScrollY, 0.0);
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+            // テクスチャ描画（MeasureStart の段差をスムーズに）
+            const int subdiv = 4;
+            int w = m_iTexWidth;
+
+            GL.Enable(EnableCap.Texture2D);
+            GL.Color4(1f, 1f, 1f, 1f);
+            GL.BindTexture(TextureTarget.Texture2D, m_iTexId);
+
+            for (int i = 0; i < w - 1; i++)
+            {
+                double x0 = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                double x1 = (m_dTotalDistM > 0.0) ? m_cumDistM[i + 1] * pxPerM_X : (i + 1) * m_dScaleX;
+
+                double y00 = (m_offsetPxPerPing != null) ? m_offsetPxPerPing[i] : 0.0;
+                double y01 = (m_offsetPxPerPing != null) ? m_offsetPxPerPing[i + 1] : 0.0;
+
+                GL.Begin(PrimitiveType.TriangleStrip);
+                for (int s = 0; s <= subdiv; s++)
+                {
+                    double t = (double)s / subdiv;
+                    double xt = x0 + (x1 - x0) * t;
+                    double y0 = y00 + (y01 - y00) * t;
+                    double u = (i + t) / (w - 1);
+
+                    GL.TexCoord2(u, 0.0); GL.Vertex2(xt, y0);
+                    GL.TexCoord2(u, 1.0); GL.Vertex2(xt, y0 + contentH);
+                }
+                GL.End();
+            }
+
+            GL.Disable(EnableCap.Texture2D);
+
+            //DrawBottomLine();
+
+            if (chkDrawDepthScale.Checked) DrawDepthScale(contentW);
+            if (chkDrawDistScale.Checked) DrawDistanceScale(contentBottom);
+
+            GL.PopMatrix(); // 画面座標へ
+
+            if (chkDrawDepthScale.Checked) DrawDepthLabelsPinnedLeft();
+            if (chkDrawDistScale.Checked) DrawDistanceLabelsPinnedTop();
+
+            glControl2D.SwapBuffers();
+            GL.Disable(EnableCap.Blend);
+        }
+
+        #endregion
+
+        #region 入力イベント
+
+        private void glControl2D_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if ((ModifierKeys & Keys.Shift) != Keys.Shift) return;
+
+            // マウス位置を基準にズーム
+            double dataX = (e.X + m_dScrollX) / m_dScaleX;
+            double dataY = (e.Y + m_dScrollY) / m_dScaleY;
+
+            double step = 0.1;
+            m_dZoom = (e.Delta > 0) ? m_dZoom + step : Math.Max(step, m_dZoom - step);
+
+            double newScaleX = m_dScaleX;
+            double newScaleY = m_dScaleY;
+
+            m_dScrollX = dataX * newScaleX - e.X;
+            m_dScrollY = dataY * newScaleY - e.Y;
+
+            UpdateScrollRanges();
+            glControl2D.Refresh();
+        }
+
+        private void glControl2D_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left) return;
+            m_bDragging = true;
+            m_dragStart = e.Location;
+            m_dScrollStartX = m_dScrollX;
+            m_dScrollStartY = m_dScrollY;
+            Cursor = Cursors.Hand;
+        }
+
+        private void glControl2D_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!m_bDragging) return;
+
+            int dx = e.X - m_dragStart.X;
+            int dy = e.Y - m_dragStart.Y;
+
+            m_dScrollX = m_dScrollStartX - dx;
+            m_dScrollY = m_dScrollStartY - dy;
+
+            UpdateScrollRanges();
+            glControl2D.Refresh();
+        }
+
+        private void glControl2D_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left) return;
+            m_bDragging = false;
+            Cursor = Cursors.Default;
+        }
+
+        private void cmbColor_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            bool gray = (cmbColor.SelectedIndex == (int)ColorMode.Gray);
+            numR.Enabled = numG.Enabled = numB.Enabled = gray;
+
+            m_bLutDirty = true;
+            m_bTextureDirty = true;
+            glControl2D.Refresh();
+        }
+
+        private void numericUpDown_ValueChanged(object sender, EventArgs e)
+        {
+            var tag = (sender as NumericUpDown)?.Tag as string;
+            if (tag == null) return;
+
+            switch (tag)
+            {
+                case "R":
+                case "G":
+                case "B":
+                    m_bLutDirty = true;
+                    break;
+
+                case "Intensity":
+                case "Threshold":
+                case "Alpha":
+                case "Bottom":
+                case "AttDb":
+                    break;
+
+                case "ScaleY":
+                    {
+                        double cyScreen = glControl2D.ClientSize.Height * 0.5;
+                        double dataY = (cyScreen + m_dScrollY) / m_dScaleY;  // 縦は中心アンカーを維持
+                        m_dRatioX = (double)numScaleY.Value;
+                        m_dRatioY = (double)numScaleZ.Value;
+
+                        m_dScrollX = 0; // 左端固定
+                        double newScaleY = m_dScaleY;
+                        m_dScrollY = dataY * newScaleY - cyScreen;
+
+                        UpdateViewportPreserveAspect();
+                        UpdateScrollRanges();
+                    }
+                    break;
+
+                case "ScaleZ":
+                    m_dRatioY = (double)numScaleZ.Value;
+                    m_dScrollY = 0; // 上端固定
+                    UpdateViewportPreserveAspect();
+                    UpdateScrollRanges();
+                    break;
+
+                default:
+                    return;
+            }
+
+            m_bTextureDirty = true;
+            if (tag == "ScaleZ" || tag == "ScaleY") UpdateScrollRanges();
+            glControl2D.Refresh();
+        }
+
+        private void btnChooseColor_Click(object sender, EventArgs e)
+        {
+            colorDialog1.Color = lblBackColor.BackColor;
+            if (colorDialog1.ShowDialog(this) != DialogResult.OK) return;
+
+            lblBackColor.BackColor = colorDialog1.Color;
+            SetBackgroundColor(colorDialog1.Color);
+        }
+
+        private void chkBox_CheckedChanged(object sender, EventArgs e)
+        {
+            var tag = ((CheckBox)sender).Tag?.ToString();
+            if (tag == null) return;
+
+            switch (tag)
+            {
+                case "Invert":
+                    m_bLutDirty = true;
+                    m_bTextureDirty = true;
+                    break;
+                case "DrawDepthScale":
+                case "DrawDistanceScale":
+                    break;
+                case "HeaveCorrection":
+                    m_bTextureDirty = true;
+                    m_bBottomDirty = true;
+                    break;
+                default:
+                    return;
+            }
+            glControl2D.Refresh();
+        }
+        /// <summary>
+        /// Signal Processing button click event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnSignalProcessing_Click(object sender, EventArgs e)
+        {
+
+        }
+        #endregion
+
+        #region 計算・描画ヘルパ
+
+        private void RebuildOffsetsPerPing()
+        {
+            if (m_blockHeaderList == null || m_blockHeaderList.Count == 0) return;
+
+            double dz_m = m_dZDistance / 100.0;  // 1 sample [m]
+            double samplesPerMeter = 1.0 / dz_m;
+
+            m_offsetPxPerPing ??= new double[m_iPingNo];
+
+            m_dMinOffsetPx = double.PositiveInfinity;
+            m_dMaxOffsetPx = double.NegativeInfinity;
+
+            for (int i = 0; i < m_iPingNo; i++)
+            {
+                double px = m_blockHeaderList[i].MeasureStart * samplesPerMeter * m_dScaleY;
+                m_offsetPxPerPing[i] = px;
+                if (px < m_dMinOffsetPx) m_dMinOffsetPx = px;
+                if (px > m_dMaxOffsetPx) m_dMaxOffsetPx = px;
+            }
+
+            // 左上へ貼り付くよう最小を0に正規化
+            for (int i = 0; i < m_iPingNo; i++) m_offsetPxPerPing[i] -= m_dMinOffsetPx;
+            m_dMaxOffsetPx -= m_dMinOffsetPx; // レンジ更新
+            m_dMinOffsetPx = 0.0;
+
+            m_dMinStartMeters = m_blockHeaderList.Min(b => b.MeasureStart);
+            m_dMaxStartMeters = m_blockHeaderList.Max(b => b.MeasureStart);
+        }
+
+        private void BuildCumulativeTrackMeters()
+        {
+            int n = m_blockHeaderList.Count;
+            m_cumDistM = new double[n];
+            m_cumDistM[0] = 0.0;
+
+            if (!TryParseXY(m_blockHeaderList[0], out double prevX, out double prevY))
+            {
+                // 等間隔フォールバック
+                for (int i = 0; i < n; i++) m_cumDistM[i] = i;
+                m_dTotalDistM = n - 1;
+                return;
+            }
+
+            double sum = 0.0;
+            for (int i = 1; i < n; i++)
+            {
+                if (!TryParseXY(m_blockHeaderList[i], out double x, out double y))
+                {
+                    x = prevX; y = prevY;
+                }
+                double dx = x - prevX, dy = y - prevY;
+                sum += Math.Sqrt(dx * dx + dy * dy);
+                m_cumDistM[i] = sum;
+                prevX = x; prevY = y;
+            }
+            m_dTotalDistM = sum;
+        }
+
+        private bool TryParseXY(BlockHeader h, out double x, out double y)
+        {
+            bool okX = double.TryParse(h.SisString5, System.Globalization.NumberStyles.Float,
+                                       System.Globalization.CultureInfo.InvariantCulture, out x);
+            bool okY = double.TryParse(h.SisString6, System.Globalization.NumberStyles.Float,
+                                       System.Globalization.CultureInfo.InvariantCulture, out y);
+            return okX && okY;
+        }
+
+        private double GetPixelsPerMeterY()
+        {
+            double dz_m = m_dZDistance / 100.0;
+            double samplesPerMeter = 1.0 / dz_m;
+            return m_dScaleY * samplesPerMeter;
+        }
+
+        private double GetPixelsPerMeterX()
+        {
+            double pxPerM_Y = GetPixelsPerMeterY();
+            return pxPerM_Y * (m_dRatioX / m_dRatioY);
+        }
+
+        private (int tex, int w, int h) GetOrCreateLabelTexture(string text)
+        {
+            if (_labelCache.TryGetValue(text, out var t)) return t;
+
+            using var bmp = new Bitmap(1, 1, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                var size = TextRenderer.MeasureText(g, text, this.Font, new Size(int.MaxValue, int.MaxValue),
+                                                    TextFormatFlags.NoPadding);
+                using var bmp2 = new Bitmap(Math.Max(1, size.Width), Math.Max(1, size.Height),
+                                            System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                using (var g2 = Graphics.FromImage(bmp2))
+                {
+                    g2.Clear(Color.Transparent);
+                    TextRenderer.DrawText(g2, text, this.Font, new Point(0, 0), Color.White,
+                                          TextFormatFlags.NoPadding);
+                }
+
+                int texId; GL.GenTextures(1, out texId);
+                GL.BindTexture(TextureTarget.Texture2D, texId);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)All.ClampToEdge);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)All.ClampToEdge);
+                var data = bmp2.LockBits(new Rectangle(0, 0, bmp2.Width, bmp2.Height),
+                                         System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                                         System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba,
+                              bmp2.Width, bmp2.Height, 0,
+                              PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0);
+                bmp2.UnlockBits(data);
+
+                t = (texId, bmp2.Width, bmp2.Height);
+                _labelCache[text] = t;
+                return t;
+            }
+        }
+
+        // 画面上部の距離ラベル
+        private void DrawDistanceLabelsPinnedTop()
+        {
+            if (m_dTotalDistM <= 0.0) return;
+
+            double pxPerM = GetPixelsPerMeterX();
+            int viewW = glControl2D.ClientSize.Width;
+
+            double stepM = 5.0; // 5m刻み固定
+
+            double viewLeft = m_dScrollX;
+            double viewRight = m_dScrollX + viewW;
+
+            GL.Enable(EnableCap.Texture2D);
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Color4(1f, 1f, 1f, 1f);
+
+            int mStart = (int)Math.Floor((viewLeft / pxPerM) / stepM);
+            int mEnd = (int)Math.Ceiling((viewRight / pxPerM) / stepM);
+            double totalM = m_dTotalDistM;
+
+            float y = 6f, padX = 4f, padY = 2f, labelOffsetX = 6f;
+
+            for (int k = mStart; k <= mEnd; k++)
+            {
+                double m = k * stepM;
+                if (m < 0 || m > totalM) continue;
+
+                float xScreen = (float)(m * pxPerM - m_dScrollX) + labelOffsetX;
+                string text = $"{m:0} m";
+                var (tex, w, h) = GetOrCreateLabelTexture(text);
+
+                GL.Disable(EnableCap.Texture2D);
+                GL.Color4(0f, 0f, 0f, 0.35f);
+                GL.Begin(PrimitiveType.Quads);
+                GL.Vertex2(xScreen - padX, y - padY);
+                GL.Vertex2(xScreen + w + padX, y - padY);
+                GL.Vertex2(xScreen + w + padX, y + h + padY);
+                GL.Vertex2(xScreen - padX, y + h + padY);
+                GL.End();
+
+                GL.Enable(EnableCap.Texture2D);
+                GL.Color4(1f, 1f, 1f, 1f);
+                GL.BindTexture(TextureTarget.Texture2D, tex);
+                GL.Begin(PrimitiveType.Quads);
+                GL.TexCoord2(0, 0); GL.Vertex2(xScreen, y);
+                GL.TexCoord2(1, 0); GL.Vertex2(xScreen + w, y);
+                GL.TexCoord2(1, 1); GL.Vertex2(xScreen + w, y + h);
+                GL.TexCoord2(0, 1); GL.Vertex2(xScreen, y + h);
+                GL.End();
+            }
+
+            GL.Disable(EnableCap.Blend);
+            GL.Disable(EnableCap.Texture2D);
+            GL.Color4(1f, 1f, 1f, 1f);
+        }
+
+        // 進行方向距離スケール（縦線）
+        private void DrawDistanceScale(double contentBottom)
+        {
+            if (m_dTotalDistM <= 0.0 || m_cumDistM == null) return;
+
+            double pxPerM = GetPixelsPerMeterX();
+            double viewLeft = m_dScrollX;
+            double viewRight = m_dScrollX + glControl2D.ClientSize.Width;
+
+            double stepM = 5.0;
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.LineWidth(1f);
+            GL.Color4(0.8f, 0.8f, 1f, 0.8f);
+            GL.Begin(PrimitiveType.Lines);
+
+            int mStart = (int)Math.Floor((viewLeft / pxPerM) / stepM);
+            int mEnd = (int)Math.Ceiling((viewRight / pxPerM) / stepM);
+            double totalM = m_dTotalDistM;
+
+            for (int k = mStart; k <= mEnd; k++)
+            {
+                double m = k * stepM;
+                if (m < 0 || m > totalM) continue;
+
+                double x = m * pxPerM;
+                GL.Vertex2(x, 0);
+                GL.Vertex2(x, contentBottom);
+            }
+
+            GL.End();
+            GL.Disable(EnableCap.Blend);
+        }
+
+        // 左固定の深度ラベル
+        private void DrawDepthLabelsPinnedLeft()
+        {
+            if (m_dZDistance <= 0) return;
+
+            double dz_m = m_dZDistance / 100.0;
+            double samplesPerMeter = 1.0 / dz_m;
+            double tol = MeterTolerance();
+
+            int viewH = glControl2D.ClientSize.Height;
+            float x = (float)Math.Max(0.0, -m_dScrollX) + 6f;
+            float padY = 2f;
+
+            int startMeters = (int)Math.Ceiling(m_dMinStartMeters - 1e-9);
+            double maxDepthMetersExact = m_dMaxStartMeters + m_iSampleNo * dz_m;
+            int endMeters = (int)Math.Ceiling(maxDepthMetersExact - 1e-9);
+
+            GL.Enable(EnableCap.Texture2D);
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Color4(1f, 1f, 1f, 1f);
+
+            for (int m = startMeters; m <= endMeters; m++)
+            {
+                int iRef = FindRefPingForMeter(m, dz_m);
+                double s = m_blockHeaderList[iRef].MeasureStart;
+                double bandM = m_iSampleNo * dz_m;
+
+                double relM = m - s;
+                if (relM < -tol || relM > bandM + tol) continue;
+
+                double relM_clamped = Math.Max(0.0, Math.Min(bandM, relM));
+                double yContent = m_offsetPxPerPing[iRef] + (relM_clamped * samplesPerMeter * m_dScaleY);
+                float yScreen = (float)(yContent - m_dScrollY);
+                if (yScreen < 0 || yScreen > viewH + 1) continue;
+
+                string text = $"{m} m";
+                var (tex, w, h) = GetOrCreateLabelTexture(text);
+
+                GL.Disable(EnableCap.Texture2D);
+                GL.Color4(0f, 0f, 0f, 0.35f);
+                GL.Begin(PrimitiveType.Quads);
+                GL.Vertex2(0, yScreen - h - padY);
+                GL.Vertex2(x + w + 4, yScreen - h - padY);
+                GL.Vertex2(x + w + 4, yScreen + padY);
+                GL.Vertex2(0, yScreen + padY);
+                GL.End();
+
+                GL.Enable(EnableCap.Texture2D);
+                GL.Color4(1f, 1f, 1f, 1f);
+                GL.BindTexture(TextureTarget.Texture2D, tex);
+                GL.Begin(PrimitiveType.Quads);
+                GL.TexCoord2(0, 0); GL.Vertex2(x, yScreen - h - padY);
+                GL.TexCoord2(1, 0); GL.Vertex2(x + w, yScreen - h - padY);
+                GL.TexCoord2(1, 1); GL.Vertex2(x + w, yScreen - padY);
+                GL.TexCoord2(0, 1); GL.Vertex2(x, yScreen - padY);
+                GL.End();
+            }
+
+            GL.Disable(EnableCap.Blend);
+            GL.Disable(EnableCap.Texture2D);
+        }
+
+        // 深度スケール（横線）
+        private void DrawDepthScale(double contentW)
+        {
+            if (m_dZDistance <= 0) return;
+
+            double dz_m = m_dZDistance / 100.0;
+            double samplesPerMeter = 1.0 / dz_m;
+            double pxPerM_X = GetPixelsPerMeterX();
+            double tol = MeterTolerance();
+
+            int startMeters = (int)Math.Ceiling(m_dMinStartMeters - 1e-9);
+            double maxDepthMetersExact = m_dMaxStartMeters + m_iSampleNo * dz_m;
+            int endMeters = (int)Math.Ceiling(maxDepthMetersExact - 1e-9);
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.LineWidth(1f);
+            GL.Color4(0.8f, 0.8f, 1f, 0.8f);
+
+            for (int m = startMeters; m <= endMeters; m++)
+            {
+                bool drawing = false;
+                GL.Begin(PrimitiveType.LineStrip);
+                for (int i = 0; i < m_iPingNo; i++)
+                {
+                    double startM = m_blockHeaderList[i].MeasureStart;
+                    double bandM = m_iSampleNo * dz_m;
+                    double relM = m - startM;
+
+                    if (relM < -tol || relM > bandM + tol)
+                    {
+                        if (drawing) { GL.End(); drawing = false; GL.Begin(PrimitiveType.LineStrip); }
+                        continue;
+                    }
+
+                    double relM_clamped = Math.Max(0.0, Math.Min(bandM, relM));
+
+                    double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                    double y = m_offsetPxPerPing[i] + (relM_clamped * samplesPerMeter * m_dScaleY);
+                    GL.Vertex2(x, y);
+                    drawing = true;
+                }
+                GL.End();
+            }
+
+            GL.Disable(EnableCap.Blend);
+        }
+
+        private int FindRefPingForMeter(double m, double dz_m)
+        {
+            double tol = MeterTolerance();
+            int best = -1;
+            double bestStart = double.NegativeInfinity;
+            double bandM = m_iSampleNo * dz_m;
+
+            for (int i = 0; i < m_iPingNo; i++)
+            {
+                double s = m_blockHeaderList[i].MeasureStart;
+                if (s - tol <= m && m <= s + bandM + tol)
+                {
+                    if (s > bestStart) { bestStart = s; best = i; }
+                }
+                else if (best == -1 && s <= m && s > bestStart)
+                {
+                    bestStart = s; best = i;
+                }
+            }
+            return (best >= 0) ? best : 0;
+        }
+        /// <summary>
+        /// 検出したボトム位置をラインで可視化。
+        /// </summary>
+        private void DrawBottomLine()
+        {
+            if (m_bottomIdx == null || m_bottomIdx.Length != m_iPingNo) return;
+
+            double pxPerM_X = GetPixelsPerMeterX();
+            int w = m_iTexWidth;
+            int h = m_iTexHeight;
+
+            // 線のスタイル
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.LineWidth(2f);
+            GL.Color4(1f, 0.6f, 0f, 0.95f); // 暖色で視認性（必要ならUIで変更可）
+
+            // MeasureStart 段差を考慮した座標に変換
+            GL.Begin(PrimitiveType.LineStrip);
+            for (int i = 0; i < w; i++)
+            {
+                double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+
+                // 画像上のY：各Pingの縦オフセット + ボトムサンプル * 縦スケール
+                int b = m_bottomIdx[i];
+
+                // 表示はヒーブの有無どちらでもよいが、画像と整合を取るならオフセット
+                if (chkHeaveCorrection.Checked)
+                {
+                    double sampleIntervalCm = m_dZDistance;
+                    double heave_cm = m_blockHeaderList[i].HeaveFromMotionSensor / 10.0;
+                    int heaveOffset = (int)Math.Round((-1.0 * heave_cm) / sampleIntervalCm);
+                    b = Math.Clamp(b + heaveOffset, 0, h - 1);
+                }
+
+                double y = (m_offsetPxPerPing[i]) + m_bottomIdx[i] * m_dScaleY;
+                GL.Vertex2(x, y);
+            }
+            GL.End();
+
+            GL.Disable(EnableCap.Blend);
+        }
+
+        #endregion
+
+        #region スクロール・ビューポート
+
+        private void CreateScrollBars()
+        {
+            if (hScroll != null) return;
+
+            hScroll = new HScrollBar { Dock = DockStyle.Bottom, SmallChange = 32, LargeChange = 256 };
+            vScroll = new VScrollBar { Dock = DockStyle.Right, SmallChange = 32, LargeChange = 256 };
+
+            hScroll.Scroll += (_, __) => { m_dScrollX = hScroll.Value; glControl2D.Refresh(); };
+            vScroll.Scroll += (_, __) => { m_dScrollY = vScroll.Value; glControl2D.Refresh(); };
+
+            splitContainer1.Panel2.Controls.Add(hScroll);
+            splitContainer1.Panel2.Controls.Add(vScroll);
+        }
+
+        private void UpdateScrollRanges()
+        {
+            m_iVpW = glControl2D.ClientSize.Width;
+            m_iVpH = glControl2D.ClientSize.Height;
+
+            double contentH = m_iSampleNo * m_dScaleY + m_dMaxOffsetPx;
+            double contentW = (m_dTotalDistM > 0.0 && m_cumDistM != null && m_cumDistM.Length == m_iPingNo)
+                                ? m_dTotalDistM * GetPixelsPerMeterX()
+                                : m_iPingNo * m_dScaleX;
+
+            int maxH = (int)Math.Max(0, Math.Ceiling(contentW - m_iVpW));
+            int maxV = (int)Math.Max(0, Math.Ceiling(contentH - m_iVpH));
+
+            hScroll.Visible = maxH > 0;
+            vScroll.Visible = maxV > 0;
+
+            hScroll.Minimum = vScroll.Minimum = 0;
+            hScroll.LargeChange = Math.Max(1, m_iVpW);
+            vScroll.LargeChange = Math.Max(1, m_iVpH);
+
+            hScroll.Maximum = maxH + hScroll.LargeChange;
+            vScroll.Maximum = maxV + vScroll.LargeChange;
+
+            if (!hScroll.Visible) m_dScrollX = 0;
+            if (!vScroll.Visible) m_dScrollY = 0;
+
+            hScroll.Value = (int)Math.Max(hScroll.Minimum, Math.Min(hScroll.Maximum - hScroll.LargeChange, m_dScrollX));
+            vScroll.Value = (int)Math.Max(vScroll.Minimum, Math.Min(vScroll.Maximum - vScroll.LargeChange, m_dScrollY));
+        }
+
+        private void UpdateViewportPreserveAspect()
+        {
+            EnsureTextureDimensions();
+
+            int W = glControl2D.Width, H = glControl2D.Height;
+            if (W <= 0 || H <= 0 || m_iTexWidth <= 0 || m_iTexHeight <= 0) return;
+
+            // 2Dのため viewport 比率調整だけ（Projection は固定Ortho）
+            GL.Viewport(0, 0, W, H);
+        }
+
+        private void SetupScreenOrtho()
+        {
+            m_iVpW = glControl2D.ClientSize.Width;
+            m_iVpH = glControl2D.ClientSize.Height;
+
+            GL.Viewport(0, 0, m_iVpW, m_iVpH);
+            GL.MatrixMode(OpenTK.Graphics.OpenGL.MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.Ortho(0, m_iVpW, m_iVpH, 0, -1, 1); // 画面ピクセル座標
+            GL.MatrixMode(OpenTK.Graphics.OpenGL.MatrixMode.Modelview);
+            GL.LoadIdentity();
+        }
+
+        #endregion
+
+        #region 画像生成
+
+        private void InitTexture()
+        {
+            EnsureTextureDimensions();
+
+            if (m_iTexId == 0)
+            {
+                GL.GenTextures(1, out m_iTexId);
+                GL.BindTexture(TextureTarget.Texture2D, m_iTexId);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)All.ClampToEdge);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)All.ClampToEdge);
+                GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+            }
+
+            m_rgba = new byte[m_iTexWidth * m_iTexHeight * 4];
+            m_bLutDirty = true;
+            m_bTextureDirty = true;
+        }
+
+        private void EnsureAttenuationTable()
+        {
+            if (m_attZ == null || m_attZ.Length != m_iTexHeight)
+                m_attZ = new double[m_iTexHeight];
+
+            double dAtt = Convert.ToDouble(numAttDb.Value);
+            double attCoef = dAtt / 667.0 / 20.0;
+            int iBottom = Math.Clamp(Convert.ToInt32(numBottom.Value), 0, m_iTexHeight);
+
+            for (int z = 0; z < m_iTexHeight; z++)
+                m_attZ[z] = (z < iBottom) ? 1.0 : Math.Pow(10.0, attCoef * (z - iBottom));
+        }
+
+        private void BuildPaletteLut()
+        {
+            m_lut = new byte[256 * 4];
+
+            var colorMode = (ColorMode)cmbColor.SelectedIndex;
+            bool invert = chkInvert.Checked;
+            double dR = Convert.ToDouble(numR.Value);
+            double dG = Convert.ToDouble(numG.Value);
+            double dB = Convert.ToDouble(numB.Value);
+
+            float r = 0, g = 0, b = 0;
+
+            for (int i = 0; i < 256; i++)
+            {
+                float v = i / 255f;
+
+                if (colorMode == ColorMode.Gray)
+                {
+                    float rr = (float)(v * dR);
+                    float gg = (float)(v * dG);
+                    float bb = (float)(v * dB);
+                    if (invert) { rr = 1f - rr; gg = 1f - gg; bb = 1f - bb; }
+
+                    m_lut[i * 4 + 0] = (byte)(Math.Clamp(rr, 0f, 1f) * 255);
+                    m_lut[i * 4 + 1] = (byte)(Math.Clamp(gg, 0f, 1f) * 255);
+                    m_lut[i * 4 + 2] = (byte)(Math.Clamp(bb, 0f, 1f) * 255);
+                    m_lut[i * 4 + 3] = 255;
+                }
+                else
+                {
+                    float vv = invert ? (1f - v) : v;
+                    ColorPalette.ToColor(vv, colorMode, ref r, ref g, ref b);
+
+                    m_lut[i * 4 + 0] = (byte)(Math.Clamp(r, 0f, 1f) * 255);
+                    m_lut[i * 4 + 1] = (byte)(Math.Clamp(g, 0f, 1f) * 255);
+                    m_lut[i * 4 + 2] = (byte)(Math.Clamp(b, 0f, 1f) * 255);
+                    m_lut[i * 4 + 3] = 255;
+                }
+            }
+        }
+
+        private void BuildRgbaImage()
+        {
+            int w = m_iTexWidth;
+            int h = m_iTexHeight;
+
+            if (m_rgba == null || m_rgba.Length != w * h * 4)
+                m_rgba = new byte[w * h * 4];
+
+            double dIntensity = Convert.ToDouble(numIntensity.Value);
+            double thr = Convert.ToDouble(numThreshold.Value);
+            byte alphaFull = (byte)(Math.Clamp((float)numAlpha.Value, 0f, 1f) * 255);
+
+            // 減衰パラメータ（dAtt[db] を 667cm/20dBスケールへ換算して指数化）
+            double dAttDb = Convert.ToDouble(numAttDb.Value);
+            double attCoef = dAttDb / 667.0 / 20.0; // 既存式を流用：delta[サンプル] と組み合わせる
+
+            double sampleIntervalCm = m_dZDistance;
+
+            Parallel.For(0, h, z =>
+            {
+                for (int y = 0; y < w; y++)
+                {
+                    var lf = m_dataBlockList[y].Lf;
+
+                    bool hasData = true;
+                    int zShifted = z;
+
+                    // ヒーブ補正はサンプル選択に反映
+                    int heaveOffset = 0;
+                    if (chkHeaveCorrection.Checked)
+                    {
+                        double heave_cm = m_blockHeaderList[y].HeaveFromMotionSensor / 10.0;
+                        heaveOffset = (int)Math.Round((-1.0 * heave_cm) / sampleIntervalCm);
+                        zShifted = z + heaveOffset;
+                        if (zShifted < 0 || zShifted >= h) hasData = false;
+                    }
+
+                    int p = (z * w + y) * 4;
+
+                    if (!hasData)
+                    {
+                        m_rgba[p + 3] = 0; // 完全透明
+                        continue;
+                    }
+
+                    double s = lf[zShifted];
+                    if (Math.Abs(s) < thr) s = 0.0;
+
+                    // --- ★ここが重要：ボトムから下だけ減衰補正 ---
+                    int bottom = (m_bottomIdx != null && y < m_bottomIdx.Length) ? m_bottomIdx[y] : 0;
+                    // 画素側でヒーブを適用したなら、ボトム側も同じだけシフトして整合
+                    bottom += heaveOffset;
+                    bottom = Math.Clamp(bottom, 0, h - 1);
+
+                    int delta = zShifted - bottom; // ボトムからのサンプル差
+                    double att = (delta > 0) ? Math.Pow(10.0, attCoef * delta) : 1.0;
+
+                    double v = s * dIntensity * att;
+                    double nv = Math.Min(Math.Abs(v), 1.0);
+                    int idx = (int)(nv * 255.0);
+                    int lut = idx * 4;
+
+                    m_rgba[p + 0] = m_lut[lut + 2];
+                    m_rgba[p + 1] = m_lut[lut + 1];
+                    m_rgba[p + 2] = m_lut[lut + 0];
+                    m_rgba[p + 3] = alphaFull;
+                }
+            });
+        }
+
+
+        private void UploadTexture()
+        {
+            GL.BindTexture(TextureTarget.Texture2D, m_iTexId);
+            GL.TexImage2D(TextureTarget.Texture2D, 0,
+                PixelInternalFormat.Rgba,
+                m_iTexWidth, m_iTexHeight, 0,
+                PixelFormat.Bgra, PixelType.UnsignedByte,
+                m_rgba);
+
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+
+            float maxAniso;
+            GL.GetFloat((GetPName)All.MaxTextureMaxAnisotropyExt, out maxAniso);
+            GL.TexParameter(TextureTarget.Texture2D, (TextureParameterName)All.TextureMaxAnisotropyExt, MathF.Min(8f, maxAniso));
+        }
+
+        private void EnsureTextureDimensions()
+        {
+            m_iTexWidth = m_iPingNo;
+            m_iTexHeight = m_iSampleNo;
+        }
+
+        #endregion
+
+        #region その他
+        private void SetBackgroundColor(Color color)
+        {
+            glControl2D.MakeCurrent();
+            GL.ClearColor(color);
+            glControl2D.Refresh();
+        }
+
+        #endregion
+
+        #region 減衰補正
+        /// <summary>
+        /// 分散（標本分散の期待値に相当；実装は母分散）最大の z をボトムとみなす。
+        /// 1) |LF| で符号影響を抑制（useAbs=false で生波形）
+        /// 2) 探索窓: startSkipM ～ (H - endGuardM) の間
+        /// 3) 窓分散: prefix sums & prefix squares でO(h)算出
+        /// 4) 出力後にPing方向の中央値フィルタで平滑
+        /// </summary>
+        private void ComputeBottomIndicesByStdDev(
+            int winVar = 31,     // 分散計算窓（奇数推奨；デフォ 31サンプル）
+            double startSkipM = 0.20,   // 上端スキップ[m]
+            double endGuardM = 0.50,   // 下端ガード[m]
+            bool useAbs = true,   // |LF| を使う
+            int medianW = 5       // 出力のPing方向中央値フィルタ幅（奇数）
+        )
+        {
+            int w = m_iPingNo;
+            int h = m_iSampleNo;
+            if (m_dataBlockList == null || w <= 0 || h <= 0) return;
+
+            m_bottomIdx ??= new int[w];
+
+            // パラメータ整形
+            if (winVar < 5) winVar = 5;
+            if (winVar % 2 == 0) winVar++;     // 奇数化
+            int half = winVar / 2;
+
+            int startSkip = (int)Math.Round((startSkipM * 100.0) / m_dZDistance);
+            int endGuard = (int)Math.Round((endGuardM * 100.0) / m_dZDistance);
+
+            Parallel.For(0, w, y =>
+            {
+                short[] lfRaw = m_dataBlockList[y].Lf;
+                if (lfRaw == null || lfRaw.Length < h)
+                {
+                    m_bottomIdx[y] = Math.Min(10, h - 1);
+                    return;
+                }
+
+                // 1) 信号を double 配列へ（必要なら絶対値）
+                double[] s = new double[h];
+                if (useAbs)
+                {
+                    for (int i = 0; i < h; i++) s[i] = Math.Abs((double)lfRaw[i]);
+                }
+                else
+                {
+                    for (int i = 0; i < h; i++) s[i] = lfRaw[i];
+                }
+
+                // 2) prefix sums と prefix squares（分散用）
+                //    sum[z]   = s[0..z-1] の和（sum[0]=0）
+                //    sum2[z]  = s^2 の和
+                double[] sum = new double[h + 1];
+                double[] sum2 = new double[h + 1];
+                for (int i = 0; i < h; i++)
+                {
+                    sum[i + 1] = sum[i] + s[i];
+                    sum2[i + 1] = sum2[i] + s[i] * s[i];
+                }
+
+                // 3) 探索範囲（窓がはみ出さないよう制限）
+                int zMin = Math.Max(startSkip + half, half);
+                int zMax = Math.Min(h - 1 - endGuard - half, h - 1 - half);
+                if (zMin > zMax) { zMin = half; zMax = h - 1 - half; }
+
+                // 4) 窓ごとの分散 = E[x^2] - (E[x])^2
+                int zPick = zMin;
+                double bestVar = double.NegativeInfinity;
+                int winN = winVar;
+
+                for (int z = zMin; z <= zMax; z++)
+                {
+                    int a = z - half;            // inclusive
+                    int b = z + half + 1;        // exclusive
+                    double S = sum[b] - sum[a];
+                    double S2 = sum2[b] - sum2[a];
+                    double mean = S / winN;
+                    double var = (S2 / winN) - (mean * mean); // 母分散相当（Nで割る）
+
+                    if (var > bestVar)
+                    {
+                        bestVar = var;
+                        zPick = z;
+                    }
+                }
+
+                m_bottomIdx[y] = Math.Clamp(zPick, 0, h - 1);
+            });
+
+            // 5) Ping方向の小さな跳ねを抑えるため中央値フィルタ（奇数幅）
+            if (medianW >= 3 && medianW % 2 == 1)
+            {
+                int[] dst = new int[w];
+                int mh = medianW / 2;
+                int[] buf = new int[medianW];
+
+                for (int i = 0; i < w; i++)
+                {
+                    int a = Math.Max(0, i - mh);
+                    int b = Math.Min(w - 1, i + mh);
+                    int n = 0;
+                    for (int k = a; k <= b; k++) buf[n++] = m_bottomIdx[k];
+                    Array.Sort(buf, 0, n);
+                    dst[i] = buf[n / 2];
+                }
+                System.Buffer.BlockCopy(dst, 0, m_bottomIdx, 0, w * sizeof(int));
+            }
+
+            m_bBottomDirty = false;
+        }
+
+        /// <summary>
+        /// 各PingのLF波形から海底面（最初の強反射）位置を検出し、m_bottomIdx[y] に格納。
+        /// ロバスト化のために |signal| → 移動平均 → しきい値超えの最初のピーク近傍を採用。
+        /// </summary>
+        private void ComputeBottomIndices()
+        {
+            int w = m_iPingNo;
+            int h = m_iSampleNo;
+            if (m_dataBlockList == null || w <= 0 || h <= 0) return;
+
+            m_bottomIdx ??= new int[w];
+
+            // 検出パラメータ（必要なら NumericUpDown にすることも可能）
+            int smoothWin = Math.Clamp(h / 200, 7, 31); // 画像サイズに応じた平滑窓（奇数）
+            if (smoothWin % 2 == 0) smoothWin++;
+            double startSkipM = 0.20;                   // 開始直後は除外（例：0.20 m）
+            double endGuardM = 0.50;                   // 末尾ガード（例：0.50 m）
+            int startSkip = (int)Math.Round((startSkipM * 100.0) / m_dZDistance);
+            int endGuard = (int)Math.Round((endGuardM * 100.0) / m_dZDistance);
+
+            Parallel.For(0, w, y =>
+            {
+                var lf = m_dataBlockList[y].Lf;
+                //var lf = m_dataBlockList[y].Hf;
+                if (lf == null || lf.Length < h) { m_bottomIdx[y] = Math.Min(10, h - 1); return; }
+
+                // 1) 絶対値 & 平滑
+                Span<double> env = stackalloc double[h];
+                for (int z = 0; z < h; z++) env[z] = Math.Abs((double)lf[z]);
+
+                // 移動平均（単純で十分）
+                int half = smoothWin / 2;
+                double run = 0;
+                for (int z = 0; z < h; z++)
+                {
+                    int z0 = Math.Max(0, z - half);
+                    int z1 = Math.Min(h - 1, z + half);
+                    if (z == 0)
+                    {
+                        for (int k = z0; k <= z1; k++) run += env[k];
+                    }
+                    else
+                    {
+                        int prev0 = Math.Max(0, (z - 1) - half);
+                        int prev1 = Math.Min(h - 1, (z - 1) + half);
+                        // 窓が1つ下にずれるときの差分更新
+                        if (z1 > prev1) run += env[z1];
+                        if (z0 > prev0) run -= env[prev0];
+                    }
+                    int win = (Math.Min(h - 1, z + half) - Math.Max(0, z - half) + 1);
+                    env[z] = run / Math.Max(1, win);
+                }
+
+                // 2) ロバストなしきい値（メディアン + k*MAD）
+                //    k=3.5 程度が経験的に安定（必要なら調整）
+                double median = Median(env);
+                double mad = MedianAbsoluteDeviation(env, median) + 1e-9;
+                double thr = median + 3.5 * mad;
+                //double thr = median + 5.0 * mad;
+
+                int searchStart = Math.Clamp(startSkip, 0, h - 1);
+                int searchEnd = Math.Clamp(h - 1 - endGuard, 0, h - 1);
+
+                // 3) しきい値超えの「最初の強い領域」のピークを海底とする
+                int zPick = searchEnd;
+                bool foundBand = false;
+                int bandStart = -1;
+
+                for (int z = searchStart; z <= searchEnd; z++)
+                {
+                    if (!foundBand && env[z] > thr)
+                    {
+                        foundBand = true;
+                        bandStart = z;
+                    }
+                    if (foundBand && env[z] <= thr)
+                    {
+                        // バンド終了 → バンド内最大の位置
+                        int bandEnd = z - 1;
+                        zPick = ArgMax(env, bandStart, bandEnd);
+                        break;
+                    }
+                }
+
+                // しきい値超えが最後まで続いた場合
+                if (foundBand && env[searchEnd] > thr)
+                    zPick = ArgMax(env, bandStart, searchEnd);
+
+                // フォールバック
+                if (!foundBand)
+                {
+                    // 単純に env の最大
+                    zPick = ArgMax(env, searchStart, searchEnd);
+                }
+
+                m_bottomIdx[y] = Math.Clamp(zPick, 0, h - 1);
+            });
+
+            m_bBottomDirty = false;
+
+            // --- ローカル関数 ---
+            static int ArgMax(Span<double> a, int s, int e)
+            {
+                s = Math.Max(0, s); e = Math.Min(a.Length - 1, e);
+                int ix = s; double best = a[s];
+                for (int i = s + 1; i <= e; i++)
+                    if (a[i] > best) { best = a[i]; ix = i; }
+                return ix;
+            }
+            static double Median(Span<double> a)
+            {
+                double[] tmp = a.ToArray();
+                Array.Sort(tmp);
+                int n = tmp.Length;
+                return (n % 2 == 1) ? tmp[n / 2] : 0.5 * (tmp[n / 2 - 1] + tmp[n / 2]);
+            }
+            static double MedianAbsoluteDeviation(Span<double> a, double med)
+            {
+                double[] dev = new double[a.Length];
+                for (int i = 0; i < a.Length; i++) dev[i] = Math.Abs(a[i] - med);
+                Array.Sort(dev);
+                int n = dev.Length;
+                double mad = (n % 2 == 1) ? dev[n / 2] : 0.5 * (dev[n / 2 - 1] + dev[n / 2]);
+                // 正規分布での尺度補正はここでは使用しない（しきい値kで吸収）
+                return mad;
+            }
+        }
+        private int EstimateFirstBreak_STA_LTA(double[] sAbs, int sta = 12, int lta = 60, double thr = 3.0, int searchStart = 0)
+        {
+            int H = sAbs.Length;
+            double[] S = new double[H + 1];
+            for (int i = 0; i < H; i++) S[i + 1] = S[i] + sAbs[i] * sAbs[i];
+
+            for (int z = Math.Max(searchStart, lta + 1); z < H; z++)
+            {
+                int l0 = z - lta, l1 = z;             // [l0, l1)
+                int s0 = Math.Max(0, z - sta), s1 = z; // [s0, s1)
+                double L = (S[l1] - S[l0]) / lta;
+                double Sshort = (S[s1] - S[s0]) / Math.Max(1, s1 - s0);
+                if (L > 1e-12 && (Sshort / L) >= thr) return z;
+            }
+            return Math.Min(searchStart + lta, H - 1); // 見つからない場合のフォールバック
+        }
+        /// <summary>
+        /// 「強い反射のピーク」をボトムとして選ぶ：
+        /// 1) |LF| を移動平均で平滑した包絡 env を作る
+        /// 2) (FB + guard) ～ (FB + depthMax) の範囲で env が最大の z を採用
+        /// </summary>
+        private void ComputeBottomIndicesByEnvelopePeak(
+            double startSkipM = 0.20,   // 上端除外（表層ノイズ避け）
+            double guardBelowFB_M = 0.10, // FB直下のガード（すぐ上の乱れを避ける）
+            double searchDepth_M = 2.00, // FBから下へ探索する最大深さ
+            int envWin = 21,          // 包絡の移動平均窓（奇数）
+            int sta = 12, int lta = 60, double staLtaThr = 3.0
+        )
+        {
+            int W = m_iPingNo, H = m_iSampleNo;
+            if (m_dataBlockList == null || W == 0 || H == 0) return;
+            m_bottomIdx ??= new int[W];
+
+            if (envWin < 5) envWin = 5;
+            if (envWin % 2 == 0) envWin++;
+
+            int startSkip = (int)Math.Round((startSkipM * 100.0) / m_dZDistance);
+            int guardFB = (int)Math.Round((guardBelowFB_M * 100.0) / m_dZDistance);
+            int searchMax = (int)Math.Round((searchDepth_M * 100.0) / m_dZDistance);
+
+            Parallel.For(0, W, y =>
+            {
+                var lfRaw = m_dataBlockList[y].Lf;
+                if (lfRaw == null || lfRaw.Length < H) { m_bottomIdx[y] = Math.Min(10, H - 1); return; }
+
+                // 絶対値にしてから包絡（=移動平均）
+                double[] sAbs = new double[H];
+                for (int i = 0; i < H; i++) sAbs[i] = Math.Abs((double)lfRaw[i]);
+
+                // まず軽量 STA/LTA で到来点（FB）を概算
+                int fb = EstimateFirstBreak_STA_LTA(sAbs, sta, lta, staLtaThr, searchStart: startSkip);
+
+                // 包絡（移動平均）
+                int half = envWin / 2;
+                double run = 0;
+                double[] env = new double[H];
+                for (int z = 0; z < H; z++)
+                {
+                    int a = Math.Max(0, z - half);
+                    int b = Math.Min(H - 1, z + half);
+                    if (z == 0)
+                    {
+                        for (int k = a; k <= b; k++) run += sAbs[k];
+                    }
+                    else
+                    {
+                        int pa = Math.Max(0, (z - 1) - half);
+                        int pb = Math.Min(H - 1, (z - 1) + half);
+                        if (b > pb) run += sAbs[b];
+                        if (a > pa) run -= sAbs[pa];
+                    }
+                    int winN = (Math.Min(H - 1, z + half) - Math.Max(0, z - half) + 1);
+                    env[z] = run / Math.Max(1, winN);
+                }
+
+                // 探索窓：FBの少し下から、一定深さまで
+                int z0 = Math.Clamp(fb + guardFB, 0, H - 1);
+                int z1 = Math.Clamp(fb + searchMax, 0, H - 1);
+                if (z1 <= z0) z1 = Math.Min(H - 1, z0 + Math.Max(10, envWin));
+
+                // 最大ピークをボトムに
+                int zPick = z0;
+                double best = -1.0;
+                for (int z = z0; z <= z1; z++)
+                {
+                    double v = env[z];
+                    if (v > best) { best = v; zPick = z; }
+                }
+
+                m_bottomIdx[y] = Math.Clamp(zPick, 0, H - 1);
+            });
+
+            // 連続性のためにごく弱い中央値平滑（3～5）
+            int Wm = 5;
+            if (Wm % 2 == 1 && Wm >= 3 && W >= Wm)
+            {
+                int[] dst = new int[W];
+                int r = Wm / 2;
+                for (int i = 0; i < W; i++)
+                {
+                    int a = Math.Max(0, i - r), b = Math.Min(W - 1, i + r);
+                    int n = b - a + 1;
+                    int[] buf = new int[n];
+                    for (int k = 0; k < n; k++) buf[k] = m_bottomIdx[a + k];
+                    Array.Sort(buf);
+                    dst[i] = buf[n / 2];
+                }
+                System.Buffer.BlockCopy(dst, 0, m_bottomIdx, 0, W * sizeof(int));
+            }
+
+            m_bBottomDirty = false;
+        }
+
+
+        /// <summary>
+        /// 微分エッジ法：|LF| を平滑 → 中心差分で微分 →
+        /// 「最初に |d| が適応閾値を超え、かつ強度がフロア以上」の z を到来点、
+        /// さらに直後の小窓で包絡ピークへ寄せて最終的なボトム z を確定。
+        /// </summary>
+        /// 微分エッジ法（ヒーブ補正後の座標系で検出）
+        private void ComputeBottomIndicesByDerivativeEdge(
+            double startSkipM = 0.20,
+            double endGuardM = 0.50,
+            int smoothWin = 19,
+            double kMad = 4.0,
+            double ampPct = 0.70,
+            double refineWinM = 0.30,
+            bool useAbsLF = true,
+            bool applyHeaveInDetection = true // ★検出にもヒーブを適用
+        )
+        {
+            int W = m_iPingNo, H = m_iSampleNo;
+            if (m_dataBlockList == null || W == 0 || H == 0) return;
+            m_bottomIdx ??= new int[W];
+
+            if (smoothWin < 5) smoothWin = 5;
+            if (smoothWin % 2 == 0) smoothWin++;
+            int half = smoothWin / 2;
+
+            int startSkip = (int)Math.Round((startSkipM * 100.0) / m_dZDistance);
+            int endGuard = (int)Math.Round((endGuardM * 100.0) / m_dZDistance);
+            int refineN = Math.Max(5, (int)Math.Round((refineWinM * 100.0) / m_dZDistance));
+
+            // 表示側の「ヒーブ適用」チェックに追従（固定で適用したいなら true に）
+            bool heaveOn = applyHeaveInDetection && chkHeaveCorrection.Checked;
+
+            Parallel.For(0, W, y =>
+            {
+                var lf = m_dataBlockList[y].Lf;
+                if (lf == null || lf.Length < H) { m_bottomIdx[y] = Math.Min(10, H - 1); return; }
+
+                // ★ ピングごとの heave オフセット（サンプル単位：表示zに対して元波形の参照は z+offset）
+                int heaveOffset = 0;
+                if (heaveOn)
+                {
+                    double heave_cm = m_blockHeaderList[y].HeaveFromMotionSensor / 10.0; // mm→cm の想定
+                    heaveOffset = (int)Math.Round((-1.0 * heave_cm) / m_dZDistance);
+                }
+
+                // 有効な「表示z」範囲（z+heaveOffset が [0,H-1] になる区間）
+                int validMin = Math.Max(0, -heaveOffset);
+                int validMax = Math.Min(H - 1, H - 1 - heaveOffset);
+
+                // 平滑窓・微分を安全にするための余白を考慮
+                int zMin = Math.Max(validMin + half + 1, startSkip + half + 1);
+                int zMax = Math.Min(validMax - half - 1, H - 2 - endGuard);
+                if (zMin >= zMax) { m_bottomIdx[y] = Math.Clamp(startSkip, 0, H - 1); return; }
+
+                // 1) env（|LF| の移動平均）※参照は常に src = z + heaveOffset
+                double[] env = new double[H];
+                double run = 0;
+
+                // ヘルパ：ソースの安全参照
+                double Src(int z)
+                {
+                    int zs = z + heaveOffset;
+                    if ((uint)zs < (uint)H) return useAbsLF ? Math.Abs((double)lf[zs]) : (double)lf[zs];
+                    return 0.0; // はみ出しは0扱い（他に pad/hold にしてもよい）
+                }
+
+                for (int z = 0; z < H; z++)
+                {
+                    int a = Math.Max(0, z - half);
+                    int b = Math.Min(H - 1, z + half);
+                    if (z == 0)
+                    {
+                        run = 0;
+                        for (int k = a; k <= b; k++) run += Src(k);
+                    }
+                    else
+                    {
+                        int pa = Math.Max(0, (z - 1) - half);
+                        int pb = Math.Min(H - 1, (z - 1) + half);
+                        if (b > pb) run += Src(b);
+                        if (a > pa) run -= Src(pa);
+                    }
+                    int winN = (Math.Min(H - 1, z + half) - Math.Max(0, z - half) + 1);
+                    env[z] = run / Math.Max(1, winN);
+                }
+
+                // 2) 中心差分の絶対値 |d|
+                double[] dabs = new double[H];
+                for (int z = 1; z < H - 1; z++)
+                    dabs[z] = Math.Abs(0.5 * (env[z + 1] - env[z - 1]));
+                dabs[0] = dabs[1]; dabs[H - 1] = dabs[H - 2];
+
+                // 3) 適応しきい値（MAD）と強度フロア（百分位）
+                (double mad, double medD) = MadOfRange(dabs, zMin, zMax);
+                double thrD = Math.Max(1e-12, medD + kMad * mad);
+                double ampFloor = Percentile(env, zMin, zMax, ampPct);
+
+                // 4) 最初のエッジ（|d| >= thr && env >= floor）
+                int zEdge = -1;
+                for (int z = zMin; z <= zMax; z++)
+                {
+                    if (dabs[z] >= thrD && env[z] >= ampFloor)
+                    {
+                        // 簡易ヒステリシス
+                        int ok = 0, need = 2;
+                        for (int k = 1; k <= need && z + k <= zMax; k++)
+                            if (dabs[z + k] >= 0.6 * thrD) ok++;
+                        if (ok >= need - 1) { zEdge = z; break; }
+                    }
+                }
+                if (zEdge < 0) zEdge = zMin;
+
+                // 5) “最初の変化の直後で小窓ピークへ寄せる”ロジック（従来どおり）
+                int a2 = Math.Min(zEdge + 1, zMax);
+                int b2 = Math.Min(zEdge + refineN, zMax);
+                int zPick = a2; double best = env[a2];
+                for (int z = a2; z <= b2; z++)
+                    if (env[z] > best) { best = env[z]; zPick = z; }
+
+                m_bottomIdx[y] = Math.Clamp(zPick, 0, H - 1); // ★この z は“ヒーブ補正後の表示z”
+            });
+
+            // 進行方向の軽い中央値平滑（任意）
+            int Wm = 5;
+            if (W >= Wm && (Wm % 2 == 1))
+            {
+                int[] dst = new int[W];
+                int r = Wm / 2;
+                for (int i = 0; i < W; i++)
+                {
+                    int a = Math.Max(0, i - r), b = Math.Min(W - 1, i + r);
+                    int n = b - a + 1;
+                    int[] buf = new int[n];
+                    for (int k = 0; k < n; k++) buf[k] = m_bottomIdx[a + k];
+                    Array.Sort(buf);
+                    dst[i] = buf[n / 2];
+                }
+                System.Buffer.BlockCopy(dst, 0, m_bottomIdx, 0, W * sizeof(int));
+            }
+
+            m_bBottomDirty = false;
+
+            // --- ヘルパ ---
+            static (double mad, double med) MadOfRange(double[] a, int s, int e)
+            {
+                int n = e - s + 1;
+                double[] tmp = new double[n];
+                for (int i = 0; i < n; i++) tmp[i] = a[s + i];
+                Array.Sort(tmp);
+                double med = (n % 2 == 1) ? tmp[n / 2] : 0.5 * (tmp[n / 2 - 1] + tmp[n / 2]);
+                for (int i = 0; i < n; i++) tmp[i] = Math.Abs(tmp[i] - med);
+                Array.Sort(tmp);
+                double mad = (n % 2 == 1) ? tmp[n / 2] : 0.5 * (tmp[n / 2 - 1] + tmp[n / 2]);
+                return (mad, med);
+            }
+            static double Percentile(double[] a, int s, int e, double p)
+            {
+                p = Math.Clamp(p, 0.0, 1.0);
+                int n = e - s + 1;
+                double[] tmp = new double[n];
+                for (int i = 0; i < n; i++) tmp[i] = a[s + i];
+                Array.Sort(tmp);
+                double idx = p * (n - 1);
+                int i0 = (int)Math.Floor(idx), i1 = Math.Min(n - 1, i0 + 1);
+                double t = idx - i0;
+                return tmp[i0] * (1 - t) + tmp[i1] * t;
+            }
+        }
+
+        /// <summary>
+        /// 微分エッジ法（ボトム＝最初の大変化）: 
+        /// |LF| を平滑 → 中心差分の絶対値 |d| → 適応しきい値を初めて超えた z をボトムに採用。
+        /// ピークへの寄せは行わない。
+        /// </summary>
+        private void ComputeBottomIndicesByDerivativeEdge_EdgeIsBottom(
+            double startSkipM = 0.20,   // 上端除外[m]
+            double endGuardM = 0.50,   // 末尾ガード[m]
+            int smoothWin = 19,     // 平滑窓（奇数 15–31）
+            double kMad = 4.0,    // 閾値 = median(|d|) + kMad * MAD（2.5–5.0）
+            double ampPct = 0.70,   // 強度フロア（env の百分位 0.6–0.85）
+            int confirmLen = 2,      // ヒステリシス：後続 confirmLen サンプルも高め継続
+            int minGapSamples = 8,      // デバウンス：複数エッジの最小間隔
+            bool useAbsLF = true    // 平滑前に絶対値化
+        )
+        {
+            int W = m_iPingNo, H = m_iSampleNo;
+            if (m_dataBlockList == null || W == 0 || H == 0) return;
+            m_bottomIdx ??= new int[W];
+
+            if (smoothWin < 5) smoothWin = 5;
+            if (smoothWin % 2 == 0) smoothWin++;
+
+            int startSkip = (int)Math.Round((startSkipM * 100.0) / m_dZDistance);
+            int endGuard = (int)Math.Round((endGuardM * 100.0) / m_dZDistance);
+            int half = smoothWin / 2;
+
+            Parallel.For(0, W, y =>
+            {
+                var lfRaw = m_dataBlockList[y].Lf;
+                if (lfRaw == null || lfRaw.Length < H) { m_bottomIdx[y] = Math.Min(10, H - 1); return; }
+
+                // 1) 包絡っぽく |LF| を平滑（移動平均）
+                double[] env = new double[H];
+                double run = 0;
+                for (int z = 0; z < H; z++)
+                {
+                    double v = useAbsLF ? Math.Abs((double)lfRaw[z]) : (double)lfRaw[z];
+                    int a = Math.Max(0, z - half);
+                    int b = Math.Min(H - 1, z + half);
+                    if (z == 0)
+                    {
+                        run = 0;
+                        for (int k = a; k <= b; k++)
+                            run += (useAbsLF ? Math.Abs((double)lfRaw[k]) : (double)lfRaw[k]);
+                    }
+                    else
+                    {
+                        int pa = Math.Max(0, (z - 1) - half);
+                        int pb = Math.Min(H - 1, (z - 1) + half);
+                        if (b > pb) run += (useAbsLF ? Math.Abs((double)lfRaw[b]) : (double)lfRaw[b]);
+                        if (a > pa) run -= (useAbsLF ? Math.Abs((double)lfRaw[pa]) : (double)lfRaw[pa]);
+                    }
+                    int winN = (Math.Min(H - 1, z + half) - Math.Max(0, z - half) + 1);
+                    env[z] = run / Math.Max(1, winN);
+                }
+
+                // 2) 中心差分で微分の絶対値 |d|
+                double[] dabs = new double[H];
+                for (int z = 1; z < H - 1; z++)
+                    dabs[z] = Math.Abs(0.5 * (env[z + 1] - env[z - 1]));
+                dabs[0] = dabs[1]; dabs[H - 1] = dabs[H - 2];
+
+                // 3) 探索範囲
+                int zMin = Math.Max(startSkip + half + 1, 1);
+                int zMax = Math.Min(H - 1 - endGuard - 1, H - 2);
+                if (zMin >= zMax) { m_bottomIdx[y] = Math.Clamp(startSkip, 0, H - 1); return; }
+
+                // 4) 適応しきい値（MAD）と強度フロア
+                (double mad, double medD) = MadOfRange(dabs, zMin, zMax);
+                double thrD = Math.Max(1e-12, medD + kMad * mad);
+                double ampFloor = Percentile(env, zMin, zMax, ampPct);
+
+                // 5) 最初のエッジ（ヒステリシス＋デバウンス）＝ボトム
+                int lastEdge = -minGapSamples - 1;
+                int zEdge = -1;
+                for (int z = zMin; z <= zMax; z++)
+                {
+                    if (dabs[z] >= thrD && env[z] >= ampFloor && (z - lastEdge) >= minGapSamples)
+                    {
+                        // 連続確認（confirmLen サンプル後も高め継続）
+                        int ok = 0;
+                        for (int k = 1; k <= confirmLen && z + k <= zMax; k++)
+                            if (dabs[z + k] >= 0.6 * thrD) ok++;
+                        if (ok >= Math.Max(1, confirmLen - 1))
+                        {
+                            zEdge = z;
+                            break; // ★最初のものを採用
+                        }
+                    }
+                    if (dabs[z] >= thrD) lastEdge = z;
+                }
+
+                if (zEdge < 0) zEdge = zMin; // フォールバック
+                m_bottomIdx[y] = Math.Clamp(zEdge, 0, H - 1);
+            });
+
+            // 進行方向の軽い平滑（任意・入れすぎ注意）
+            int mw = 3; // 3～5 くらい。線がギザるなら5
+            if (W >= mw && mw % 2 == 1)
+            {
+                int[] dst = new int[W];
+                int r = mw / 2;
+                for (int i = 0; i < W; i++)
+                {
+                    int a = Math.Max(0, i - r), b = Math.Min(W - 1, i + r);
+                    int n = b - a + 1;
+                    int[] buf = new int[n];
+                    for (int k = 0; k < n; k++) buf[k] = m_bottomIdx[a + k];
+                    Array.Sort(buf);
+                    dst[i] = buf[n / 2];
+                }
+                System.Buffer.BlockCopy(dst, 0, m_bottomIdx, 0, W * sizeof(int));
+            }
+
+            m_bBottomDirty = false;
+
+            // --- ヘルパ ---
+            static (double mad, double med) MadOfRange(double[] a, int s, int e)
+            {
+                int n = e - s + 1;
+                double[] tmp = new double[n];
+                for (int i = 0; i < n; i++) tmp[i] = a[s + i];
+                Array.Sort(tmp);
+                double med = (n % 2 == 1) ? tmp[n / 2] : 0.5 * (tmp[n / 2 - 1] + tmp[n / 2]);
+                for (int i = 0; i < n; i++) tmp[i] = Math.Abs(tmp[i] - med);
+                Array.Sort(tmp);
+                double mad = (n % 2 == 1) ? tmp[n / 2] : 0.5 * (tmp[n / 2 - 1] + tmp[n / 2]);
+                return (mad, med);
+            }
+            static double Percentile(double[] a, int s, int e, double p)  // p∈[0,1]
+            {
+                p = Math.Clamp(p, 0.0, 1.0);
+                int n = e - s + 1;
+                double[] tmp = new double[n];
+                for (int i = 0; i < n; i++) tmp[i] = a[s + i];
+                Array.Sort(tmp);
+                double idx = p * (n - 1);
+                int i0 = (int)Math.Floor(idx), i1 = Math.Min(n - 1, i0 + 1);
+                double t = idx - i0;
+                return tmp[i0] * (1 - t) + tmp[i1] * t;
+            }
+        }
+
+        #endregion
+
+
+        private void glControl2D_Click(object sender, EventArgs e)
+        {
+
+
+
+        }
+    }
+}
