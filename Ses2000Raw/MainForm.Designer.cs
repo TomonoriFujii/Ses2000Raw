@@ -49,7 +49,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { tsMenutemFile });
             menuStrip1.Location = new Point(1, 32);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1810, 24);
+            menuStrip1.Size = new Size(1598, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -85,7 +85,7 @@
             toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripButton1 });
             toolStrip1.Location = new Point(1, 56);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(1810, 25);
+            toolStrip1.Size = new Size(1598, 25);
             toolStrip1.TabIndex = 1;
             toolStrip1.Text = "toolStrip1";
             // 
@@ -101,10 +101,10 @@
             // 
             // statusStrip1
             // 
-            statusStrip1.Location = new Point(1, 977);
+            statusStrip1.Location = new Point(1, 877);
             statusStrip1.Name = "statusStrip1";
             statusStrip1.RenderMode = ToolStripRenderMode.ManagerRenderMode;
-            statusStrip1.Size = new Size(1810, 22);
+            statusStrip1.Size = new Size(1598, 22);
             statusStrip1.TabIndex = 2;
             statusStrip1.Text = "statusStrip1";
             // 
@@ -116,7 +116,7 @@
             dockPanel1.Name = "dockPanel1";
             dockPanel1.Padding = new Padding(6);
             dockPanel1.ShowAutoHideContentOnHover = false;
-            dockPanel1.Size = new Size(1810, 896);
+            dockPanel1.Size = new Size(1598, 796);
             dockPanel1.TabIndex = 3;
             dockPanel1.Theme = vS2015DarkTheme1;
             // 
@@ -128,7 +128,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1812, 1000);
+            ClientSize = new Size(1600, 900);
             Controls.Add(dockPanel1);
             Controls.Add(statusStrip1);
             Controls.Add(toolStrip1);
@@ -138,6 +138,7 @@
             MainMenuStrip = menuStrip1;
             Name = "MainForm";
             Padding = new Padding(1);
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "SES-Reflect";
             Load += MainForm_Load;
             Controls.SetChildIndex(menuStrip1, 0);

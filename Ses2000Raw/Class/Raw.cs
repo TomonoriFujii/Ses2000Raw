@@ -527,7 +527,7 @@ namespace Ses2000Raw
     {
         public short[] Lf { get; private set; } = new short[0];
         public short[] Hf { get; private set; } = new short[0];
-        public short[] Processesd { get; private set; } = new short[0];
+        public short[] Processed { get; private set; } = new short[0];
 
         public static DataBlock ReadFrom(Stream s, int lfSamples, int hfSamples)
         {
@@ -578,17 +578,25 @@ namespace Ses2000Raw
             }
         }
 
+        public void SetProcessesd(short[] data, bool clone = false)
+        {
+            Processed = clone ? (short[])data?.Clone() : data;
+        }
         // ====== Clone メソッド ======
         public DataBlock Clone()
         {
             return new DataBlock
             {
                 Lf = (short[])this.Lf.Clone(),
-                Hf = (short[])this.Hf.Clone()
+                Hf = (short[])this.Hf.Clone(),
+                Processed = (short[])this.Processed.Clone()
             };
         }
 
         object ICloneable.Clone() => Clone();
+
+
+
     }
 
 }

@@ -127,8 +127,14 @@
   <data name="BlueOrangeIcb" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\lut\BlueOrangeIcb.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="Envelope" xml:space="preserve">
+    <value>Envelope</value>
+  </data>
   <data name="Fire" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\lut\Fire.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="FullWave" xml:space="preserve">
+    <value>None (Full Wave)</value>
   </data>
   <data name="Gem" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\lut\Gem.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>

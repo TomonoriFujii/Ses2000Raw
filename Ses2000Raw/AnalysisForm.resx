@@ -120,6 +120,28 @@
   <metadata name="colorDialog1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <metadata name="toolStrip1.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>138, 17</value>
+  </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="tsBtnSaveImage.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAK1SURBVEhL1ZLJTxNRAIcHl2g8GAU9mZh49eYR931BQdmX
+        KBdPgBiVBJVWufonqImIFkqByiKrVQgRDBFKpqGTYZbu0mmroSQGEg7En3mvndoMUyAQD7zkd5zv++bN
+        MMyWP3c/esvKuzyR8i4P7nS6cbvTjbION0o73Cj54EKx1YUiqwsF7S7kt8vIa5NxqzW2HIuEbIuEGy0S
+        ssySkmeV8rV8psjCRwoTABdy44CbrTKyLTJ9+HqLhGtmCVebJVxpFnG5ScRFk4gLJhHn3ws4+07AmdiC
+        Wj5D6grj8Lw2V6LO2DuEIGvELGvAk54hKiBwsktNcbhJwLm44HSjgFONM9DymVT1isMA8FUAX4kg+3TN
+        egLXF+jU51hkRBx1FA6+AmH28brqT77VEejVk7uv7/2Mn45aOkOPjcJLrDKG+VmUWmVaTwTJ9SdSCbT1
+        REA+bJY59nFV+LRXQSQSBudTUNwur6jXFejVq38OEZC7J8UqnCwcDoPzKihskxICAj/eoCMg9apArX85
+        oaDBHqL1WrgqCIdD4HxBFLRKifpMPUFyPRG8mlCwuLhI1+QIgfXow9URSa5FovWZDXxqgRauLhqN6gpy
+        xn/gSL+A2rEZTE3zsE/zMNljezg49efwUMBIBWr968nQCjjZwsJCQpJcf9DmR0Y3j/sjHCZYJ76zTlQN
+        O1E57ETFVxF7Brw49MVfRwWrwdURSbLggM2P9G4e1SMchZNROBUI2NXvxe4Bbpl5M+n/rQXrCf5JYoIM
+        mw/pAx4cGxRQ803EozERD8hGRRy1ualgZ58XjNkeeMG5fcvz8/NQR0CpRt4iEAhQQQ0/h3oxiudiFM/i
+        MwpRGIQ53ON+YQcRbPSkf/JhrbMpwf51CLb3eTYu2LcOwbb/LUjr3YRgb48wvrS0hNWW1smPap/beucv
+        89SWd1MkOYcAAAAASUVORK5CYII=
+</value>
+  </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>45</value>
   </metadata>

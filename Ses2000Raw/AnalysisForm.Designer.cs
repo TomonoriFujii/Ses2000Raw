@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AnalysisForm));
             splitContainer1 = new SplitContainer();
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
@@ -72,6 +73,7 @@
             lblDemodulate = new Label();
             label12 = new Label();
             grpBoxDisplay = new GroupBox();
+            chkFlipX = new CheckBox();
             btnScaleSetting = new Button();
             chkHeaveCorrection = new CheckBox();
             chkDrawDistScale = new CheckBox();
@@ -100,8 +102,13 @@
             numG = new NumericUpDown();
             label26 = new Label();
             tabPage2 = new TabPage();
+            tabPage3 = new TabPage();
+            tabPage5 = new TabPage();
             glControl2D = new OpenTK.GLControl.GLControl();
             colorDialog1 = new ColorDialog();
+            toolStrip1 = new ToolStrip();
+            tsBtnSaveImage = new ToolStripButton();
+            formsPlot1 = new ScottPlot.WinForms.FormsPlot();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -136,6 +143,8 @@
             ((System.ComponentModel.ISupportInitialize)numR).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numB).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numG).BeginInit();
+            tabPage2.SuspendLayout();
+            toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // splitContainer1
@@ -143,7 +152,7 @@
             splitContainer1.BackColor = Color.Transparent;
             splitContainer1.Dock = DockStyle.Fill;
             splitContainer1.FixedPanel = FixedPanel.Panel1;
-            splitContainer1.Location = new Point(0, 0);
+            splitContainer1.Location = new Point(0, 31);
             splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -153,7 +162,7 @@
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(glControl2D);
-            splitContainer1.Size = new Size(1219, 816);
+            splitContainer1.Size = new Size(1219, 785);
             splitContainer1.SplitterDistance = 290;
             splitContainer1.TabIndex = 0;
             // 
@@ -162,13 +171,15 @@
             tabControl1.Alignment = TabAlignment.Left;
             tabControl1.Controls.Add(tabPage1);
             tabControl1.Controls.Add(tabPage2);
+            tabControl1.Controls.Add(tabPage3);
+            tabControl1.Controls.Add(tabPage5);
             tabControl1.Dock = DockStyle.Fill;
             tabControl1.Location = new Point(0, 0);
             tabControl1.Margin = new Padding(0);
             tabControl1.Multiline = true;
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(290, 816);
+            tabControl1.Size = new Size(290, 785);
             tabControl1.SizeMode = TabSizeMode.Fixed;
             tabControl1.TabIndex = 0;
             // 
@@ -183,9 +194,9 @@
             tabPage1.Location = new Point(27, 4);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(259, 808);
+            tabPage1.Size = new Size(259, 777);
             tabPage1.TabIndex = 0;
-            tabPage1.Text = "tabPage1";
+            tabPage1.Text = "Setting";
             tabPage1.UseVisualStyleBackColor = true;
             // 
             // grpBox3DFrustum
@@ -202,7 +213,7 @@
             grpBox3DFrustum.Controls.Add(numViewY);
             grpBox3DFrustum.Controls.Add(label5);
             grpBox3DFrustum.Controls.Add(numViewZ);
-            grpBox3DFrustum.Location = new Point(3, 686);
+            grpBox3DFrustum.Location = new Point(3, 711);
             grpBox3DFrustum.Name = "grpBox3DFrustum";
             grpBox3DFrustum.Size = new Size(242, 113);
             grpBox3DFrustum.TabIndex = 7;
@@ -357,7 +368,7 @@
             grpBox3DMoving.Controls.Add(numRotateY);
             grpBox3DMoving.Controls.Add(label11);
             grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(6, 529);
+            grpBox3DMoving.Location = new Point(6, 554);
             grpBox3DMoving.Name = "grpBox3DMoving";
             grpBox3DMoving.Size = new Size(242, 151);
             grpBox3DMoving.TabIndex = 5;
@@ -638,6 +649,7 @@
             lblDemodulate.Name = "lblDemodulate";
             lblDemodulate.Size = new Size(142, 23);
             lblDemodulate.TabIndex = 11;
+            lblDemodulate.Tag = "0";
             lblDemodulate.Text = "None (Full Wave)";
             lblDemodulate.TextAlign = ContentAlignment.MiddleLeft;
             // 
@@ -652,6 +664,7 @@
             // 
             // grpBoxDisplay
             // 
+            grpBoxDisplay.Controls.Add(chkFlipX);
             grpBoxDisplay.Controls.Add(btnScaleSetting);
             grpBoxDisplay.Controls.Add(chkHeaveCorrection);
             grpBoxDisplay.Controls.Add(chkDrawDistScale);
@@ -668,10 +681,22 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(6, 338);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 185);
+            grpBoxDisplay.Size = new Size(241, 210);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
+            // 
+            // chkFlipX
+            // 
+            chkFlipX.AutoSize = true;
+            chkFlipX.Location = new Point(12, 184);
+            chkFlipX.Name = "chkFlipX";
+            chkFlipX.Size = new Size(140, 19);
+            chkFlipX.TabIndex = 15;
+            chkFlipX.Tag = "FlipX";
+            chkFlipX.Text = "Flip Image End to End";
+            chkFlipX.UseVisualStyleBackColor = true;
+            chkFlipX.CheckedChanged += chkBox_CheckedChanged;
             // 
             // btnScaleSetting
             // 
@@ -717,7 +742,7 @@
             chkDrawDepthScale.AutoSize = true;
             chkDrawDepthScale.Checked = true;
             chkDrawDepthScale.CheckState = CheckState.Checked;
-            chkDrawDepthScale.Location = new Point(12, 134);
+            chkDrawDepthScale.Location = new Point(13, 134);
             chkDrawDepthScale.Name = "chkDrawDepthScale";
             chkDrawDepthScale.Size = new Size(118, 19);
             chkDrawDepthScale.TabIndex = 12;
@@ -987,13 +1012,32 @@
             // 
             // tabPage2
             // 
+            tabPage2.Controls.Add(formsPlot1);
             tabPage2.Location = new Point(27, 4);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(259, 808);
+            tabPage2.Size = new Size(259, 777);
             tabPage2.TabIndex = 1;
-            tabPage2.Text = "tabPage2";
+            tabPage2.Text = "Signal";
             tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // tabPage3
+            // 
+            tabPage3.Location = new Point(27, 4);
+            tabPage3.Name = "tabPage3";
+            tabPage3.Size = new Size(259, 777);
+            tabPage3.TabIndex = 2;
+            tabPage3.Text = "FFT";
+            tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // tabPage5
+            // 
+            tabPage5.Location = new Point(27, 4);
+            tabPage5.Name = "tabPage5";
+            tabPage5.Size = new Size(259, 777);
+            tabPage5.TabIndex = 4;
+            tabPage5.Text = "Ping Info";
+            tabPage5.UseVisualStyleBackColor = true;
             // 
             // glControl2D
             // 
@@ -1006,13 +1050,44 @@
             glControl2D.Name = "glControl2D";
             glControl2D.Profile = OpenTK.Windowing.Common.ContextProfile.Compatability;
             glControl2D.SharedContext = null;
-            glControl2D.Size = new Size(925, 816);
+            glControl2D.Size = new Size(925, 785);
             glControl2D.TabIndex = 0;
             glControl2D.Visible = false;
             glControl2D.Load += glControl2D_Load;
-            glControl2D.Click += glControl2D_Click;
             glControl2D.Paint += glControl2D_Paint;
+            glControl2D.MouseDown += glControl2D_MouseDown;
+            glControl2D.MouseMove += glControl2D_MouseMove;
+            glControl2D.MouseUp += glControl2D_MouseUp;
             glControl2D.Resize += glControl2D_Resize;
+            // 
+            // toolStrip1
+            // 
+            toolStrip1.ImageScalingSize = new Size(24, 24);
+            toolStrip1.Items.AddRange(new ToolStripItem[] { tsBtnSaveImage });
+            toolStrip1.Location = new Point(0, 0);
+            toolStrip1.Name = "toolStrip1";
+            toolStrip1.Size = new Size(1219, 31);
+            toolStrip1.TabIndex = 1;
+            toolStrip1.Text = "toolStrip1";
+            toolStrip1.ItemClicked += toolStrip1_ItemClicked;
+            // 
+            // tsBtnSaveImage
+            // 
+            tsBtnSaveImage.Image = (Image)resources.GetObject("tsBtnSaveImage.Image");
+            tsBtnSaveImage.ImageTransparentColor = Color.Magenta;
+            tsBtnSaveImage.Name = "tsBtnSaveImage";
+            tsBtnSaveImage.Size = new Size(94, 28);
+            tsBtnSaveImage.Tag = "SaveImage";
+            tsBtnSaveImage.Text = "Save Image";
+            // 
+            // formsPlot1
+            // 
+            formsPlot1.DisplayScale = 1F;
+            formsPlot1.Dock = DockStyle.Fill;
+            formsPlot1.Location = new Point(3, 3);
+            formsPlot1.Name = "formsPlot1";
+            formsPlot1.Size = new Size(253, 771);
+            formsPlot1.TabIndex = 0;
             // 
             // AnalysisForm
             // 
@@ -1020,6 +1095,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1219, 816);
             Controls.Add(splitContainer1);
+            Controls.Add(toolStrip1);
             Name = "AnalysisForm";
             Text = "AnalysisForm";
             Load += AnalysisForm_Load;
@@ -1063,7 +1139,11 @@
             ((System.ComponentModel.ISupportInitialize)numR).EndInit();
             ((System.ComponentModel.ISupportInitialize)numB).EndInit();
             ((System.ComponentModel.ISupportInitialize)numG).EndInit();
+            tabPage2.ResumeLayout(false);
+            toolStrip1.ResumeLayout(false);
+            toolStrip1.PerformLayout();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -1142,5 +1222,11 @@
         private Label label23;
         private Label label22;
         private Button btnSignalProcessing;
+        private ToolStrip toolStrip1;
+        private ToolStripButton tsBtnSaveImage;
+        private CheckBox chkFlipX;
+        private TabPage tabPage3;
+        private TabPage tabPage5;
+        private ScottPlot.WinForms.FormsPlot formsPlot1;
     }
 }

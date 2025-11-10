@@ -37,6 +37,21 @@ namespace Ses2000Raw
         #endregion
 
         /// <summary>
+        /// short[] → double[] への変換
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
+        public static double[] ToDouble(short[] src)
+        {
+            int n = src.Length;
+            double[] dst = new double[n];
+            for (int i = 0; i < n; i++)
+                dst[i] = src[i];
+            return dst;
+        }
+
+
+        /// <summary>
         /// サンプリング周波数と音速からサンプリング間隔を計算する
         /// </summary>
         /// <param name="samplingFreqHz">サンプリング周波数 [Hz]</param>

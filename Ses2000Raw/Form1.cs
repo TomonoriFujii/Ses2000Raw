@@ -222,23 +222,5 @@ namespace Ses2000Raw
             return true;
         }
     }
-    /// <summary>
-    /// 
-    /// </summary>
-    public class ExtractionInfo
-    {
-        public Channel Channel { get; set; }
-        public int BeamId { get; set; }
-        public int Angle { get; set; }
-        public int FreqId { get; set; }
-        public int Frequency { get; set; } // kHz
-    }
-    /// <summary>
-    /// 
-    /// </summary>
-    public enum Channel
-    {
-        LF = 0,
-        HF = 1
-    }
+    
 }

@@ -31,7 +31,7 @@ namespace Ses2000Raw
         }
     }
 
-    class Constant
+    public class Constant
     {
         /// <summary>
         /// îwåiêF
@@ -70,5 +70,44 @@ namespace Ses2000Raw
         public const int ACORE_BIN_BLOCK_SIZE = 4;
         public const int AMOLE_BIN_BLOCK_SIZE = 4;
 
+    }
+
+    public class Result
+    {
+        public ResultCode RetCode { get; set; }
+        public string Message { get; set; }
+        public object Obj { get; set; }
+
+        public Result()
+        {
+            RetCode = ResultCode.Error;
+            Message = String.Empty;
+        }
+    }
+
+    public enum ResultCode : int
+    {
+        Ok = 0,
+        Cancel,
+        Error
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public class ExtractionInfo
+    {
+        public Channel Channel { get; set; }
+        public int BeamId { get; set; }
+        public int Angle { get; set; }
+        public int FreqId { get; set; }
+        public int Frequency { get; set; } // kHz
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public enum Channel
+    {
+        LF = 0,
+        HF = 1
     }
 }

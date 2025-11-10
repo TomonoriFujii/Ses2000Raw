@@ -8,6 +8,9 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
+using System.Diagnostics;
+using ScottPlot;
+using ScottPlot.Rendering;
 
 namespace Ses2000Raw
 {
@@ -16,9 +19,19 @@ namespace Ses2000Raw
         #region フィールド
         private int[] m_bottomIdx;         // Pingごとのボトム（サンプルindex）
         private bool m_bBottomDirty = true; // データ読込時や閾値変更時に再検出フラグ
+        private double m_dSampleFreqHz;     // サンプリング周波数[Hz]
+        private bool m_bApplyBpf = false;    // BPF適用フラグ
+        private string? m_strScreenshotPath = null;
+        private short m_sFullWaveAmpMax;
+        private short m_sEnvelopeAmpMax;
 
         // サンプル間隔[m]の半分を許容幅に（端数吸収用）
         private double MeterTolerance() => (m_dZDistance / 100.0) * 0.5;
+
+        // 左右反転フラグ
+        private bool m_bFlipX = false;
+        // 直近のコンテンツ全幅(px)を保持（反転マッピングで使用）
+        private double m_contentW = 0.0;
 
         // MeasureStart の最小/最大[m]
         private double m_dMinStartMeters;
@@ -92,11 +105,54 @@ namespace Ses2000Raw
             get { return m_dataBlockList; }
             set { m_dataBlockList = value; }
         }
+        public DemodulationMode DemodulateMode
+        {
+            get
+            {
+                return Convert.ToInt32(this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope ?
+                    DemodulationMode.Envelope : DemodulationMode.None;
+            }
+            set
+            {
+                this.lblDemodulate.Tag = value;
+                this.lblDemodulate.Text = value == DemodulationMode.Envelope ?
+                    Properties.Resources.Envelope : Properties.Resources.FullWave;
 
+                //this.lblDemodulate.Tag = (int)value;
+            }
+        }
+        public int Hpf_kHz
+        {
+            get { return Convert.ToInt32(this.lblHPF.Text.Replace(" kHz", "")); }
+            set { this.lblHPF.Text = $"{value} kHz"; }
+        }
+        public int Lpf_kHz
+        {
+            get { return Convert.ToInt32(this.lblLPF.Text.Replace(" kHz", "")); }
+            set { this.lblLPF.Text = $"{value} kHz"; }
+        }
+        public bool ApplyBpf
+        {
+            get { return m_bApplyBpf; }
+            set
+            {
+                m_bApplyBpf = value;
+                this.lblHPF.Enabled = m_bApplyBpf;
+                this.lblLPF.Enabled = m_bApplyBpf;
+            }
+        }
 
         // GLコントロール状態
         private bool m_bLoadTK = false;
         private Channel m_channel;
+        #endregion
+
+        #region 列挙体
+        public enum DemodulationMode
+        {
+            None = 0,
+            Envelope = 1,
+        }
         #endregion
 
         #region 初期化
@@ -106,20 +162,6 @@ namespace Ses2000Raw
         /// <param name="title"></param>
         public AnalysisForm(string title, Channel channel)
         {
-            //bool bRet = ReadRaw(rawFile, out m_fileHeader, out m_blockHeaderList, out m_dataBlockList);
-            //if (!bRet) return;
-
-            //if (m_dataBlockList.Count == 0)
-            //    return;
-
-            //m_iPingNo = m_dataBlockList.Count;
-            //if (m_iPingNo == 0) return;
-
-            //var paramForm = new LoadParamForm(this);
-            //if (paramForm.ShowDialog(this) != DialogResult.OK) return;
-
-
-
             InitializeComponent();
             this.Text = title;
 
@@ -170,6 +212,27 @@ namespace Ses2000Raw
             this.btnSignalProcessing.BackColor = Constant.BUTTON_BACKCOLOR;
             this.btnChooseColor.BackColor = Constant.BUTTON_BACKCOLOR;
             this.btnScaleSetting.BackColor = Constant.BUTTON_BACKCOLOR;
+
+
+            // 1) 線色のパレットをダーク向けに
+            formsPlot1.Plot.Add.Palette = new ScottPlot.Palettes.Penumbra();
+
+            // 2) 背景色（図全体・データ領域）
+            formsPlot1.Plot.FigureBackground.Color = ScottPlot.Color.FromHex("#181818");
+            formsPlot1.Plot.DataBackground.Color = ScottPlot.Color.FromHex("#1f1f1f");
+
+            // 3) 軸とグリッド（明るい色でコントラスト）
+            formsPlot1.Plot.Axes.Color(ScottPlot.Color.FromHex("#d7d7d7"));
+            formsPlot1.Plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#404040");
+
+            // 4) 凡例（使っていなければ省略可）
+            formsPlot1.Plot.Legend.BackgroundColor = ScottPlot.Color.FromHex("#404040");
+            formsPlot1.Plot.Legend.FontColor = ScottPlot.Color.FromHex("#d7d7d7");
+            formsPlot1.Plot.Legend.OutlineColor = ScottPlot.Color.FromHex("#d7d7d7");
+
+            // 5) 反映
+            formsPlot1.Refresh();
+
         }
         /// <summary>
         /// 
@@ -178,18 +241,26 @@ namespace Ses2000Raw
         /// <param name="e"></param>
         private void AnalysisForm_Load(object sender, EventArgs e)
         {
-            double dSampleFreq = m_blockHeaderList[0].SampleFrequencyForLf; // Hz
+            m_dSampleFreqHz = m_blockHeaderList[0].SampleFrequencyForLf; // Hz
             double dSV = m_blockHeaderList[0].SoundVelocity;    // m/s
-            m_dZDistance = Method.CalcSampleInterval(dSampleFreq, dSV);
+            m_dZDistance = Method.CalcSampleInterval(m_dSampleFreqHz, dSV);
             m_iSampleNo = (m_channel == Channel.LF) ? m_blockHeaderList[0].LfDataLength : m_blockHeaderList[0].HfDataLength;
             m_iPingNo = m_blockHeaderList.Count;
+            m_sFullWaveAmpMax = (short)m_dataBlockList
+                                    .Where(b => b.Lf != null && b.Lf.Length > 0)
+                                    .SelectMany(b => b.Lf)
+                                    .Max(v => Math.Abs(v));
+
+            this.lblDemodulate.Text = Convert.ToInt32(this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope ?
+                    Properties.Resources.Envelope : Properties.Resources.FullWave;
 
             this.lblHPF.Text = "0 kHz";
-            this.lblLPF.Text = $"{(int)(dSampleFreq / 1000 * 0.5)} kHz";
+            this.lblLPF.Text = $"{(int)(m_dSampleFreqHz / 1000 * 0.5)} kHz";
+            this.lblHPF.Enabled = this.lblLPF.Enabled = m_bApplyBpf;
 
             chkInvert.Checked = false;
             numR.Value = numG.Value = numB.Value = 1.0M;
-            lblBackColor.BackColor = Color.Black;
+            lblBackColor.BackColor = System.Drawing.Color.Black;
             cmbColor.SelectedIndex = (int)ColorMode.Royal;
             cmbColor_SelectedIndexChanged(null, null);
             numIntensity.Value = 0.00003M;
@@ -199,9 +270,7 @@ namespace Ses2000Raw
             numScaleZ.Value = 1M;
 
             glControl2D.MouseWheel += glControl2D_MouseWheel;
-            glControl2D.MouseDown += glControl2D_MouseDown;
-            glControl2D.MouseMove += glControl2D_MouseMove;
-            glControl2D.MouseUp += glControl2D_MouseUp;
+
 
             m_dRatioX = (double)numScaleY.Value;
             m_dRatioY = (double)numScaleZ.Value;
@@ -227,7 +296,7 @@ namespace Ses2000Raw
             m_bLoadTK = true;
             glControl2D.MakeCurrent();
 
-            GL.ClearColor(Color.Black);
+            GL.ClearColor(System.Drawing.Color.Black);
 
             InitTexture();
             UpdateViewportPreserveAspect();
@@ -278,7 +347,7 @@ namespace Ses2000Raw
                 e.Graphics.FillRectangle(bg, rect);
 
             // ボーダー
-            using (var pen = new Pen(Color.FromArgb(113, 96, 232)))
+            using (var pen = new Pen(System.Drawing.Color.FromArgb(113, 96, 232)))
                 e.Graphics.DrawRectangle(pen, rect);
 
             // アンチエイリアス等
@@ -292,7 +361,7 @@ namespace Ses2000Raw
                 LineAlignment = StringAlignment.Center,
                 Trimming = StringTrimming.EllipsisCharacter
             })
-            using (var font = new Font(tab.Font, FontStyle.Regular))
+            using (var font = new Font(tab.Font, System.Drawing.FontStyle.Regular))
             using (var brush = new SolidBrush(Constant.FORECOLOR))
             {
                 // 中心を原点に移動して -90°回転（左タブ）
@@ -326,125 +395,11 @@ namespace Ses2000Raw
             SetupScreenOrtho();
             UpdateScrollRanges();
 
-            GL.Disable(EnableCap.DepthTest);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-
-            if (m_bLutDirty) { BuildPaletteLut(); m_bLutDirty = false; }
-            if (m_bTextureDirty)
-            {
-                if (m_bBottomDirty)
-                {
-                    //ComputeBottomIndices();
-                    /*
-                    ComputeBottomIndicesByStdDev(
-                        //winVar: 31,       // データが粗ければ広げる（例: 41～61）
-                        winVar: 61,       // データが粗ければ広げる（例: 41～61）
-                        startSkipM: 0.30, // 表層除外
-                        endGuardM: 0.50,  // 末尾ガード
-                        useAbs: true,
-                        medianW: 3
-                    );*/
-
-                    //        ComputeBottomIndicesByEnvelopePeak(
-                    //startSkipM: 0.1,       // 表層ノイズを避ける
-                    //guardBelowFB_M: 0.10,   // FB直下の乱れを避ける
-                    //searchDepth_M: 1.00,    // FBから下へ最大2mだけ見る（任意で調整）
-                    //envWin: 25,             // 包絡平滑窓（奇数）
-                    //sta: 15, lta: 50, staLtaThr: 3.0);
-
-
-                    /* これが一番まし*/
-                    ComputeBottomIndicesByDerivativeEdge(
-                                                            startSkipM: 0.20,   // 表層回避
-                                                            endGuardM: 0.50,   // 末尾ガード
-                                                            smoothWin: 25,     // 15〜31 で調整
-                                                            kMad: 3.0,    // 厳しめにしたい時は 4.5〜5.0
-                                                            ampPct: 0.85,   // 誤検知多いなら 0.75〜0.85
-                                                            refineWinM: 0.30,   // 到来点の直下0.3mでピークへ寄せる
-                                                            useAbsLF: true,
-                                                            applyHeaveInDetection: this.chkHeaveCorrection.Checked
-                                                        );
-                    /**/
-
-                    //ComputeBottomIndicesByDerivativeEdge_EdgeIsBottom(
-                    //    startSkipM: 0.20,
-                    //    endGuardM: 0.50,
-                    //    smoothWin: 19,
-                    //    kMad: 4.0,
-                    //    ampPct: 0.70,
-                    //    confirmLen: 2,
-                    //    minGapSamples: 8,
-                    //    useAbsLF: true
-                    //);
-                }
-
-                //EnsureAttenuationTable();
-                BuildRgbaImage();
-                UploadTexture();
-                m_bTextureDirty = false;
-            }
-
-            // コンテンツサイズ（拡大後）
-            double pxPerM_X = GetPixelsPerMeterX();
-            double contentW = (m_cumDistM != null && m_dTotalDistM > 0)
-                              ? m_dTotalDistM * pxPerM_X
-                              : m_iPingNo * m_dScaleX;
-            double contentH = m_iSampleNo * m_dScaleY;
-            double contentBottom = contentH + m_dMaxOffsetPx;
-
-            // スクロール反映
-            GL.PushMatrix();
-            GL.Translate(-m_dScrollX, -m_dScrollY, 0.0);
-
-            GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
-            // テクスチャ描画（MeasureStart の段差をスムーズに）
-            const int subdiv = 4;
-            int w = m_iTexWidth;
-
-            GL.Enable(EnableCap.Texture2D);
-            GL.Color4(1f, 1f, 1f, 1f);
-            GL.BindTexture(TextureTarget.Texture2D, m_iTexId);
-
-            for (int i = 0; i < w - 1; i++)
-            {
-                double x0 = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
-                double x1 = (m_dTotalDistM > 0.0) ? m_cumDistM[i + 1] * pxPerM_X : (i + 1) * m_dScaleX;
-
-                double y00 = (m_offsetPxPerPing != null) ? m_offsetPxPerPing[i] : 0.0;
-                double y01 = (m_offsetPxPerPing != null) ? m_offsetPxPerPing[i + 1] : 0.0;
-
-                GL.Begin(PrimitiveType.TriangleStrip);
-                for (int s = 0; s <= subdiv; s++)
-                {
-                    double t = (double)s / subdiv;
-                    double xt = x0 + (x1 - x0) * t;
-                    double y0 = y00 + (y01 - y00) * t;
-                    double u = (i + t) / (w - 1);
-
-                    GL.TexCoord2(u, 0.0); GL.Vertex2(xt, y0);
-                    GL.TexCoord2(u, 1.0); GL.Vertex2(xt, y0 + contentH);
-                }
-                GL.End();
-            }
-
-            GL.Disable(EnableCap.Texture2D);
-
-            //DrawBottomLine();
-
-            if (chkDrawDepthScale.Checked) DrawDepthScale(contentW);
-            if (chkDrawDistScale.Checked) DrawDistanceScale(contentBottom);
-
-            GL.PopMatrix(); // 画面座標へ
-
-            if (chkDrawDepthScale.Checked) DrawDepthLabelsPinnedLeft();
-            if (chkDrawDistScale.Checked) DrawDistanceLabelsPinnedTop();
+            RenderSceneCore(applyScroll: true, drawLabels: true);
 
             glControl2D.SwapBuffers();
-            GL.Disable(EnableCap.Blend);
-        }
 
+        }
         #endregion
 
         #region 入力イベント
@@ -482,16 +437,23 @@ namespace Ses2000Raw
 
         private void glControl2D_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!m_bDragging) return;
+            if (m_bDragging)
+            {
+                int dx = e.X - m_dragStart.X;
+                int dy = e.Y - m_dragStart.Y;
+                m_dScrollX = m_dScrollStartX - dx;
+                m_dScrollY = m_dScrollStartY - dy;
+                UpdateScrollRanges();
+                glControl2D.Refresh();
+                return;
+            }
 
-            int dx = e.X - m_dragStart.X;
-            int dy = e.Y - m_dragStart.Y;
+            int ping = GetPingIndexAtMouseX(e.X);
+            if (ping >= 0)
+            {
+                PlotWave(DataBlockList[ping].Lf, BlockHeaderList[ping].MeasureStart);
+            }
 
-            m_dScrollX = m_dScrollStartX - dx;
-            m_dScrollY = m_dScrollStartY - dy;
-
-            UpdateScrollRanges();
-            glControl2D.Refresh();
         }
 
         private void glControl2D_MouseUp(object sender, MouseEventArgs e)
@@ -590,6 +552,10 @@ namespace Ses2000Raw
                     m_bTextureDirty = true;
                     m_bBottomDirty = true;
                     break;
+                case "FlipX":
+                    m_bFlipX = ((CheckBox)sender).Checked;
+                    glControl2D.Refresh();
+                    break;
                 default:
                     return;
             }
@@ -602,11 +568,303 @@ namespace Ses2000Raw
         /// <param name="e"></param>
         private void btnSignalProcessing_Click(object sender, EventArgs e)
         {
+            SignalProcessingForm frmSp = new SignalProcessingForm(this, m_dSampleFreqHz);
+            if (frmSp.ShowDialog(this) == DialogResult.OK)
+            {
+                //if (((int)this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope)
+                //    MessageBox.Show("Envelope");
+                //else
+                //    MessageBox.Show("None");
 
+
+                m_bTextureDirty = true;
+                glControl2D.Refresh();
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void toolStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            if (e.ClickedItem.Tag == null) return;
+
+            switch (e.ClickedItem.Tag.ToString())
+            {
+                case "SaveImage":
+                    SaveImageProcess();
+                    break;
+            }
         }
         #endregion
 
         #region 計算・描画ヘルパ
+        /// <summary>
+        /// 現在の表示倍率（px/m）そのままで、画面外も含めた全体をPNG出力します。
+        /// includeLabels=true で横/縦スケール線＆ラベルも含めます。
+        /// GPU上限を超える場合は等比で軽く縮小します（※タイル描画も可能。必要なら言ってください）
+        /// </summary>
+        public void SaveFullImageAtCurrentScreenScale(string filePath, bool includeLabels = true)
+        {
+            glControl2D.MakeCurrent();
+
+            // 全域描画用にスクロール固定
+            double oldScrollX = m_dScrollX, oldScrollY = m_dScrollY;
+            m_dScrollX = 0; m_dScrollY = 0;
+
+            // オフセットなど最新化
+            RebuildOffsetsPerPing();
+
+            // コンテンツ全体のpxサイズ（今のスケールのまま）
+            GetContentSize(out double contentW_px, out double contentH_px, out double contentBottom_px);
+            int W = Math.Max(1, (int)Math.Ceiling(contentW_px));
+            int H = Math.Max(1, (int)Math.Ceiling(contentH_px));
+
+            // GPUの最大レンダバッファを確認し、でかすぎるなら等比縮小
+            GL.GetInteger(GetPName.MaxRenderbufferSize, out int maxRb);
+            if (W > maxRb || H > maxRb)
+            {
+                double s = Math.Min((double)maxRb / W, (double)maxRb / H);
+                W = Math.Max(1, (int)Math.Floor(W * s));
+                H = Math.Max(1, (int)Math.Floor(H * s));
+                contentBottom_px *= s;  // 後続の縦線レンジで使用
+            }
+
+            // --- FBO 構築 ---
+            int fbo = 0, colorTex = 0, depthRb = 0;
+            GL.GenFramebuffers(1, out fbo);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+
+            GL.GenTextures(1, out colorTex);
+            GL.BindTexture(TextureTarget.Texture2D, colorTex);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, W, H, 0,
+                          PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            GL.GenRenderbuffers(1, out depthRb);
+            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, depthRb);
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent24, W, H);
+
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+                                    TextureTarget.Texture2D, colorTex, 0);
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+                                       RenderbufferTarget.Renderbuffer, depthRb);
+
+            var status = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            if (status != FramebufferErrorCode.FramebufferComplete)
+            {
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                if (depthRb != 0) GL.DeleteRenderbuffer(depthRb);
+                if (colorTex != 0) GL.DeleteTexture(colorTex);
+                if (fbo != 0) GL.DeleteFramebuffer(fbo);
+                m_dScrollX = oldScrollX; m_dScrollY = oldScrollY;
+                throw new InvalidOperationException($"FBO incomplete: {status}");
+            }
+
+            // このFBOに全域描画
+            GL.Viewport(0, 0, W, H);
+            GL.ClearColor(lblBackColor.BackColor);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            // 射影：コンテンツpx座標系そのまま（左上原点）
+            GL.MatrixMode(OpenTK.Graphics.OpenGL.MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.Ortho(0, W, H, 0, -1, 1);
+            GL.MatrixMode(OpenTK.Graphics.OpenGL.MatrixMode.Modelview);
+            GL.LoadIdentity();
+
+            // 本体（テクスチャ）描画：スクロール無し・ラベル無し
+            RenderSceneCore(applyScroll: false, drawLabels: false);
+
+            // スケール線＆ラベル（必要なら）
+            if (includeLabels)
+            {
+                // 深度の横線（全域）
+                if (chkDrawDepthScale.Checked)
+                    DrawDepthScale(W);
+
+                // 距離スケール縦線（全域レンジ指定）
+                if (chkDrawDistScale.Checked)
+                    DrawDistanceScaleRange(contentBottom_px, viewLeftPx: 0.0, viewRightPx: W);
+
+                // 左固定の深度ラベル（px座標で左固定になる）
+                if (chkDrawDepthScale.Checked)
+                    DrawDepthLabelsPinnedLeft();
+
+                // 上部の距離ラベル（全域レンジ指定）
+                if (chkDrawDistScale.Checked)
+                    DrawDistanceLabelsPinnedTopRange(viewLeftPx: 0.0, viewRightPx: W);
+            }
+
+            // 読み出し＆保存
+            GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
+            GL.PixelStore(PixelStoreParameter.PackAlignment, 1);
+            byte[] pixels = new byte[W * H * 4];
+            GL.ReadPixels(0, 0, W, H, PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+
+            FlipVerticallyInPlace(pixels, W, H);
+
+            using (var bmp = new Bitmap(W, H, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            {
+                var data = bmp.LockBits(new Rectangle(0, 0, W, H),
+                                        System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                                        System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try { System.Runtime.InteropServices.Marshal.Copy(pixels, 0, data.Scan0, pixels.Length); }
+                finally { bmp.UnlockBits(data); }
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            // 後片付け
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DeleteRenderbuffer(depthRb);
+            GL.DeleteTexture(colorTex);
+            GL.DeleteFramebuffer(fbo);
+
+            // スクロール戻す
+            m_dScrollX = oldScrollX; m_dScrollY = oldScrollY;
+        }
+
+        /// <summary>
+        /// 全域を FBO に描いて保存するメソッド
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="outputWidthPx"></param>
+        /// <param name="includeLabels"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public void SaveFullImagePng(string filePath, int outputWidthPx = 4000, bool includeLabels = true)
+        {
+            glControl2D.MakeCurrent();
+
+            // 現在の状態を保存してあとで戻す
+            double oldScrollX = m_dScrollX, oldScrollY = m_dScrollY;
+
+            // 全域描画なのでスクロール無効化
+            m_dScrollX = 0; m_dScrollY = 0;
+
+            // コンテンツ実寸（画面座標系）
+            RebuildOffsetsPerPing(); // 念のため
+            GetContentSize(out double contentW, out double contentH, out _);
+
+            if (contentW <= 0 || contentH <= 0) { m_dScrollX = oldScrollX; m_dScrollY = oldScrollY; return; }
+
+            // 出力サイズ決定（width 指定、高さは等倍率）
+            double scale = outputWidthPx / contentW;
+            int W = outputWidthPx;
+            int H = (int)Math.Ceiling(contentH * scale);
+
+            // GPU上限チェック（必要なら縮小）
+            int maxRb; GL.GetInteger(GetPName.MaxRenderbufferSize, out maxRb);
+            if (W > maxRb || H > maxRb)
+            {
+                double sW = (double)maxRb / W;
+                double sH = (double)maxRb / H;
+                scale *= Math.Min(sW, sH);
+                W = Math.Max(1, (int)Math.Floor(contentW * scale));
+                H = Math.Max(1, (int)Math.Floor(contentH * scale));
+            }
+
+            // --- FBO 構築 ---
+            int fbo = 0, colorTex = 0, depthRb = 0;
+            GL.GenFramebuffers(1, out fbo);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, fbo);
+
+            GL.GenTextures(1, out colorTex);
+            GL.BindTexture(TextureTarget.Texture2D, colorTex);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba8, W, H, 0,
+                          PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            GL.GenRenderbuffers(1, out depthRb);
+            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, depthRb);
+            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent24, W, H);
+
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0,
+                                    TextureTarget.Texture2D, colorTex, 0);
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment,
+                                       RenderbufferTarget.Renderbuffer, depthRb);
+
+            var status = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            if (status != FramebufferErrorCode.FramebufferComplete)
+            {
+                // 後始末して戻る
+                GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+                if (depthRb != 0) GL.DeleteRenderbuffer(depthRb);
+                if (colorTex != 0) GL.DeleteTexture(colorTex);
+                if (fbo != 0) GL.DeleteFramebuffer(fbo);
+                m_dScrollX = oldScrollX; m_dScrollY = oldScrollY;
+                throw new InvalidOperationException($"FBO incomplete: {status}");
+            }
+
+            // --- この FBO に全域を描く ---
+            GL.Viewport(0, 0, W, H);
+            GL.ClearColor(lblBackColor.BackColor); // UIと同じ背景にしたい場合
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            // 射影を「全コンテンツ座標」に合わせる（0..contentW, 0..contentH）
+            GL.MatrixMode(OpenTK.Graphics.OpenGL.MatrixMode.Projection);
+            GL.LoadIdentity();
+            GL.Ortho(0, contentW, contentH, 0, -1, 1);
+            GL.MatrixMode(OpenTK.Graphics.OpenGL.MatrixMode.Modelview);
+            GL.LoadIdentity();
+
+            // まず本体だけ描く（ラベル/スケールは一旦オフ）
+            RenderSceneCore(applyScroll: false, drawLabels: false);
+
+            // 全域サイズを取得
+            GetContentSize(out contentW, out _, out double contentBottom);
+
+            if (includeLabels)
+            {
+                // 深度の横線
+                if (chkDrawDepthScale.Checked)
+                    DrawDepthScale(contentW);
+
+                // 距離スケールの縦線（全域）
+                if (chkDrawDistScale.Checked)
+                    DrawDistanceScaleRange(contentBottom, viewLeftPx: 0.0, viewRightPx: contentW);
+
+                // 左の深度ラベル（画面座標固定系）
+                if (chkDrawDepthScale.Checked)
+                    DrawDepthLabelsPinnedLeft();
+
+                // 上の距離ラベル（全域）
+                if (chkDrawDistScale.Checked)
+                    DrawDistanceLabelsPinnedTopRange(viewLeftPx: 0.0, viewRightPx: contentW);
+            }
+
+            // --- 読み出して保存 ---
+            GL.ReadBuffer(ReadBufferMode.ColorAttachment0);
+            GL.PixelStore(PixelStoreParameter.PackAlignment, 1);
+
+            byte[] pixels = new byte[W * H * 4];
+            GL.ReadPixels(0, 0, W, H, PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+
+            // 上下反転
+            FlipVerticallyInPlace(pixels, W, H);
+
+            using (var bmp = new Bitmap(W, H, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            {
+                var data = bmp.LockBits(new Rectangle(0, 0, W, H),
+                                        System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                                        System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try { System.Runtime.InteropServices.Marshal.Copy(pixels, 0, data.Scan0, pixels.Length); }
+                finally { bmp.UnlockBits(data); }
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            // 後片付け＆元に戻す
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.DeleteRenderbuffer(depthRb);
+            GL.DeleteTexture(colorTex);
+            GL.DeleteFramebuffer(fbo);
+
+            m_dScrollX = oldScrollX; m_dScrollY = oldScrollY;
+        }
 
         private void RebuildOffsetsPerPing()
         {
@@ -701,8 +959,8 @@ namespace Ses2000Raw
                                             System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
                 using (var g2 = Graphics.FromImage(bmp2))
                 {
-                    g2.Clear(Color.Transparent);
-                    TextRenderer.DrawText(g2, text, this.Font, new Point(0, 0), Color.White,
+                    g2.Clear(System.Drawing.Color.Transparent);
+                    TextRenderer.DrawText(g2, text, this.Font, new Point(0, 0), System.Drawing.Color.White,
                                           TextFormatFlags.NoPadding);
                 }
 
@@ -726,39 +984,44 @@ namespace Ses2000Raw
             }
         }
 
-        // 画面上部の距離ラベル
+        /// <summary>
+        /// 画面上部の距離ラベル
+        /// </summary>
         private void DrawDistanceLabelsPinnedTop()
+        {
+            double viewLeftPx = m_dScrollX;
+            double viewRightPx = m_dScrollX + glControl2D.ClientSize.Width;
+            DrawDistanceLabelsPinnedTopRange(viewLeftPx, viewRightPx);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="viewLeftPx"></param>
+        /// <param name="viewRightPx"></param>
+        private void DrawDistanceLabelsPinnedTopRange(double viewLeftPx, double viewRightPx)
         {
             if (m_dTotalDistM <= 0.0) return;
 
-            double pxPerM = GetPixelsPerMeterX();
-            int viewW = glControl2D.ClientSize.Width;
-
-            double stepM = 5.0; // 5m刻み固定
-
-            double viewLeft = m_dScrollX;
-            double viewRight = m_dScrollX + viewW;
+            double stepM = 5.0;
+            double totalM = m_dTotalDistM;
 
             GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.Color4(1f, 1f, 1f, 1f);
 
-            int mStart = (int)Math.Floor((viewLeft / pxPerM) / stepM);
-            int mEnd = (int)Math.Ceiling((viewRight / pxPerM) / stepM);
-            double totalM = m_dTotalDistM;
-
             float y = 6f, padX = 4f, padY = 2f, labelOffsetX = 6f;
 
-            for (int k = mStart; k <= mEnd; k++)
+            for (double m = 0.0; m <= totalM + 1e-9; m += stepM)
             {
-                double m = k * stepM;
-                if (m < 0 || m > totalM) continue;
+                double x = MapXByMeter(m);                // ★反転対応
+                if (x < viewLeftPx - 1 || x > viewRightPx + 1) continue;
 
-                float xScreen = (float)(m * pxPerM - m_dScrollX) + labelOffsetX;
+                float xScreen = (float)(x - m_dScrollX) + labelOffsetX;
                 string text = $"{m:0} m";
                 var (tex, w, h) = GetOrCreateLabelTexture(text);
 
+                // 影
                 GL.Disable(EnableCap.Texture2D);
                 GL.Color4(0f, 0f, 0f, 0.35f);
                 GL.Begin(PrimitiveType.Quads);
@@ -768,6 +1031,7 @@ namespace Ses2000Raw
                 GL.Vertex2(xScreen - padX, y + h + padY);
                 GL.End();
 
+                // 本体
                 GL.Enable(EnableCap.Texture2D);
                 GL.Color4(1f, 1f, 1f, 1f);
                 GL.BindTexture(TextureTarget.Texture2D, tex);
@@ -784,16 +1048,30 @@ namespace Ses2000Raw
             GL.Color4(1f, 1f, 1f, 1f);
         }
 
-        // 進行方向距離スケール（縦線）
+
+        /// <summary>
+        /// 進行方向距離スケール（縦線）
+        /// 既存関数の中身は温存し、入口だけ拡張
+        /// </summary>
+        /// <param name="contentBottom"></param>
         private void DrawDistanceScale(double contentBottom)
         {
-            if (m_dTotalDistM <= 0.0 || m_cumDistM == null) return;
+            double viewLeftPx = m_dScrollX;
+            double viewRightPx = m_dScrollX + glControl2D.ClientSize.Width;
+            DrawDistanceScaleRange(contentBottom, viewLeftPx, viewRightPx);
+        }
+        /// <summary>
+        /// 全域/任意範囲用
+        /// </summary>
+        /// <param name="contentBottom"></param>
+        /// <param name="viewLeftPx"></param>
+        /// <param name="viewRightPx"></param>
+        private void DrawDistanceScaleRange(double contentBottom, double viewLeftPx, double viewRightPx)
+        {
+            if (m_dTotalDistM <= 0.0) return;
 
-            double pxPerM = GetPixelsPerMeterX();
-            double viewLeft = m_dScrollX;
-            double viewRight = m_dScrollX + glControl2D.ClientSize.Width;
-
-            double stepM = 5.0;
+            double stepM = 5.0; // 目盛間隔
+            double totalM = m_dTotalDistM;
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -801,16 +1079,10 @@ namespace Ses2000Raw
             GL.Color4(0.8f, 0.8f, 1f, 0.8f);
             GL.Begin(PrimitiveType.Lines);
 
-            int mStart = (int)Math.Floor((viewLeft / pxPerM) / stepM);
-            int mEnd = (int)Math.Ceiling((viewRight / pxPerM) / stepM);
-            double totalM = m_dTotalDistM;
-
-            for (int k = mStart; k <= mEnd; k++)
+            for (double m = 0.0; m <= totalM + 1e-9; m += stepM)
             {
-                double m = k * stepM;
-                if (m < 0 || m > totalM) continue;
-
-                double x = m * pxPerM;
+                double x = MapXByMeter(m); // ★反転対応
+                if (x < viewLeftPx - 1 || x > viewRightPx + 1) continue; // ビュー外はスキップ
                 GL.Vertex2(x, 0);
                 GL.Vertex2(x, contentBottom);
             }
@@ -818,6 +1090,8 @@ namespace Ses2000Raw
             GL.End();
             GL.Disable(EnableCap.Blend);
         }
+
+
 
         // 左固定の深度ラベル
         private void DrawDepthLabelsPinnedLeft()
@@ -919,7 +1193,8 @@ namespace Ses2000Raw
 
                     double relM_clamped = Math.Max(0.0, Math.Min(bandM, relM));
 
-                    double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                    //double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                    double x = MapXByPing(i);
                     double y = m_offsetPxPerPing[i] + (relM_clamped * samplesPerMeter * m_dScaleY);
                     GL.Vertex2(x, y);
                     drawing = true;
@@ -972,7 +1247,8 @@ namespace Ses2000Raw
             GL.Begin(PrimitiveType.LineStrip);
             for (int i = 0; i < w; i++)
             {
-                double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                //double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                double x = MapXByPing(i);
 
                 // 画像上のY：各Pingの縦オフセット + ボトムサンプル * 縦スケール
                 int b = m_bottomIdx[i];
@@ -993,10 +1269,187 @@ namespace Ses2000Raw
 
             GL.Disable(EnableCap.Blend);
         }
+        /// <summary>
+        /// 波形グラフの描画
+        /// </summary>
+        private void PlotWave(short[] wave, uint measureStart)
+        {
+            double[] amps = wave.Select(v => (double)v).ToArray();
+            double[] depths = Enumerable.Range(0, amps.Length)
+                                .Select(i => measureStart + (i * m_dZDistance / 100.0d))   // 片道距離[m]
+                                .ToArray();
 
+
+            var plt = formsPlot1.Plot;
+            plt.Clear();
+
+            // X=振幅, Y=時間
+            var sc = plt.Add.Scatter(amps, depths);
+
+            sc.MarkerSize = 0;
+
+            // ここがポイント：Y軸を上→下の正方向に反転
+            plt.Axes.InvertY();
+
+            //const short AMP_MIN = short.MinValue;   // -32768
+            //const short AMP_MAX = short.MaxValue;   // +32767
+
+            plt.Axes.SetLimitsX(-m_sFullWaveAmpMax, m_sFullWaveAmpMax);
+
+            // オートスケール時にも常に反転を維持（推奨）
+            plt.Axes.AutoScaler.InvertedY = true;
+
+            // 体裁
+            plt.Axes.Bottom.Label.Text = "Amplitude";
+            plt.Axes.Left.Label.Text = "Depth (m)";
+            //plt.Add.VerticalLine(0);   // 0 振幅の基準線（任意）
+
+            formsPlot1.Refresh();
+
+        }
         #endregion
 
         #region スクロール・ビューポート
+        /// <summary>
+        /// 描画コア
+        /// </summary>
+        private void RenderSceneCore(bool applyScroll, bool drawLabels)
+        {
+            GL.Disable(EnableCap.DepthTest);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            if (m_bLutDirty) { BuildPaletteLut(); m_bLutDirty = false; }
+            if (m_bTextureDirty)
+            {
+                if (m_bBottomDirty)
+                {
+                    //ComputeBottomIndices();
+                    /*
+                    ComputeBottomIndicesByStdDev(
+                        //winVar: 31,       // データが粗ければ広げる（例: 41～61）
+                        winVar: 61,       // データが粗ければ広げる（例: 41～61）
+                        startSkipM: 0.30, // 表層除外
+                        endGuardM: 0.50,  // 末尾ガード
+                        useAbs: true,
+                        medianW: 3
+                    );*/
+
+                    //        ComputeBottomIndicesByEnvelopePeak(
+                    //startSkipM: 0.1,       // 表層ノイズを避ける
+                    //guardBelowFB_M: 0.10,   // FB直下の乱れを避ける
+                    //searchDepth_M: 1.00,    // FBから下へ最大2mだけ見る（任意で調整）
+                    //envWin: 25,             // 包絡平滑窓（奇数）
+                    //sta: 15, lta: 50, staLtaThr: 3.0);
+
+
+                    /* これが一番まし*/
+                    ComputeBottomIndicesByDerivativeEdge(
+                                                            startSkipM: 0.20,   // 表層回避
+                                                            endGuardM: 0.50,   // 末尾ガード
+                                                            smoothWin: 25,     // 15〜31 で調整
+                                                            kMad: 3.0,    // 厳しめにしたい時は 4.5〜5.0
+                                                            ampPct: 0.85,   // 誤検知多いなら 0.75〜0.85
+                                                            refineWinM: 0.30,   // 到来点の直下0.3mでピークへ寄せる
+                                                            useAbsLF: true,
+                                                            applyHeaveInDetection: this.chkHeaveCorrection.Checked
+                                                        );
+                    /**/
+
+                    //ComputeBottomIndicesByDerivativeEdge_EdgeIsBottom(
+                    //    startSkipM: 0.20,
+                    //    endGuardM: 0.50,
+                    //    smoothWin: 19,
+                    //    kMad: 4.0,
+                    //    ampPct: 0.70,
+                    //    confirmLen: 2,
+                    //    minGapSamples: 8,
+                    //    useAbsLF: true
+                    //);
+                }
+
+                //EnsureAttenuationTable();
+                BuildRgbaImage();
+                UploadTexture();
+                m_bTextureDirty = false;
+            }
+
+            GetContentSize(out double contentW, out double contentH, out double contentBottom);
+            m_contentW = contentW;
+
+            // スクロール反映
+            GL.PushMatrix();
+            if (applyScroll) GL.Translate(-m_dScrollX, -m_dScrollY, 0.0);
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+            // テクスチャ描画（MeasureStart の段差をスムーズに）
+            const int subdiv = 4;
+            int w = m_iTexWidth;
+
+            GL.Enable(EnableCap.Texture2D);
+            GL.Color4(1f, 1f, 1f, 1f);
+            GL.BindTexture(TextureTarget.Texture2D, m_iTexId);
+
+            double pxPerM_X = GetPixelsPerMeterX();
+
+            for (int i = 0; i < w - 1; i++)
+            {
+                //double x0 = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
+                //double x1 = (m_dTotalDistM > 0.0) ? m_cumDistM[i + 1] * pxPerM_X : (i + 1) * m_dScaleX;
+                double x0 = MapXByPing(i);
+                double x1 = MapXByPing(i + 1);
+                double y00 = (m_offsetPxPerPing != null) ? m_offsetPxPerPing[i] : 0.0;
+                double y01 = (m_offsetPxPerPing != null) ? m_offsetPxPerPing[i + 1] : 0.0;
+
+                GL.Begin(PrimitiveType.TriangleStrip);
+                for (int s = 0; s <= subdiv; s++)
+                {
+                    double t = (double)s / subdiv;
+                    double xt = x0 + (x1 - x0) * t;
+                    double y0 = y00 + (y01 - y00) * t;
+                    double u = (i + t) / (w - 1);
+
+                    GL.TexCoord2(u, 0.0); GL.Vertex2(xt, y0);
+                    GL.TexCoord2(u, 1.0); GL.Vertex2(xt, y0 + contentH);
+                }
+                GL.End();
+            }
+
+            GL.Disable(EnableCap.Texture2D);
+
+            //DrawBottomLine();
+            if (drawLabels)
+            {
+                if (chkDrawDepthScale.Checked) DrawDepthScale(contentW);
+                if (chkDrawDistScale.Checked) DrawDistanceScale(contentBottom);
+            }
+
+            GL.PopMatrix(); // 画面座標へ
+
+            if (drawLabels)
+            {
+                if (chkDrawDepthScale.Checked) DrawDepthLabelsPinnedLeft();
+                if (chkDrawDistScale.Checked) DrawDistanceLabelsPinnedTop();
+            }
+            GL.Disable(EnableCap.Blend);
+        }
+        /// <summary>
+        /// コンテンツ全体の幅高さを求める
+        /// </summary>
+        /// <param name="pxPerM_X"></param>
+        /// <param name="contentW"></param>
+        /// <param name="contentH"></param>
+        /// <param name="contentBottom"></param>
+        private void GetContentSize(out double contentW, out double contentH, out double contentBottom)
+        {
+            double pxPerM_X = GetPixelsPerMeterX();
+            contentW = (m_cumDistM != null && m_dTotalDistM > 0)
+                        ? m_dTotalDistM * pxPerM_X
+                        : m_iPingNo * m_dScaleX;
+            contentH = m_iSampleNo * m_dScaleY;
+            contentBottom = contentH + m_dMaxOffsetPx;
+        }
 
         private void CreateScrollBars()
         {
@@ -1166,7 +1619,9 @@ namespace Ses2000Raw
             {
                 for (int y = 0; y < w; y++)
                 {
-                    var lf = m_dataBlockList[y].Lf;
+                    short[] wave = (DemodulateMode == DemodulationMode.Envelope || this.lblHPF.Enabled) ?
+                                        m_dataBlockList[y].Processed :
+                                        m_dataBlockList[y].Lf;
 
                     bool hasData = true;
                     int zShifted = z;
@@ -1189,7 +1644,7 @@ namespace Ses2000Raw
                         continue;
                     }
 
-                    double s = lf[zShifted];
+                    double s = wave[zShifted];
                     if (Math.Abs(s) < thr) s = 0.0;
 
                     // --- ★ここが重要：ボトムから下だけ減衰補正 ---
@@ -1241,13 +1696,138 @@ namespace Ses2000Raw
         #endregion
 
         #region その他
-        private void SetBackgroundColor(Color color)
+        private void SetBackgroundColor(System.Drawing.Color color)
         {
             glControl2D.MakeCurrent();
             GL.ClearColor(color);
             glControl2D.Refresh();
         }
 
+        /// <summary>
+        /// SaveImage
+        /// </summary>
+        private void SaveImageProcess()
+        {
+            using (var sfd = new SaveFileDialog()
+            {
+                Filter = "PNG Image|*.png",
+                //FileName = "section.png"
+                FileName = this.Text.Replace(".raw ", "") + ".png"
+            })
+            {
+                if (sfd.ShowDialog(this) == DialogResult.OK)
+                {
+                    //SaveFullImagePng(sfd.FileName, outputWidthPx: 6000, includeLabels: true);
+                    SaveFullImageAtCurrentScreenScale(sfd.FileName, includeLabels: true);
+                }
+            }
+        }
+        /// <summary>
+        /// 次の描画フレームで GL 内容を PNG 保存します。
+        /// 画像サイズは現在の glControl2D のピクセルサイズになります。
+        /// </summary>
+        public void SaveCurrentViewPng(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath)) return;
+            m_strScreenshotPath = filePath;
+            glControl2D.Refresh();  // 次の Paint で保存実行
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rgba"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        private static void FlipVerticallyInPlace(byte[] rgba, int width, int height)
+        {
+            int stride = width * 4;
+            byte[] line = new byte[stride];
+            for (int y = 0; y < height / 2; y++)
+            {
+                int top = y * stride;
+                int bottom = (height - 1 - y) * stride;
+                System.Buffer.BlockCopy(rgba, top, line, 0, stride);
+                System.Buffer.BlockCopy(rgba, bottom, rgba, top, stride);
+                System.Buffer.BlockCopy(line, 0, rgba, bottom, stride);
+            }
+        }
+        // ======== X座標の統一マッピング（反転対応の要）========
+        /// <summary>直近の全コンテンツ幅(px)に対して水平反転を適用する。</summary>
+        private double MapContentX(double xContent)
+        {
+            return m_bFlipX ? (m_contentW - xContent) : xContent;
+        }
+        /// <summary>Ping index → X(px)</summary>
+        private double MapXByPing(int i)
+        {
+            double pxPerM_X = GetPixelsPerMeterX();
+            double x = (m_dTotalDistM > 0.0) ? (m_cumDistM[i] * pxPerM_X) : (i * m_dScaleX);
+            return MapContentX(x);
+        }
+
+        /// <summary>距離[m] → X(px)</summary>
+        private double MapXByMeter(double m)
+        {
+            double pxPerM_X = GetPixelsPerMeterX();
+            double x = m * pxPerM_X;
+            return MapContentX(x);
+        }
+        // =====================================================
+
+        /// <summary>
+        /// 画面上のマウスX（pixels, 左上原点）から Ping index を求める。
+        /// ビュー外なら -1 を返す。
+        /// </summary>
+        private int GetPingIndexAtMouseX(int mouseX)
+        {
+            // 1) 画面→コンテンツX（スクロール補正）
+            double xContent = m_dScrollX + mouseX;
+
+            // 最新の全コンテンツ幅を持っていない場合に備えて更新
+            if (m_contentW <= 0)
+            {
+                GetContentSize(out double cw, out _, out _);
+                m_contentW = cw;
+            }
+
+            // 範囲外は除外
+            if (xContent < 0 || xContent > m_contentW) return -1;
+
+            // 2) 左右反転の補正（描画時と逆変換）
+            //   ※描画側は MapContentX(x) = m_bFlipX ? (m_contentW - x) : x
+            //     よって逆変換は同じ式をもう一度適用（可逆）
+            double xUnflipped = m_bFlipX ? (m_contentW - xContent) : xContent;
+
+            int ping;
+            if (m_dTotalDistM > 0.0 && m_cumDistM != null && m_cumDistM.Length == m_iPingNo)
+            {
+                // 3A) 測線距離ベースの横軸：コンテンツX(px) → 距離[m] → 最近傍のPing
+                double pxPerM = GetPixelsPerMeterX();
+                double meters = xUnflipped / pxPerM; // 0..m_dTotalDistM
+
+                // m_cumDistM は単調増加なので二分探索
+                // Array.BinarySearch は負値で ~ を取ると挿入位置が得られる
+                int idx = Array.BinarySearch(m_cumDistM, meters);
+                if (idx >= 0)
+                {
+                    ping = idx;
+                }
+                else
+                {
+                    int ins = ~idx;                 // meters を入れるべき位置
+                    ping = Math.Max(0, ins - 1);    // 左側のPingを採用（区間の下端）
+                }
+            }
+            else
+            {
+                // 3B) ピクセル等間隔の横軸：コンテンツX(px) → 列番号
+                ping = (int)Math.Floor(xUnflipped / m_dScaleX);
+            }
+
+            // 4) クランプ
+            if (ping < 0 || ping >= m_iPingNo) return -1;
+            return ping;
+        }
         #endregion
 
         #region 減衰補正
@@ -1917,13 +2497,5 @@ namespace Ses2000Raw
         }
 
         #endregion
-
-
-        private void glControl2D_Click(object sender, EventArgs e)
-        {
-
-
-
-        }
     }
 }
