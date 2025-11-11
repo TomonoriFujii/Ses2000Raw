@@ -191,8 +191,6 @@ namespace Ses2000Raw
                     rect,
                     Constant.FORECOLOR,
                     TextFormatFlags.WordEllipsis | TextFormatFlags.VerticalCenter
-
-
                 );
             };
             tabControl1.DrawItem += tabControl1_DrawItem;
@@ -250,6 +248,8 @@ namespace Ses2000Raw
                                     .Where(b => b.Lf != null && b.Lf.Length > 0)
                                     .SelectMany(b => b.Lf)
                                     .Max(v => Math.Abs(v));
+
+            //this.formsPlot1.Plot.Axes.SetLimitsX(-m_sFullWaveAmpMax, m_sFullWaveAmpMax);
 
             this.lblDemodulate.Text = Convert.ToInt32(this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope ?
                     Properties.Resources.Envelope : Properties.Resources.FullWave;
@@ -451,7 +451,9 @@ namespace Ses2000Raw
             int ping = GetPingIndexAtMouseX(e.X);
             if (ping >= 0)
             {
-                PlotWave(DataBlockList[ping].Lf, BlockHeaderList[ping].MeasureStart);
+                PlotWave(DemodulateMode == DemodulationMode.None ? DataBlockList[ping].Lf : DataBlockList[ping].Processed,
+                            BlockHeaderList[ping].MeasureStart,
+                            BlockHeaderList[ping].MeasureLength);
             }
 
         }
@@ -1272,29 +1274,29 @@ namespace Ses2000Raw
         /// <summary>
         /// 波形グラフの描画
         /// </summary>
-        private void PlotWave(short[] wave, uint measureStart)
+        private void PlotWave(short[] wave, uint measureStart, uint measureLength)
         {
             double[] amps = wave.Select(v => (double)v).ToArray();
             double[] depths = Enumerable.Range(0, amps.Length)
                                 .Select(i => measureStart + (i * m_dZDistance / 100.0d))   // 片道距離[m]
                                 .ToArray();
 
-
             var plt = formsPlot1.Plot;
             plt.Clear();
 
-            // X=振幅, Y=時間
-            var sc = plt.Add.Scatter(amps, depths);
+            // X=振幅, Y=深度
+            var sc = plt.Add.Scatter(amps, depths, ScottPlot.Color.FromColor(System.Drawing.Color.GreenYellow));
 
             sc.MarkerSize = 0;
 
-            // ここがポイント：Y軸を上→下の正方向に反転
+            // Y軸を上→下の正方向に反転
             plt.Axes.InvertY();
 
             //const short AMP_MIN = short.MinValue;   // -32768
             //const short AMP_MAX = short.MaxValue;   // +32767
 
             plt.Axes.SetLimitsX(-m_sFullWaveAmpMax, m_sFullWaveAmpMax);
+            plt.Axes.SetLimitsY(measureStart + measureLength, measureStart);
 
             // オートスケール時にも常に反転を維持（推奨）
             plt.Axes.AutoScaler.InvertedY = true;
