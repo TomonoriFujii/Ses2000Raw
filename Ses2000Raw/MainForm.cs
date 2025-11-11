@@ -20,6 +20,8 @@ namespace Ses2000Raw
         private const int OFF_LF_SAMPLES = 268;
         private const int OFF_HF_SAMPLES = 272;
 
+        private MapForm m_frmMap;
+
         public MainForm()
         {
             InitializeComponent();
@@ -37,6 +39,8 @@ namespace Ses2000Raw
             this.ForeColor = Constant.FORECOLOR;
 
             this.lblTitle.Text = "SES-Reflect";
+            m_frmMap = new MapForm();
+            m_frmMap.Show(this.dockPanel1, DockState.DockRight);
 
             ColorPalette.LoadColorTable();
         }
@@ -52,8 +56,6 @@ namespace Ses2000Raw
             {
                 case "Open":
                     OpenRawFile();
-
-
                     //btnBrowse_Click(sender, e);
                     break;
                 case "Exit":
@@ -180,6 +182,7 @@ namespace Ses2000Raw
                 //analysisForm.DataBlockList.Add(((DataBlock)dataBlockList[i]).Clone());
             }
             analysisForm.Show(this.dockPanel1, DockState.Document);
+            //analysisForm.Show(this.dockPanel1, DockState.DockLeft);
 
         }
         /// <summary>
