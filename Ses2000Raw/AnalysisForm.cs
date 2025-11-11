@@ -55,6 +55,11 @@ namespace Ses2000Raw
         // テキストラベルのテクスチャキャッシュ
         private readonly Dictionary<string, (int tex, int w, int h)> _labelCache = new();
 
+        // 波形ビューの状態
+        private double? m_mouseDepthMeters;
+        private int m_lastPlottedPing = -1;
+        private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
+
         // ドラッグ・スクロール
         private bool m_bDragging = false;
         private Point m_dragStart;
@@ -451,13 +456,20 @@ namespace Ses2000Raw
             int ping = GetPingIndexAtMouseX(e.X);
             if (ping >= 0)
             {
-                PlotWave(DemodulateMode == DemodulationMode.None ? DataBlockList[ping].Lf : DataBlockList[ping].Processed,
-                            BlockHeaderList[ping].MeasureStart,
-                            BlockHeaderList[ping].MeasureLength);
+                m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
+                PlotPingWave(ping);
+            }
+            else if (m_mouseDepthMeters.HasValue)
+            {
+                ClearWaveformDepthGuide();
             }
 
         }
-
+        private void glControl2D_MouseLeave(object sender, EventArgs e)
+        {
+            if (m_mouseDepthMeters.HasValue)
+                ClearWaveformDepthGuide();
+        }
         private void glControl2D_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return;
@@ -1283,6 +1295,7 @@ namespace Ses2000Raw
 
             var plt = formsPlot1.Plot;
             plt.Clear();
+            m_depthGuideLine = null;
 
             // X=振幅, Y=深度
             var sc = plt.Add.Scatter(amps, depths, ScottPlot.Color.FromColor(System.Drawing.Color.GreenYellow));
@@ -1306,8 +1319,33 @@ namespace Ses2000Raw
             plt.Axes.Left.Label.Text = "Depth (m)";
             //plt.Add.VerticalLine(0);   // 0 振幅の基準線（任意）
 
+            UpdateWaveformDepthGuide(m_mouseDepthMeters, refreshPlot: false);
+
             formsPlot1.Refresh();
 
+        }
+        private void PlotPingWave(int pingIndex)
+        {
+            if (pingIndex < 0 || pingIndex >= m_dataBlockList.Count) return;
+
+            short[]? wave = GetActiveWaveform(pingIndex);
+
+            if (wave == null) return;
+
+            PlotWave(wave,
+                     BlockHeaderList[pingIndex].MeasureStart,
+                     BlockHeaderList[pingIndex].MeasureLength);
+
+            m_lastPlottedPing = pingIndex;
+        }
+
+        private short[]? GetActiveWaveform(int pingIndex)
+        {
+            if (pingIndex < 0 || pingIndex >= m_dataBlockList.Count) return null;
+
+            return DemodulateMode == DemodulationMode.None
+                ? DataBlockList[pingIndex].Lf
+                : DataBlockList[pingIndex].Processed;
         }
         #endregion
 
@@ -1829,6 +1867,91 @@ namespace Ses2000Raw
             // 4) クランプ
             if (ping < 0 || ping >= m_iPingNo) return -1;
             return ping;
+        }
+        private double? GetDepthMetersAtMouse(int pingIndex, int mouseY)
+        {
+            if (m_offsetPxPerPing == null) return null;
+            if (pingIndex < 0 || pingIndex >= m_offsetPxPerPing.Length) return null;
+            if (m_iSampleNo <= 0) return null;
+            if (m_dScaleY <= 0 || m_dZDistance <= 0) return null;
+
+            short[]? wave = GetActiveWaveform(pingIndex);
+            if (wave == null || wave.Length == 0) return null;
+
+            double yContent = m_dScrollY + mouseY;
+            double relPx = yContent - m_offsetPxPerPing[pingIndex];
+
+            double maxPx = (wave.Length - 1) * m_dScaleY;
+            const double pxTolerance = 1e-6;
+            if (relPx < -pxTolerance || relPx > maxPx + pxTolerance) return null;
+
+            relPx = Math.Clamp(relPx, 0.0, maxPx);
+
+            double sampleIndex = relPx / m_dScaleY;
+
+            if (chkHeaveCorrection.Checked)
+            {
+                double sampleIntervalCm = m_dZDistance;
+                if (sampleIntervalCm > 0.0)
+                {
+                    double heave_cm = m_blockHeaderList[pingIndex].HeaveFromMotionSensor / 10.0;
+                    double heaveSamples = (-1.0 * heave_cm) / sampleIntervalCm;
+                    sampleIndex += heaveSamples;
+                }
+            }
+
+            double maxSampleIndex = wave.Length - 1;
+            sampleIndex = Math.Clamp(sampleIndex, 0.0, maxSampleIndex);
+
+            double dz_m = m_dZDistance / 100.0;
+            double depth = BlockHeaderList[pingIndex].MeasureStart + sampleIndex * dz_m;
+
+            double start = BlockHeaderList[pingIndex].MeasureStart;
+            double length = BlockHeaderList[pingIndex].MeasureLength;
+            if (length > 0)
+            {
+                double end = start + length;
+                depth = Math.Clamp(depth, start, end);
+            }
+
+            return depth;
+        }
+
+        private void UpdateWaveformDepthGuide(double? depthMeters, bool refreshPlot = true)
+        {
+            if (formsPlot1 == null) return;
+
+            if (depthMeters is double depth)
+            {
+                if (m_depthGuideLine == null)
+                {
+                    m_depthGuideLine = formsPlot1.Plot.Add.HorizontalLine(depth,
+                                                                          color: ScottPlot.Color.FromColor(System.Drawing.Color.Gray),
+                                                                          pattern: ScottPlot.LinePattern.Solid);
+
+                    m_depthGuideLine.LineWidth = 1;
+                }
+                else
+                {
+                    m_depthGuideLine.Y = depth;
+                    m_depthGuideLine.IsVisible = true;
+                }
+            }
+            else if (m_depthGuideLine != null)
+            {
+                m_depthGuideLine.IsVisible = false;
+            }
+
+            if (refreshPlot)
+            {
+                formsPlot1.Refresh();
+            }
+        }
+
+        private void ClearWaveformDepthGuide()
+        {
+            m_mouseDepthMeters = null;
+            UpdateWaveformDepthGuide(null);
         }
         #endregion
 
@@ -2499,5 +2622,7 @@ namespace Ses2000Raw
         }
 
         #endregion
+
+
     }
 }

@@ -102,13 +102,13 @@
             numG = new NumericUpDown();
             label26 = new Label();
             tabPage2 = new TabPage();
+            formsPlot1 = new ScottPlot.WinForms.FormsPlot();
             tabPage3 = new TabPage();
             tabPage5 = new TabPage();
             glControl2D = new OpenTK.GLControl.GLControl();
             colorDialog1 = new ColorDialog();
             toolStrip1 = new ToolStrip();
             tsBtnSaveImage = new ToolStripButton();
-            formsPlot1 = new ScottPlot.WinForms.FormsPlot();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -1021,6 +1021,15 @@
             tabPage2.Text = "Signal";
             tabPage2.UseVisualStyleBackColor = true;
             // 
+            // formsPlot1
+            // 
+            formsPlot1.DisplayScale = 1F;
+            formsPlot1.Dock = DockStyle.Fill;
+            formsPlot1.Location = new Point(3, 3);
+            formsPlot1.Name = "formsPlot1";
+            formsPlot1.Size = new Size(253, 771);
+            formsPlot1.TabIndex = 0;
+            // 
             // tabPage3
             // 
             tabPage3.Location = new Point(27, 4);
@@ -1056,6 +1065,7 @@
             glControl2D.Load += glControl2D_Load;
             glControl2D.Paint += glControl2D_Paint;
             glControl2D.MouseDown += glControl2D_MouseDown;
+            glControl2D.MouseLeave += glControl2D_MouseLeave;
             glControl2D.MouseMove += glControl2D_MouseMove;
             glControl2D.MouseUp += glControl2D_MouseUp;
             glControl2D.Resize += glControl2D_Resize;
@@ -1079,15 +1089,6 @@
             tsBtnSaveImage.Size = new Size(94, 28);
             tsBtnSaveImage.Tag = "SaveImage";
             tsBtnSaveImage.Text = "Save Image";
-            // 
-            // formsPlot1
-            // 
-            formsPlot1.DisplayScale = 1F;
-            formsPlot1.Dock = DockStyle.Fill;
-            formsPlot1.Location = new Point(3, 3);
-            formsPlot1.Name = "formsPlot1";
-            formsPlot1.Size = new Size(253, 771);
-            formsPlot1.TabIndex = 0;
             // 
             // AnalysisForm
             // 
