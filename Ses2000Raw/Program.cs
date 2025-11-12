@@ -111,4 +111,11 @@ namespace Ses2000Raw
         LF = 0,
         HF = 1
     }
+    public enum DemodulationMode
+    {
+        None = 0,
+        Deconvolution = 1,
+        Envelope = 2,
+        DeconvoEnvelope = 3
+    }
 }

@@ -79,12 +79,15 @@ namespace Ses2000Raw
         {
             try
             {
-                bool bEnvelope = (this.cmbDemodulate.SelectedIndex == (int)AnalysisForm.DemodulationMode.Envelope) ? true : false;
+                bool bEnvelope = (this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.Envelope ||
+                                  this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.DeconvoEnvelope) ? true : false;
+                bool bDeconvo = (this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.Deconvolution ||
+                                  this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.DeconvoEnvelope) ? true : false;
                 bool bBpf = this.chkBpf.Checked;
 
-                if (!bEnvelope && !bBpf)
+                if(this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.None && !bBpf)
                 {
-                    m_frmParent.DemodulateMode = (AnalysisForm.DemodulationMode)this.cmbDemodulate.SelectedIndex;
+                    m_frmParent.DemodulateMode = (DemodulationMode)this.cmbDemodulate.SelectedIndex;
                     m_frmParent.ApplyBpf = bBpf;
                     m_frmParent.Hpf_kHz = this.trackBarHpf.Value;
                     m_frmParent.Lpf_kHz = this.trackBarLpf.Value;
@@ -127,7 +130,8 @@ namespace Ses2000Raw
                         bBpf,
                         hpf_kHz,
                         lpf_kHz,
-                        bEnvelope
+                        bEnvelope,
+                        bDeconvo
                     )
                 ).ConfigureAwait(true); // WinFormsなのでUIに戻す
 
@@ -168,7 +172,7 @@ namespace Ses2000Raw
 #endif
 
                 // 最後にUI側設定を確定
-                m_frmParent.DemodulateMode = (AnalysisForm.DemodulationMode)this.cmbDemodulate.SelectedIndex;
+                m_frmParent.DemodulateMode = (DemodulationMode)this.cmbDemodulate.SelectedIndex;
                 m_frmParent.ApplyBpf = bBpf;
                 m_frmParent.Hpf_kHz = hpf_kHz;
                 m_frmParent.Lpf_kHz = lpf_kHz;

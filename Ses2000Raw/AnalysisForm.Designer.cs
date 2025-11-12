@@ -1993,7 +1993,7 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.Size = new Size(129, 50);
+            tableLayoutPanel1.Size = new Size(112, 50);
             tableLayoutPanel1.TabIndex = 0;
             // 
             // label21
@@ -2002,7 +2002,7 @@
             label21.Dock = DockStyle.Fill;
             label21.Location = new Point(3, 0);
             label21.Name = "label21";
-            label21.Size = new Size(58, 25);
+            label21.Size = new Size(50, 25);
             label21.TabIndex = 0;
             label21.Text = "Date";
             label21.TextAlign = ContentAlignment.MiddleCenter;
@@ -2011,9 +2011,9 @@
             // 
             labelDate.AutoSize = true;
             labelDate.Dock = DockStyle.Fill;
-            labelDate.Location = new Point(67, 0);
+            labelDate.Location = new Point(59, 0);
             labelDate.Name = "labelDate";
-            labelDate.Size = new Size(59, 25);
+            labelDate.Size = new Size(50, 25);
             labelDate.TabIndex = 1;
             labelDate.Text = "----/--/--";
             labelDate.TextAlign = ContentAlignment.MiddleCenter;
@@ -2024,7 +2024,7 @@
             label25.Dock = DockStyle.Fill;
             label25.Location = new Point(3, 25);
             label25.Name = "label25";
-            label25.Size = new Size(58, 25);
+            label25.Size = new Size(50, 25);
             label25.TabIndex = 2;
             label25.Text = "Time";
             label25.TextAlign = ContentAlignment.MiddleCenter;
@@ -2033,9 +2033,9 @@
             // 
             labelTime.AutoSize = true;
             labelTime.Dock = DockStyle.Fill;
-            labelTime.Location = new Point(67, 25);
+            labelTime.Location = new Point(59, 25);
             labelTime.Name = "labelTime";
-            labelTime.Size = new Size(59, 25);
+            labelTime.Size = new Size(50, 25);
             labelTime.TabIndex = 3;
             labelTime.Text = "--:--:--.---";
             labelTime.TextAlign = ContentAlignment.MiddleCenter;
@@ -2104,8 +2104,6 @@
             // 
             // tsBtnSaveImage
             // 
-            tsBtnSaveImage.Checked = true;
-            tsBtnSaveImage.CheckState = CheckState.Checked;
             tsBtnSaveImage.Image = (Image)resources.GetObject("tsBtnSaveImage.Image");
             tsBtnSaveImage.ImageTransparentColor = Color.Magenta;
             tsBtnSaveImage.Name = "tsBtnSaveImage";

@@ -30,7 +30,6 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MapForm));
             map1 = new DotSpatial.Controls.Map();
-            spatialStatusStrip1 = new DotSpatial.Controls.SpatialStatusStrip();
             spatialToolStrip1 = new DotSpatial.Controls.SpatialToolStrip();
             appManager1 = new DotSpatial.Controls.AppManager();
             SuspendLayout();
@@ -54,19 +53,9 @@
             map1.ProjectionModeReproject = DotSpatial.Controls.ActionMode.Prompt;
             map1.RedrawLayersWhileResizing = false;
             map1.SelectionEnabled = true;
-            map1.Size = new Size(800, 403);
+            map1.Size = new Size(800, 425);
             map1.TabIndex = 0;
             map1.ZoomOutFartherThanMaxExtent = false;
-            // 
-            // spatialStatusStrip1
-            // 
-            spatialStatusStrip1.Location = new Point(0, 428);
-            spatialStatusStrip1.Name = "spatialStatusStrip1";
-            spatialStatusStrip1.ProgressBar = null;
-            spatialStatusStrip1.ProgressLabel = null;
-            spatialStatusStrip1.Size = new Size(800, 22);
-            spatialStatusStrip1.TabIndex = 1;
-            spatialStatusStrip1.Text = "spatialStatusStrip1";
             // 
             // spatialToolStrip1
             // 
@@ -94,7 +83,6 @@
             ClientSize = new Size(800, 450);
             Controls.Add(map1);
             Controls.Add(spatialToolStrip1);
-            Controls.Add(spatialStatusStrip1);
             Name = "MapForm";
             Text = "Map";
             ResumeLayout(false);
@@ -104,7 +92,6 @@
         #endregion
 
         private DotSpatial.Controls.Map map1;
-        private DotSpatial.Controls.SpatialStatusStrip spatialStatusStrip1;
         private DotSpatial.Controls.SpatialToolStrip spatialToolStrip1;
         private DotSpatial.Controls.AppManager appManager1;
     }

@@ -92,13 +92,9 @@ namespace Ses2000Raw
         /// <param name="lpf">LPFカットオフ周波数</param>
         /// <param name="envelopeFlag">Envelope実行フラグ</param>
         /// <returns>信号処理済みの波形データ</returns>
-        public static short[] SignalProcess(short[] fullWave, int sampleFreq, int fftNs, bool bpfFlag, int hpf, int lpf, bool envelopeFlag)
+        public static short[] SignalProcess(short[] fullWave, int sampleFreq, int fftNs, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, bool deconvoFlag)
         {
             int iNs = fullWave.Length;                            // サンプル数
-            //short[] ret = new short[iNs];
-
-            //double[] aryTmp = new double[fftNs];
-            //fullWave.CopyTo(aryTmp, 0);
 
             // 入力を Complex[] 化
             Complex[] xTime = new Complex[fftNs];
@@ -241,7 +237,7 @@ namespace Ses2000Raw
         /// <param name="lpf"></param>
         /// <param name="envelopeFlag"></param>
         /// <returns></returns>
-        public static Result SignalProcessParallel(SynchronizationContext context, IProgress<int> progress, List<DataBlock> dataBlockList, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag)
+        public static Result SignalProcessParallel(SynchronizationContext context, IProgress<int> progress, List<DataBlock> dataBlockList, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, bool deconvoFlag)
         {
             Result ret = new Result();
             int iNumPing = dataBlockList.Count;
@@ -263,7 +259,7 @@ namespace Ses2000Raw
 
 
                     // 信号処理
-                    short[] envWaves = SignalProcess(dataBlockList[y].Lf, sampleFreq, iFftNs, bpfFlag, hpf, lpf, envelopeFlag);
+                    short[] envWaves = SignalProcess(dataBlockList[y].Lf, sampleFreq, iFftNs, bpfFlag, hpf, lpf, envelopeFlag, deconvoFlag);
                     processed[y] = envWaves;
 
                     // 進捗（Progress<T> はUIに自動マーシャル）

@@ -11,6 +11,7 @@ using WeifenLuo.WinFormsUI.Docking;
 using System.Diagnostics;
 using ScottPlot;
 using ScottPlot.Rendering;
+using DotSpatial.Topology.Operation.Valid;
 
 namespace Ses2000Raw
 {
@@ -123,16 +124,21 @@ namespace Ses2000Raw
         {
             get
             {
-                return Convert.ToInt32(this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope ?
-                    DemodulationMode.Envelope : DemodulationMode.None;
+                if(this.lblDemodulate.Tag == null) return DemodulationMode.None;
+                switch(Convert.ToInt32(this.lblDemodulate.Tag))
+                {
+                    case 0: return DemodulationMode.None;
+                    case 1: return DemodulationMode.Deconvolution;
+                    case 2: return DemodulationMode.Envelope;
+                    case 3: return DemodulationMode.DeconvoEnvelope;
+                    default: return DemodulationMode.None;
+                }
             }
             set
             {
                 this.lblDemodulate.Tag = value;
                 this.lblDemodulate.Text = value == DemodulationMode.Envelope ?
                     Properties.Resources.Envelope : Properties.Resources.FullWave;
-
-                //this.lblDemodulate.Tag = (int)value;
             }
         }
         public int Hpf_kHz
@@ -161,13 +167,7 @@ namespace Ses2000Raw
         private Channel m_channel;
         #endregion
 
-        #region 列挙体
-        public enum DemodulationMode
-        {
-            None = 0,
-            Envelope = 1,
-        }
-        #endregion
+
 
         #region 初期化
         /// <summary>
@@ -224,7 +224,6 @@ namespace Ses2000Raw
             this.btnChooseColor.BackColor = Constant.BUTTON_BACKCOLOR;
             this.btnScaleSetting.BackColor = Constant.BUTTON_BACKCOLOR;
 
-
             // 1) 線色のパレットをダーク向けに
             formsPlot1.Plot.Add.Palette = new ScottPlot.Palettes.Penumbra();
 
@@ -243,7 +242,6 @@ namespace Ses2000Raw
 
             // 5) 反映
             formsPlot1.Refresh();
-
         }
         /// <summary>
         /// 
@@ -1905,7 +1903,7 @@ namespace Ses2000Raw
             {
                 for (int y = 0; y < w; y++)
                 {
-                    short[] wave = (DemodulateMode == DemodulationMode.Envelope || this.lblHPF.Enabled) ?
+                    short[] wave = (DemodulateMode != DemodulationMode.None || this.lblHPF.Enabled) ?
                                         m_dataBlockList[y].Processed :
                                         m_dataBlockList[y].Lf;
 

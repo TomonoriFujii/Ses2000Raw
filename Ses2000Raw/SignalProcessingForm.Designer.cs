@@ -62,7 +62,7 @@
             // 
             cmbDemodulate.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbDemodulate.FormattingEnabled = true;
-            cmbDemodulate.Items.AddRange(new object[] { "None (Full Wave)", "Envelope" });
+            cmbDemodulate.Items.AddRange(new object[] { "None (Full Wave)", "Deconvolution", "Envelope", "Deconvolution + Envelope" });
             cmbDemodulate.Location = new Point(118, 20);
             cmbDemodulate.Name = "cmbDemodulate";
             cmbDemodulate.Size = new Size(201, 23);
