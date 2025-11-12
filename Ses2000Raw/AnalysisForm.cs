@@ -60,6 +60,10 @@ namespace Ses2000Raw
         private int m_lastPlottedPing = -1;
         private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
 
+        private MapForm? m_mapForm;
+        private (double X, double Y)?[]? m_pingPositions;
+        private int m_lastMapCursorPing = -1;
+
         // ドラッグ・スクロール
         private bool m_bDragging = false;
         private Point m_dragStart;
@@ -109,6 +113,11 @@ namespace Ses2000Raw
         {
             get { return m_dataBlockList; }
             set { m_dataBlockList = value; }
+        }
+        public MapForm? MapView
+        {
+            get { return m_mapForm; }
+            set { m_mapForm = value; }
         }
         public DemodulationMode DemodulateMode
         {
@@ -212,7 +221,6 @@ namespace Ses2000Raw
             this.grpBoxSignal.ForeColor = Constant.FORECOLOR;
             this.cmbColor.BackColor = Constant.COMBO_BACKCOLOR;
             this.cmbColor.ForeColor = Constant.COMBO_FORECOLOR;
-            this.btnSignalProcessing.BackColor = Constant.BUTTON_BACKCOLOR;
             this.btnChooseColor.BackColor = Constant.BUTTON_BACKCOLOR;
             this.btnScaleSetting.BackColor = Constant.BUTTON_BACKCOLOR;
 
@@ -228,7 +236,7 @@ namespace Ses2000Raw
             formsPlot1.Plot.Axes.Color(ScottPlot.Color.FromHex("#d7d7d7"));
             formsPlot1.Plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#404040");
 
-            // 4) 凡例（使っていなければ省略可）
+            // 4) 凡例
             formsPlot1.Plot.Legend.BackgroundColor = ScottPlot.Color.FromHex("#404040");
             formsPlot1.Plot.Legend.FontColor = ScottPlot.Color.FromHex("#d7d7d7");
             formsPlot1.Plot.Legend.OutlineColor = ScottPlot.Color.FromHex("#d7d7d7");
@@ -281,6 +289,10 @@ namespace Ses2000Raw
             m_dRatioY = (double)numScaleZ.Value;
             //m_dZoom = 1.0;
             m_dZoom = 0.7;
+
+            RebuildPingPositionsFromHeaders();
+            UpdateMapTrack();
+
         }
         /// <summary>
         /// 
@@ -458,10 +470,13 @@ namespace Ses2000Raw
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
                 PlotPingWave(ping);
+                ShowInfo(BlockHeaderList[ping]);
             }
-            else if (m_mouseDepthMeters.HasValue)
+            else
             {
-                ClearWaveformDepthGuide();
+                if (m_mouseDepthMeters.HasValue)
+                    ClearWaveformDepthGuide();
+                UpdateMapCursorMarker(-1);
             }
 
         }
@@ -469,6 +484,7 @@ namespace Ses2000Raw
         {
             if (m_mouseDepthMeters.HasValue)
                 ClearWaveformDepthGuide();
+            UpdateMapCursorMarker(-1);
         }
         private void glControl2D_MouseUp(object sender, MouseEventArgs e)
         {
@@ -585,12 +601,6 @@ namespace Ses2000Raw
             SignalProcessingForm frmSp = new SignalProcessingForm(this, m_dSampleFreqHz);
             if (frmSp.ShowDialog(this) == DialogResult.OK)
             {
-                //if (((int)this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope)
-                //    MessageBox.Show("Envelope");
-                //else
-                //    MessageBox.Show("None");
-
-
                 m_bTextureDirty = true;
                 glControl2D.Refresh();
             }
@@ -606,6 +616,9 @@ namespace Ses2000Raw
 
             switch (e.ClickedItem.Tag.ToString())
             {
+                case "SignalProcessing":
+                    SignalProcess();
+                    break;
                 case "SaveImage":
                     SaveImageProcess();
                     break;
@@ -911,31 +924,56 @@ namespace Ses2000Raw
 
         private void BuildCumulativeTrackMeters()
         {
-            int n = m_blockHeaderList.Count;
-            m_cumDistM = new double[n];
-            m_cumDistM[0] = 0.0;
-
-            if (!TryParseXY(m_blockHeaderList[0], out double prevX, out double prevY))
+            if (m_blockHeaderList == null)
             {
-                // 等間隔フォールバック
-                for (int i = 0; i < n; i++) m_cumDistM[i] = i;
-                m_dTotalDistM = n - 1;
+                m_cumDistM = Array.Empty<double>();
+                m_dTotalDistM = 0.0;
                 return;
             }
 
+            int n = m_blockHeaderList.Count;
+            m_cumDistM = new double[n];
+            if (n == 0)
+            {
+                m_dTotalDistM = 0.0;
+                m_pingPositions = Array.Empty<(double X, double Y)?>();
+                UpdateMapTrack();
+                return;
+            }
+            m_cumDistM[0] = 0.0;
+
+            RebuildPingPositionsFromHeaders();
+
+            if (m_pingPositions == null || m_pingPositions.Length == 0 || !m_pingPositions[0].HasValue)
+            {
+                // 等間隔フォールバック
+                for (int i = 0; i < n; i++) m_cumDistM[i] = i;
+                m_dTotalDistM = Math.Max(0, n - 1);
+                UpdateMapTrack();
+                return;
+            }
+
+            var prev = m_pingPositions[0]!.Value;
             double sum = 0.0;
             for (int i = 1; i < n; i++)
             {
-                if (!TryParseXY(m_blockHeaderList[i], out double x, out double y))
+                var pos = m_pingPositions[i];
+                if (!pos.HasValue)
                 {
-                    x = prevX; y = prevY;
+                    pos = prev;
+                    m_pingPositions[i] = prev;
                 }
-                double dx = x - prevX, dy = y - prevY;
+                double dx = pos.Value.X - prev.X;
+                double dy = pos.Value.Y - prev.Y;
+
                 sum += Math.Sqrt(dx * dx + dy * dy);
                 m_cumDistM[i] = sum;
-                prevX = x; prevY = y;
+                //prevX = x; prevY = y;
+                prev = pos.Value;
             }
             m_dTotalDistM = sum;
+
+            UpdateMapTrack();
         }
 
         private bool TryParseXY(BlockHeader h, out double x, out double y)
@@ -946,7 +984,91 @@ namespace Ses2000Raw
                                        System.Globalization.CultureInfo.InvariantCulture, out y);
             return okX && okY;
         }
+        private void RebuildPingPositionsFromHeaders()
+        {
+            if (m_blockHeaderList == null)
+            {
+                m_pingPositions = null;
+                return;
+            }
 
+            int n = m_blockHeaderList.Count;
+            var positions = new (double X, double Y)?[n];
+            double? lastX = null;
+            double? lastY = null;
+
+            for (int i = 0; i < n; i++)
+            {
+                if (TryParseXY(m_blockHeaderList[i], out double x, out double y))
+                {
+                    lastX = x;
+                    lastY = y;
+                    positions[i] = (x, y);
+                }
+                else if (lastX.HasValue && lastY.HasValue)
+                {
+                    positions[i] = (lastX.Value, lastY.Value);
+                }
+            }
+
+            m_pingPositions = positions;
+        }
+
+        private void UpdateMapTrack()
+        {
+            if (m_mapForm == null)
+                return;
+
+            if (m_pingPositions == null)
+            {
+                m_mapForm.SetTrack(Array.Empty<(double X, double Y)>());
+                return;
+            }
+
+            var points = new List<(double X, double Y)>(m_pingPositions.Length);
+            foreach (var pos in m_pingPositions)
+            {
+                if (pos.HasValue)
+                    points.Add(pos.Value);
+            }
+
+            m_mapForm.SetTrack(points);
+
+            if (m_lastMapCursorPing >= 0)
+            {
+                UpdateMapCursorMarker(m_lastMapCursorPing);
+            }
+        }
+
+        private void UpdateMapCursorMarker(int pingIndex)
+        {
+            if (m_mapForm == null)
+                return;
+
+            if (m_pingPositions == null || pingIndex < 0 || pingIndex >= m_pingPositions.Length)
+            {
+                if (m_lastMapCursorPing != -1)
+                {
+                    m_mapForm.ClearCursor();
+                    m_lastMapCursorPing = -1;
+                }
+                return;
+            }
+
+            var pos = m_pingPositions[pingIndex];
+            if (!pos.HasValue)
+            {
+                if (m_lastMapCursorPing != -1)
+                {
+                    m_mapForm.ClearCursor();
+                    m_lastMapCursorPing = -1;
+                }
+                return;
+            }
+
+            m_mapForm.UpdateCursorPosition(pos.Value.X, pos.Value.Y);
+            m_lastMapCursorPing = pingIndex;
+        }
         private double GetPixelsPerMeterY()
         {
             double dz_m = m_dZDistance / 100.0;
@@ -1326,6 +1448,8 @@ namespace Ses2000Raw
         }
         private void PlotPingWave(int pingIndex)
         {
+            UpdateMapCursorMarker(pingIndex);
+
             if (pingIndex < 0 || pingIndex >= m_dataBlockList.Count) return;
 
             short[]? wave = GetActiveWaveform(pingIndex);
@@ -1346,6 +1470,128 @@ namespace Ses2000Raw
             return DemodulateMode == DemodulationMode.None
                 ? DataBlockList[pingIndex].Lf
                 : DataBlockList[pingIndex].Processed;
+        }
+        /// <summary>
+        /// Ping情報の表示
+        /// </summary>
+        /// <param name="date"></param>
+
+        private void ShowInfo(BlockHeader ping)//! ping: BlockHeader[ping]のこと
+        {
+
+
+
+            //日付表示
+            string date = ping.Date;
+            //todo 順番が日本式じゃないから入れ替える.
+            //todo ミリ秒がわからないけどそのまま？
+            List<String> dateSwap = date.Split('.').ToList();
+            //String japaneseDate = dateSwap[2] + "年" + dateSwap[1] + "月" + dateSwap[0] + "日";
+            String japaneseDate = dateSwap[2] + "/" + dateSwap[1] + "/" + dateSwap[0];
+            labelDate.Text = japaneseDate;
+
+
+
+            //時間表示
+            string time = ping.Time;
+            List<String> timeCut = time.Split('.').ToList();
+            labelTime.Text = timeCut[0];
+
+
+            //SisString1~8表示
+            String sisStirng1 = ping.SisString1;
+            String sisStirng2 = ping.SisString2;
+            String sisStirng3 = ping.SisString3;
+            String sisStirng4 = ping.SisString4;
+            String sisStirng5 = ping.SisString5;
+            String sisStirng6 = ping.SisString6;
+            String sisStirng7 = ping.SisString7;
+            String sisStirng8 = ping.SisString8;
+
+            labelSisString1.Text = sisStirng1;
+            labelSisString2.Text = sisStirng2;
+            labelSisString3.Text = sisStirng3;
+            labelSisString4.Text = sisStirng4;
+            labelSisString5.Text = sisStirng5;
+            labelSisString6.Text = sisStirng6;
+            labelSisString7.Text = sisStirng7;
+            labelSisString8.Text = sisStirng8;
+
+
+
+
+            //Measure 表示
+            String measureStart = ping.MeasureStart.ToString();
+            String measureLength = ping.MeasureLength.ToString();
+
+            labelMeasureStart.Text = measureStart;
+            labelMeasureLength.Text = measureLength;
+
+
+
+
+            //Motion Sensor Angle表示
+            String headingMotionSensor = ping.HeadingAngleFromMotionSensor.ToString();
+            String rollMotionSensor = ping.RollAngleFromMotionSensor.ToString();
+            String pitchMotionSensor = ping.PitchAngleFromMotionSensor.ToString();
+            String yawMotionSensor = ping.YawAngleFromMotionSensor.ToString();
+            String heaveMotionSensor = ping.HeaveFromMotionSensor.ToString();
+
+            labelHeadingMotionSensor.Text = headingMotionSensor;
+            labelRollMotionSensor.Text = rollMotionSensor;
+            labelPitchMotionSensor.Text = pitchMotionSensor;
+            labelYawMotionSensor.Text = yawMotionSensor;
+            labelHeaveMotionSensor.Text = heaveMotionSensor;
+
+
+            //steering表示
+            String rollAngleSteering = ping.SteeringRollAngle.ToString();
+            String pitchAngleSteering = ping.SteeringPitchAngle.ToString();
+
+            labelRollSteering.Text = rollAngleSteering;
+            labelPitchSteering.Text = pitchAngleSteering;
+
+
+            //Frequency表示
+            String lfFrequency = ping.Frequency1.ToString();  //? lf?
+            String hfFrequency = ping.HfFrequency1.ToString();//? hf?
+            String SampleFrequencyLf = ping.SampleFrequencyForLf.ToString();
+
+            labelLfFrequency.Text = lfFrequency;
+            labelHfFrequency.Text = hfFrequency;
+            labelSampleFreqLf.Text = SampleFrequencyLf;
+
+
+            //Pulse表示
+
+            String pulses1 = ping.Pulses1.ToString();//? pulses1?何を表している？
+            String PulseToPulseDistance = ping.PulseToPulseDistance.ToString();
+            String pulseLength = ping.PulseLength.ToString();
+
+            labelPulses1.Text = pulses1;
+            labelPulseToPulseDistance.Text = PulseToPulseDistance;
+            labelPulseLength.Text = pulseLength;
+
+
+            //Gain Value表示
+            String gainValueLf = ping.GainValueOfLf.ToString();
+            String gainValueHf = ping.GainValueOfHf.ToString();
+
+            labelGainValueLf.Text = gainValueLf;
+            labelGainValueHf.Text = gainValueHf;
+
+
+            //Sound Velocity表示
+            String soundVelocity = ping.SoundVelocity.ToString();
+
+            labelSoundVelocity.Text = soundVelocity;
+
+
+
+
+
+
+
         }
         #endregion
 
@@ -1742,7 +1988,18 @@ namespace Ses2000Raw
             GL.ClearColor(color);
             glControl2D.Refresh();
         }
-
+        /// <summary>
+        /// SignalProcessing
+        /// </summary>
+        private void SignalProcess()
+        {
+            SignalProcessingForm frmSp = new SignalProcessingForm(this, m_dSampleFreqHz);
+            if (frmSp.ShowDialog(this) == DialogResult.OK)
+            {
+                m_bTextureDirty = true;
+                glControl2D.Refresh();
+            }
+        }
         /// <summary>
         /// SaveImage
         /// </summary>
@@ -2624,5 +2881,14 @@ namespace Ses2000Raw
         #endregion
 
 
+        private void glControl2D_MouseClick(object sender, MouseEventArgs e)
+        {
+            Debug.WriteLine($"2D MouseClick: {e.Button} @ ({e.X}, {e.Y})");
+        }
+
+        private void contextMenuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            
+        }
     }
 }

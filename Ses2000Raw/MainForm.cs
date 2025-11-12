@@ -151,6 +151,7 @@ namespace Ses2000Raw
             }
 
             AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel);
+            analysisForm.MapView = m_frmMap;
             analysisForm.FileHeader = (FileHeader)fileHeader.Clone();
             for (int i = 0; i < blockHeaderList.Count; i++)
             {
