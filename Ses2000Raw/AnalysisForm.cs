@@ -73,6 +73,8 @@ namespace Ses2000Raw
         private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
         private double? m_mouseContentX;
         private double? m_mouseContentY;
+        private double? m_selectedAnomalyDepthMeters;
+        private int? m_selectedAnomalyPing;
 
         private MapForm? m_frmMap;
         private (double X, double Y)?[]? m_pingPositions;
@@ -86,8 +88,6 @@ namespace Ses2000Raw
         private double m_dScrollY; // 表示原点Y（拡大後px）
 
         private bool m_bDraggingAddContact = false;//! スクロール判定のためm_bDraggingAddContactを追加 1119で追加場所確認
-        private bool m_doNotShowUsageAddContactForm = false; //! 再表示判定用
-        private bool m_prevAddContactChecked = false;
 
 
 
@@ -514,11 +514,20 @@ namespace Ses2000Raw
             }
 
             int ping = GetPingIndexAtMouseX(e.X);
+            if (toolStripButtonAddContact.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue)
+            {
+                ping = m_selectedAnomalyPing.Value;
+            }
             double? prevMouseContentX = m_mouseContentX;
             double? prevMouseContentY = m_mouseContentY;
-            m_mouseContentX = (ping >= 0) ? m_dScrollX + e.X : null;
-            m_mouseContentY = (ping >= 0) ? m_dScrollY + e.Y : null;
-            if (ping >= 0)
+            bool hasValidPing = (ping >= 0 && ping < m_iPingNo);
+            m_mouseContentX = hasValidPing
+                ? (toolStripButtonAddContact.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue
+                    ? MapXByPing(ping)
+                    : m_dScrollX + e.X)
+                : null;
+            m_mouseContentY = hasValidPing ? m_dScrollY + e.Y : null;
+            if (hasValidPing)
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
                 PlotPingWave(ping);
@@ -556,7 +565,7 @@ namespace Ses2000Raw
         {
             if (e.Button != MouseButtons.Left) return;
             m_bDragging = false;
-            Cursor = Cursors.Default;
+            Cursor = toolStripButtonAddContact.Checked ? Cursors.Cross : Cursors.Default;
         }
 
         private void cmbColor_SelectedIndexChanged(object sender, EventArgs e)
@@ -1774,7 +1783,10 @@ namespace Ses2000Raw
 
             if (m_mouseContentX is double mouseX)
             {
-                GL.Color4(1f, 0f, 0f, 0.6f);
+                var (lineR, lineG, lineB, lineA) = toolStripButtonAddContact.Checked
+                    ? (0f, 0.8f, 1f, 0.8f)
+                    : (1f, 0f, 0f, 0.6f);
+                GL.Color4(lineR, lineG, lineB, lineA);
                 GL.Begin(PrimitiveType.Lines);
                 GL.Vertex2(mouseX, 0.0);
                 GL.Vertex2(mouseX, contentBottom);
@@ -1783,7 +1795,10 @@ namespace Ses2000Raw
 
             if (m_mouseContentY is double mouseY)
             {
-                GL.Color4(1f, 0f, 0f, 0.6f);
+                var (lineR, lineG, lineB, lineA) = toolStripButtonAddContact.Checked
+                    ? (0f, 0.8f, 1f, 0.8f)
+                    : (1f, 0f, 0f, 0.6f);
+                GL.Color4(lineR, lineG, lineB, lineA);
                 GL.Begin(PrimitiveType.Lines);
                 GL.Vertex2(0.0, mouseY);
                 GL.Vertex2(contentW, mouseY);
@@ -2961,44 +2976,65 @@ namespace Ses2000Raw
 
         public double? AddContactProcess(double depth, int ping)//ここ仮名。変更予定
         {
-            double dAnomaryDepth = 0.0;
-
-            // 1回目のクリック
+            // 1回目のクリック（音響異常）
             if (m_clickStep == 0)
             {
-                m_dBottomDepth = depth;
-
+                m_selectedAnomalyDepthMeters = depth;
+                m_selectedAnomalyPing = ping;
                 m_clickStep = 1;
                 this.toolStripButtonAddContact.Enabled = false;
+                MessageBox.Show("海底面の位置をクリックしてください", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                glControl2D.Cursor = Cursors.Cross;
+                m_mouseContentX = MapXByPing(ping);
+                glControl2D.Refresh();
 
                 return null;
             }
-            // 2回目のクリック
+            // 2回目のクリック（海底面）
             else if (m_clickStep == 1)
             {
-                if (m_dBottomDepth.HasValue)
+                if (m_selectedAnomalyDepthMeters.HasValue && m_selectedAnomalyPing.HasValue)
                 {
-                    dAnomaryDepth = Math.Round(Math.Abs(m_dBottomDepth.Value - depth), 2);//深さのため、絶対値計算。小数点第２位まで表示
-                    m_clickStep = 0;
-                    this.toolStripButtonAddContact.Checked = false;
-                    this.toolStripButtonAddContact.Enabled = true;
-                    m_frmMap.AddClickedCurSor(ping, this);//? この方法でいいのか？もしAnalysisFormを渡すとき
-
-                    return dAnomaryDepth;
+                    m_dBottomDepth = depth;
+                    double burialDepth = Math.Round(Math.Abs(m_dBottomDepth.Value - m_selectedAnomalyDepthMeters.Value), 2);//深さのため、絶対値計算。小数点第２位まで表示
+                    return burialDepth;
                 }
                 else
                 {
-                    MessageBox.Show("最初の高さ情報が取得できません。処理を中断します。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    m_clickStep = 0;
-                    this.toolStripButtonAddContact.Checked = false;
-                    this.toolStripButtonAddContact.Enabled = true;
+                    MessageBox.Show("最初の音響異常の深度が取得できません。処理を中断します。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    ResetAddContactState();
                     return null;
                 }
-                //MessageBox.Show($"埋没深度 : {objectDepth}");
-                //analysisForm.ToolStripButtonAddContactChecked = false; // ボタンの状態を戻す
-                //analysisForm.ToolStripButtonAddContactEnabled = true;
             }
             return null;//到達予定はないが、警告回避のために記述
+        }
+
+        private void BeginAddContactSelection()
+        {
+            m_clickStep = 0;
+            m_selectedAnomalyDepthMeters = null;
+            m_selectedAnomalyPing = null;
+            m_dBottomDepth = null;
+            m_mouseContentX = null;
+            m_mouseContentY = null;
+            glControl2D.Cursor = Cursors.Cross;
+            MessageBox.Show("対象の音響異常の位置をクリックしてください", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ResetAddContactState()
+        {
+            m_clickStep = 0;
+            m_selectedAnomalyDepthMeters = null;
+            m_selectedAnomalyPing = null;
+            m_dBottomDepth = null;
+            m_mouseDepthMeters = null;
+            m_mouseContentX = null;
+            m_mouseContentY = null;
+            m_bDraggingAddContact = false;
+            toolStripButtonAddContact.Enabled = true;
+            toolStripButtonAddContact.Checked = false;
+            glControl2D.Cursor = Cursors.Default;
+            glControl2D.Refresh();
         }
 
 
@@ -3013,53 +3049,60 @@ namespace Ses2000Raw
             }
             if (toolStripButtonAddContact.Checked)
             {
-                int pingNo = GetPingIndexAtMouseX(e.X);
+                int pingNo = (m_clickStep == 1 && m_selectedAnomalyPing.HasValue)
+                    ? m_selectedAnomalyPing.Value
+                    : GetPingIndexAtMouseX(e.X);
 
-                glControl2D.Cursor = Cursors.Cross;//二回目のクリックに切り替わったことを示すカーソル変更
-
-                if (m_mouseDepthMeters == null)
+                if (pingNo < 0 || pingNo >= m_iPingNo)
                 {
                     return;
                 }
-                else if (m_mouseDepthMeters.HasValue)
+
+                glControl2D.Cursor = Cursors.Cross;//二回目のクリックに切り替わったことを示すカーソル変更
+
+                double? depthAtClick = GetDepthMetersAtMouse(pingNo, e.Y);
+                if (!depthAtClick.HasValue)
                 {
-                    double dAnomaryDepth = m_mouseDepthMeters.Value;
-                    double? dBurialDepth = AddContactProcess(dAnomaryDepth, pingNo);
-                    m_bDraggingAddContact = false;
-
-                    if (dBurialDepth.HasValue)
-                    {
-                        int iAnomaryNo = m_frmMap.AnomaryList.Count + 1;
-                        var (noCurSorFilePath, withCurSorFilePath) = GenerateScreenshotFilePath(iAnomaryNo);//filepath作成
-
-                        Anomary anomary = new Anomary()
-                        {
-                            FileName = Path.GetFileName(m_rawFileName),
-                            AnonaryNo = iAnomaryNo,
-                            Date = Method.ConvertDateString(BlockHeaderList[pingNo].Date, "yyyy/MM/dd"),
-                            Time = BlockHeaderList[pingNo].Time,
-                            PingNo = pingNo,
-                            Easting = double.Parse(BlockHeaderList[pingNo].SisString5),
-                            Northing = double.Parse(BlockHeaderList[pingNo].SisString6),
-                            Latitude = double.Parse(BlockHeaderList[pingNo].SisString2),
-                            Longitude = double.Parse(BlockHeaderList[pingNo].SisString3),
-                            BottomDepth = m_dBottomDepth.Value,
-                            AnomaryDepth = dAnomaryDepth,
-                            BurialDepth = dBurialDepth.Value,
-                            Screenshot1 = Path.GetFileName(noCurSorFilePath),
-                            Screenshot2 = Path.GetFileName(withCurSorFilePath),
-                        };
-                        m_frmMap.AnomaryList.Add(anomary); // AnomaryList
-                        m_frmMap.UpdateDataGridView();
-
-                        CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
-                        CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
-
-                        MessageBox.Show($"コンタクトが追加されました。深度 : {dBurialDepth}", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        glControl2D.Cursor = Cursors.Default;
-
-                    }
+                    return;
                 }
+
+                double? dBurialDepth = AddContactProcess(depthAtClick.Value, pingNo);
+                m_bDraggingAddContact = false;
+
+                if (dBurialDepth.HasValue && m_selectedAnomalyDepthMeters.HasValue && m_dBottomDepth.HasValue)
+                {
+                    int targetPing = m_selectedAnomalyPing ?? pingNo;
+                    int iAnomaryNo = m_frmMap.AnomaryList.Count + 1;
+                    var (noCurSorFilePath, withCurSorFilePath) = GenerateScreenshotFilePath(iAnomaryNo);//filepath作成
+
+                    Anomary anomary = new Anomary()
+                    {
+                        FileName = Path.GetFileName(m_rawFileName),
+                        AnonaryNo = iAnomaryNo,
+                        Date = Method.ConvertDateString(BlockHeaderList[targetPing].Date, "yyyy/MM/dd"),
+                        Time = BlockHeaderList[targetPing].Time,
+                        PingNo = targetPing,
+                        Easting = double.Parse(BlockHeaderList[targetPing].SisString5),
+                        Northing = double.Parse(BlockHeaderList[targetPing].SisString6),
+                        Latitude = double.Parse(BlockHeaderList[targetPing].SisString2),
+                        Longitude = double.Parse(BlockHeaderList[targetPing].SisString3),
+                        BottomDepth = m_dBottomDepth.Value,
+                        AnomaryDepth = m_selectedAnomalyDepthMeters.Value,
+                        BurialDepth = dBurialDepth.Value,
+                        Screenshot1 = Path.GetFileName(noCurSorFilePath),
+                        Screenshot2 = Path.GetFileName(withCurSorFilePath),
+                    };
+                    m_frmMap.AnomaryList.Add(anomary); // AnomaryList
+                    m_frmMap.UpdateDataGridView();
+                    m_frmMap.AddClickedCurSor(targetPing, this);
+
+                    CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
+                    CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
+
+                    MessageBox.Show($"コンタクトが追加されました。深度 : {dBurialDepth}", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    ResetAddContactState();
+                }
+                return;
             }
         }
 
@@ -3079,33 +3122,15 @@ namespace Ses2000Raw
             // 現在の状態
             bool nowChecked = toolStripButtonAddContact.Checked;
 
-            // false→trueの時だけ処理
-            if (!m_prevAddContactChecked && nowChecked)
+            if (nowChecked)
             {
-                if (m_doNotShowUsageAddContactForm)
-                    return;
-
-                UsageAddContactForm usageForm = new UsageAddContactForm();
-                DialogResult result = usageForm.ShowDialog();
-                if (usageForm.DoNotShowAgain)
-                {
-                    m_doNotShowUsageAddContactForm = true;
-                }
-                if (result == DialogResult.OK)
-                {
-                    toolStripButtonAddContact.Checked = true;
-
-                }
-                else
-                {
-                    toolStripButtonAddContact.Checked = false;
-                    //m_prevAddContactChecked = nowChecked;
-                    return;
-                }
+                BeginAddContactSelection();
+            }
+            else
+            {
+                ResetAddContactState();
             }
 
-            // 状態を更新
-            m_prevAddContactChecked = nowChecked;
         }
 
 
