@@ -71,6 +71,7 @@ namespace Ses2000Raw
         private double? m_mouseDepthMeters;
         private int m_lastPlottedPing = -1;
         private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
+        private double? m_mouseContentX;
 
         private MapForm? m_frmMap;
         private (double X, double Y)?[]? m_pingPositions;
@@ -488,6 +489,11 @@ namespace Ses2000Raw
             m_dScrollStartX = m_dScrollX;
             m_dScrollStartY = m_dScrollY;
             Cursor = Cursors.Hand;
+            if (m_mouseContentX.HasValue)
+            {
+                m_mouseContentX = null;
+                glControl2D.Refresh();
+            }
         }
 
         private void glControl2D_MouseMove(object sender, MouseEventArgs e)
@@ -505,6 +511,8 @@ namespace Ses2000Raw
             }
 
             int ping = GetPingIndexAtMouseX(e.X);
+            double? prevMouseContentX = m_mouseContentX;
+            m_mouseContentX = (ping >= 0) ? m_dScrollX + e.X : null;
             if (ping >= 0)
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
@@ -519,12 +527,22 @@ namespace Ses2000Raw
                 UpdateMapCursorMarker(-1);
             }
 
+            if (prevMouseContentX != m_mouseContentX)
+            {
+                glControl2D.Refresh();
+            }
+
         }
         private void glControl2D_MouseLeave(object sender, EventArgs e)
         {
             if (m_mouseDepthMeters.HasValue)
                 ClearWaveformDepthGuide();
             UpdateMapCursorMarker(-1);
+            if (m_mouseContentX.HasValue)
+            {
+                m_mouseContentX = null;
+                glControl2D.Refresh();
+            }
         }
         private void glControl2D_MouseUp(object sender, MouseEventArgs e)
         {
@@ -1744,6 +1762,15 @@ namespace Ses2000Raw
             {
                 if (chkDrawDepthScale.Checked) DrawDepthScale(contentW);
                 if (chkDrawDistScale.Checked) DrawDistanceScale(contentBottom);
+            }
+
+            if (m_mouseContentX is double mouseX)
+            {
+                GL.Color4(1f, 0f, 0f, 0.6f);
+                GL.Begin(PrimitiveType.Lines);
+                GL.Vertex2(mouseX, 0.0);
+                GL.Vertex2(mouseX, contentBottom);
+                GL.End();
             }
 
             GL.PopMatrix(); // 画面座標へ
