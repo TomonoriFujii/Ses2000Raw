@@ -72,6 +72,7 @@ namespace Ses2000Raw
         private int m_lastPlottedPing = -1;
         private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
         private double? m_mouseContentX;
+        private double? m_mouseContentY;
 
         private MapForm? m_frmMap;
         private (double X, double Y)?[]? m_pingPositions;
@@ -492,6 +493,7 @@ namespace Ses2000Raw
             if (m_mouseContentX.HasValue)
             {
                 m_mouseContentX = null;
+                m_mouseContentY = null;
                 glControl2D.Refresh();
             }
         }
@@ -507,12 +509,15 @@ namespace Ses2000Raw
                 UpdateScrollRanges();
                 glControl2D.Refresh();
                 m_bDraggingAddContact = true; //1119
+                m_mouseContentY = null;
                 return;
             }
 
             int ping = GetPingIndexAtMouseX(e.X);
             double? prevMouseContentX = m_mouseContentX;
+            double? prevMouseContentY = m_mouseContentY;
             m_mouseContentX = (ping >= 0) ? m_dScrollX + e.X : null;
+            m_mouseContentY = (ping >= 0) ? m_dScrollY + e.Y : null;
             if (ping >= 0)
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
@@ -525,9 +530,11 @@ namespace Ses2000Raw
                 if (m_mouseDepthMeters.HasValue)
                     ClearWaveformDepthGuide();
                 UpdateMapCursorMarker(-1);
+                m_mouseContentX = null;
+                m_mouseContentY = null;
             }
 
-            if (prevMouseContentX != m_mouseContentX)
+            if (prevMouseContentX != m_mouseContentX || prevMouseContentY != m_mouseContentY)
             {
                 glControl2D.Refresh();
             }
@@ -541,6 +548,7 @@ namespace Ses2000Raw
             if (m_mouseContentX.HasValue)
             {
                 m_mouseContentX = null;
+                m_mouseContentY = null;
                 glControl2D.Refresh();
             }
         }
@@ -1770,6 +1778,15 @@ namespace Ses2000Raw
                 GL.Begin(PrimitiveType.Lines);
                 GL.Vertex2(mouseX, 0.0);
                 GL.Vertex2(mouseX, contentBottom);
+                GL.End();
+            }
+
+            if (m_mouseContentY is double mouseY)
+            {
+                GL.Color4(1f, 0f, 0f, 0.6f);
+                GL.Begin(PrimitiveType.Lines);
+                GL.Vertex2(0.0, mouseY);
+                GL.Vertex2(contentW, mouseY);
                 GL.End();
             }
 
