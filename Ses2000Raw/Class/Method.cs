@@ -36,6 +36,24 @@ namespace Ses2000Raw
         }
         #endregion
 
+        public static string ConvertDateString(string ddMMyyyy, string format)
+        {
+            if (DateTime.TryParseExact(
+                                        ddMMyyyy,
+                                        "dd.MM.yyyy",
+                                        System.Globalization.CultureInfo.InvariantCulture,
+                                        System.Globalization.DateTimeStyles.None,
+                                        out DateTime dt))
+            {
+                return dt.ToString(format);
+            }
+            else
+            {
+                // 変換失敗
+                return ddMMyyyy;
+            }
+        }
+
         /// <summary>
         /// short[] → double[] への変換
         /// </summary>

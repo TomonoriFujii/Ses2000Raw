@@ -1,9 +1,12 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿using DotSpatial.Symbology.Forms;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -12,6 +15,7 @@ using System.Diagnostics;
 using ScottPlot;
 using ScottPlot.Rendering;
 using DotSpatial.Topology.Operation.Valid;
+using PointShape = DotSpatial.Symbology.PointShape;
 
 namespace Ses2000Raw
 {
@@ -25,6 +29,13 @@ namespace Ses2000Raw
         private string? m_strScreenshotPath = null;
         private short m_sFullWaveAmpMax;
         private short m_sEnvelopeAmpMax;
+        private string m_rawFileName = "";
+        //private string m_rawFilePath = "";
+        private string? m_CSVFilePath = null;
+
+        private int m_clickStep = 0;
+        private double? m_dBottomDepth = null;
+
 
         // サンプル間隔[m]の半分を許容幅に（端数吸収用）
         private double MeterTolerance() => (m_dZDistance / 100.0) * 0.5;
@@ -61,7 +72,7 @@ namespace Ses2000Raw
         private int m_lastPlottedPing = -1;
         private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
 
-        private MapForm? m_mapForm;
+        private MapForm? m_frmMap;
         private (double X, double Y)?[]? m_pingPositions;
         private int m_lastMapCursorPing = -1;
 
@@ -71,6 +82,12 @@ namespace Ses2000Raw
         private double m_dScrollStartX, m_dScrollStartY;
         private double m_dScrollX; // 表示原点X（拡大後px）
         private double m_dScrollY; // 表示原点Y（拡大後px）
+
+        private bool m_bDraggingAddContact = false;//! スクロール判定のためm_bDraggingAddContactを追加 1119で追加場所確認
+        private bool m_doNotShowUsageAddContactForm = false; //! 再表示判定用
+        private bool m_prevAddContactChecked = false;
+
+
 
         // スクロールバー
         private HScrollBar hScroll;
@@ -117,15 +134,29 @@ namespace Ses2000Raw
         }
         public MapForm? MapView
         {
-            get { return m_mapForm; }
-            set { m_mapForm = value; }
+            get { return m_frmMap; }
+            set { m_frmMap = value; }
         }
+
+        public bool ToolStripButtonAddContactChecked
+        {
+            get => toolStripButtonAddContact.Checked;
+            set => toolStripButtonAddContact.Checked = value;
+
+        }
+
+        public bool ToolStripButtonAddContactEnabled
+        {
+            get => toolStripButtonAddContact.Enabled;
+            set => toolStripButtonAddContact.Enabled = value;
+        }
+
         public DemodulationMode DemodulateMode
         {
             get
             {
-                if(this.lblDemodulate.Tag == null) return DemodulationMode.None;
-                switch(Convert.ToInt32(this.lblDemodulate.Tag))
+                if (this.lblDemodulate.Tag == null) return DemodulationMode.None;
+                switch (Convert.ToInt32(this.lblDemodulate.Tag))
                 {
                     case 0: return DemodulationMode.None;
                     case 1: return DemodulationMode.Deconvolution;
@@ -161,6 +192,10 @@ namespace Ses2000Raw
                 this.lblLPF.Enabled = m_bApplyBpf;
             }
         }
+        public string? CSVFilePath
+        {
+            get => m_CSVFilePath;
+        }
 
         // GLコントロール状態
         private bool m_bLoadTK = false;
@@ -174,10 +209,14 @@ namespace Ses2000Raw
         /// コンストラクタ
         /// </summary>
         /// <param name="title"></param>
-        public AnalysisForm(string title, Channel channel)
+        public AnalysisForm(string title, Channel channel, string RawFileName)
         {
             InitializeComponent();
             this.Text = title;
+            m_rawFileName = RawFileName;
+            //m_rawFilePath = Path.GetDirectoryName(RawFileName);
+
+
 
             m_blockHeaderList = new List<BlockHeader>();
             m_dataBlockList = new List<DataBlock>();
@@ -443,6 +482,7 @@ namespace Ses2000Raw
         private void glControl2D_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return;
+            m_bDraggingAddContact = false; //1119
             m_bDragging = true;
             m_dragStart = e.Location;
             m_dScrollStartX = m_dScrollX;
@@ -460,6 +500,7 @@ namespace Ses2000Raw
                 m_dScrollY = m_dScrollStartY - dy;
                 UpdateScrollRanges();
                 glControl2D.Refresh();
+                m_bDraggingAddContact = true; //1119
                 return;
             }
 
@@ -468,7 +509,8 @@ namespace Ses2000Raw
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
                 PlotPingWave(ping);
-                ShowInfo(BlockHeaderList[ping]);
+                ShowInfo(ping, BlockHeaderList[ping]);
+                //ShowInfoToDataGridView(ping, BlockHeaderList[ping]);
             }
             else
             {
@@ -582,7 +624,8 @@ namespace Ses2000Raw
                     break;
                 case "FlipX":
                     m_bFlipX = ((CheckBox)sender).Checked;
-                    glControl2D.Refresh();
+                    break;
+                case "ShowBottomTrack":
                     break;
                 default:
                     return;
@@ -1014,12 +1057,12 @@ namespace Ses2000Raw
 
         private void UpdateMapTrack()
         {
-            if (m_mapForm == null)
+            if (m_frmMap == null)
                 return;
 
             if (m_pingPositions == null)
             {
-                m_mapForm.SetTrack(Array.Empty<(double X, double Y)>());
+                m_frmMap.SetTrack(Array.Empty<(double X, double Y)>());
                 return;
             }
 
@@ -1030,7 +1073,7 @@ namespace Ses2000Raw
                     points.Add(pos.Value);
             }
 
-            m_mapForm.SetTrack(points);
+            m_frmMap.SetTrack(points);
 
             if (m_lastMapCursorPing >= 0)
             {
@@ -1040,14 +1083,14 @@ namespace Ses2000Raw
 
         private void UpdateMapCursorMarker(int pingIndex)
         {
-            if (m_mapForm == null)
+            if (m_frmMap == null)
                 return;
 
             if (m_pingPositions == null || pingIndex < 0 || pingIndex >= m_pingPositions.Length)
             {
                 if (m_lastMapCursorPing != -1)
                 {
-                    m_mapForm.ClearCursor();
+                    m_frmMap.ClearCursor();
                     m_lastMapCursorPing = -1;
                 }
                 return;
@@ -1058,13 +1101,13 @@ namespace Ses2000Raw
             {
                 if (m_lastMapCursorPing != -1)
                 {
-                    m_mapForm.ClearCursor();
+                    m_frmMap.ClearCursor();
                     m_lastMapCursorPing = -1;
                 }
                 return;
             }
 
-            m_mapForm.UpdateCursorPosition(pos.Value.X, pos.Value.Y);
+            m_frmMap.UpdateCursorPosition(pos.Value.X, pos.Value.Y);
             m_lastMapCursorPing = pingIndex;
         }
         private double GetPixelsPerMeterY()
@@ -1474,19 +1517,14 @@ namespace Ses2000Raw
         /// </summary>
         /// <param name="date"></param>
 
-        private void ShowInfo(BlockHeader ping)//! ping: BlockHeader[ping]のこと
+        private void ShowInfo(int pingNumber, BlockHeader ping)//! ping: BlockHeader[ping]のこと
         {
 
 
 
             //日付表示
             string date = ping.Date;
-            //todo 順番が日本式じゃないから入れ替える.
-            //todo ミリ秒がわからないけどそのまま？
-            List<String> dateSwap = date.Split('.').ToList();
-            //String japaneseDate = dateSwap[2] + "年" + dateSwap[1] + "月" + dateSwap[0] + "日";
-            String japaneseDate = dateSwap[2] + "/" + dateSwap[1] + "/" + dateSwap[0];
-            labelDate.Text = japaneseDate;
+            labelDate.Text = Method.ConvertDateString(date, "yyyy/MM/dd");
 
 
 
@@ -1494,6 +1532,9 @@ namespace Ses2000Raw
             string time = ping.Time;
             List<String> timeCut = time.Split('.').ToList();
             labelTime.Text = timeCut[0];
+
+            //Ping Number表示
+            labelPingNumber.Text = pingNumber.ToString();
 
 
             //SisString1~8表示
@@ -1583,11 +1624,6 @@ namespace Ses2000Raw
             String soundVelocity = ping.SoundVelocity.ToString();
 
             labelSoundVelocity.Text = soundVelocity;
-
-
-
-
-
 
 
         }
@@ -1702,7 +1738,8 @@ namespace Ses2000Raw
 
             GL.Disable(EnableCap.Texture2D);
 
-            DrawBottomLine();
+            if(this.chkShowBtk.Checked) DrawBottomLine();
+
             if (drawLabels)
             {
                 if (chkDrawDepthScale.Checked) DrawDepthScale(contentW);
@@ -2878,5 +2915,420 @@ namespace Ses2000Raw
 
         #endregion
 
+        public double? AddContactProcess(double depth, int ping)//ここ仮名。変更予定
+        {
+            double dAnomaryDepth = 0.0;
+
+            // 1回目のクリック
+            if (m_clickStep == 0)
+            {
+                m_dBottomDepth = depth;
+
+                m_clickStep = 1;
+                this.toolStripButtonAddContact.Enabled = false;
+
+                return null;
+            }
+            // 2回目のクリック
+            else if (m_clickStep == 1)
+            {
+                if (m_dBottomDepth.HasValue)
+                {
+                    dAnomaryDepth = Math.Round(Math.Abs(m_dBottomDepth.Value - depth), 2);//深さのため、絶対値計算。小数点第２位まで表示
+                    m_clickStep = 0;
+                    this.toolStripButtonAddContact.Checked = false;
+                    this.toolStripButtonAddContact.Enabled = true;
+                    m_frmMap.AddClickedCurSor(ping, this);//? この方法でいいのか？もしAnalysisFormを渡すとき
+
+                    return dAnomaryDepth;
+                }
+                else
+                {
+                    MessageBox.Show("最初の高さ情報が取得できません。処理を中断します。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    m_clickStep = 0;
+                    this.toolStripButtonAddContact.Checked = false;
+                    this.toolStripButtonAddContact.Enabled = true;
+                    return null;
+                }
+                //MessageBox.Show($"埋没深度 : {objectDepth}");
+                //analysisForm.ToolStripButtonAddContactChecked = false; // ボタンの状態を戻す
+                //analysisForm.ToolStripButtonAddContactEnabled = true;
+            }
+            return null;//到達予定はないが、警告回避のために記述
+        }
+
+
+
+        #region クリックイベントなど
+        private void glControl2D_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (m_bDraggingAddContact)//! スクロール判定のためm_bDraggingAddContactを追加。1119
+            {
+                // ドラッグ後のクリックは無視
+                return;
+            }
+            if (toolStripButtonAddContact.Checked)
+            {
+                int pingNo = GetPingIndexAtMouseX(e.X);
+
+                glControl2D.Cursor = Cursors.Cross;//二回目のクリックに切り替わったことを示すカーソル変更
+
+                if (m_mouseDepthMeters == null)
+                {
+                    return;
+                }
+                else if (m_mouseDepthMeters.HasValue)
+                {
+                    double dAnomaryDepth = m_mouseDepthMeters.Value;
+                    double? dBurialDepth = AddContactProcess(dAnomaryDepth, pingNo);
+                    m_bDraggingAddContact = false;
+
+                    if (dBurialDepth.HasValue)
+                    {
+                        int iAnomaryNo = m_frmMap.AnomaryList.Count + 1;
+                        var (noCurSorFilePath, withCurSorFilePath) = GenerateScreenshotFilePath(iAnomaryNo);//filepath作成
+
+                        Anomary anomary = new Anomary()
+                        {
+                            FileName = Path.GetFileName(m_rawFileName),
+                            AnonaryNo = iAnomaryNo,
+                            Date = Method.ConvertDateString(BlockHeaderList[pingNo].Date, "yyyy/MM/dd"),
+                            Time = BlockHeaderList[pingNo].Time,
+                            PingNo = pingNo,
+                            Easting = double.Parse(BlockHeaderList[pingNo].SisString5),
+                            Northing = double.Parse(BlockHeaderList[pingNo].SisString6),
+                            Latitude = double.Parse(BlockHeaderList[pingNo].SisString2),
+                            Longitude = double.Parse(BlockHeaderList[pingNo].SisString3),
+                            BottomDepth = m_dBottomDepth.Value,
+                            AnomaryDepth = dAnomaryDepth,
+                            BurialDepth = dBurialDepth.Value,
+                            Screenshot1 = Path.GetFileName(noCurSorFilePath),
+                            Screenshot2 = Path.GetFileName(withCurSorFilePath),
+                        };
+                        m_frmMap.AnomaryList.Add(anomary); // AnomaryList
+                        m_frmMap.UpdateDataGridView();
+
+                        CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
+                        CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
+
+                        MessageBox.Show($"コンタクトが追加されました。深度 : {dBurialDepth}", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        glControl2D.Cursor = Cursors.Default;
+
+                    }
+                }
+            }
+        }
+
+        private void contextMenuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+
+        }
+
+        #endregion
+
+
+
+
+
+        private void toolStripButtonAddContact_CheckedChanged(object sender, EventArgs e)
+        {
+            // 現在の状態
+            bool nowChecked = toolStripButtonAddContact.Checked;
+
+            // false→trueの時だけ処理
+            if (!m_prevAddContactChecked && nowChecked)
+            {
+                if (m_doNotShowUsageAddContactForm)
+                    return;
+
+                UsageAddContactForm usageForm = new UsageAddContactForm();
+                DialogResult result = usageForm.ShowDialog();
+                if (usageForm.DoNotShowAgain)
+                {
+                    m_doNotShowUsageAddContactForm = true;
+                }
+                if (result == DialogResult.OK)
+                {
+                    toolStripButtonAddContact.Checked = true;
+
+                }
+                else
+                {
+                    toolStripButtonAddContact.Checked = false;
+                    //m_prevAddContactChecked = nowChecked;
+                    return;
+                }
+            }
+
+            // 状態を更新
+            m_prevAddContactChecked = nowChecked;
+        }
+
+
+
+
+        #region スクリーンショット保存関連 ファイルパス生成など
+        private (string noCursorFilePath, string withCursorFilePath) GenerateScreenshotFilePath(int anomaryNo)
+        {
+            string dir = Properties.Settings.Default.RawDir + @"\Anomary";
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            string noCursorFilePath = Path.Combine(dir, $"anomary{anomaryNo.ToString("D2")}.png");
+            string withCurSorFilePath = Path.Combine(dir, $"anomary{anomaryNo.ToString("D2")}_cursor.png");
+
+            return (noCursorFilePath, withCurSorFilePath);
+        }
+        private void CaptureWindowWithFrame(Form targetForm, string filePath)
+        {
+
+            glControl2D.Refresh();
+            Application.DoEvents();
+            // フォームの位置とサイズを取得
+            Rectangle formRect = new Rectangle(targetForm.Location, targetForm.Size);
+
+            using (Bitmap bmp = new Bitmap(formRect.Width, formRect.Height))
+            {
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    // フォームの左上座標からフォームサイズ分だけキャプチャ
+                    g.CopyFromScreen(formRect.Location, Point.Empty, formRect.Size);
+                }
+
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }//マウスカーソルなしウィンドウすべて
+
+
+        /*
+        private void CaptureWindowWithFrameWithCursor(Form targetForm, string filePath)
+        {
+            glControl2D.Refresh();
+            Application.DoEvents();
+
+
+
+            
+
+            // フォームのスクリーン座標とサイズを取得
+            Rectangle screenRect = targetForm.RectangleToScreen(targetForm.ClientRectangle);
+
+            using (Bitmap bmp = new Bitmap(screenRect.Width, screenRect.Height))
+            {
+
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    //! カスタムカーソルの作成(緑色十字)
+                    g.Clear(System.Drawing.Color.Transparent);
+                    using (Pen pen = new Pen(System.Drawing.Color.LightGreen, 2))
+                    {
+                        g.DrawLine(pen, 16, 0, 16, 32);
+                        g.DrawLine(pen, 0, 16, 32, 16);
+                    }
+
+                    Cursor customCross = new Cursor(bmp.GetHicon());
+
+
+
+
+
+
+
+                    // スクリーン座標でキャプチャ
+                    g.CopyFromScreen(screenRect.Location, Point.Empty, screenRect.Size);
+
+                    // カーソルの絶対座標（スクリーン座標）
+                    Point absPos = Cursor.Position;
+
+                    // 画像内の座標（絶対座標をそのまま使う場合は注意）
+                    // 画像内に描画するには↓
+                    Point relPos = new Point(absPos.X - screenRect.Left, absPos.Y - screenRect.Top);
+
+                    // relPosが画像内なら描画
+                    if (relPos.X >= 0 && relPos.X < bmp.Width && relPos.Y >= 0 && relPos.Y < bmp.Height)
+                    {
+                        //Cursors.Cross.Draw(g, new Rectangle(relPos, Cursors.Cross.Size));
+                        customCross.Draw(g, new Rectangle(relPos, customCross.Size));
+                    }
+                }
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+
+
+
+
+        }//マウスカーソルありウィンドウすべて
+
+        */
+
+
+        private void CaptureWindowWithFrameWithCursor(Form targetForm, string filePath)
+        {
+            glControl2D.Refresh();
+            Application.DoEvents();
+
+            Rectangle screenRect = targetForm.RectangleToScreen(targetForm.ClientRectangle);
+
+            using (Bitmap bmp = new Bitmap(screenRect.Width, screenRect.Height))
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                // 画面キャプチャ
+                g.CopyFromScreen(screenRect.Location, Point.Empty, screenRect.Size);
+
+                // カーソル位置計算
+                Point absPos = Cursor.Position;
+                Point relPos = new Point(absPos.X - screenRect.Left, absPos.Y - screenRect.Top);
+
+
+
+                using (Bitmap crossBmp = new Bitmap(32, 32))
+                using (Graphics cg = Graphics.FromImage(crossBmp))
+                {
+                    cg.Clear(System.Drawing.Color.Transparent);
+                    using (Pen pen = new Pen(System.Drawing.Color.OrangeRed, 5))
+                    {
+                        cg.DrawLine(pen, 16, 0, 16, 32);
+                        cg.DrawLine(pen, 0, 16, 32, 16);
+                    }
+                    // relPosが画像内なら描画
+                    if (relPos.X >= 0 && relPos.X < bmp.Width && relPos.Y >= 0 && relPos.Y < bmp.Height)
+                    {
+                        g.DrawImage(crossBmp, new Rectangle(relPos, crossBmp.Size));
+                    }
+                }
+
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }
+
+
+
+        public void SaveGLControl2DPng(string filePath)
+        {
+
+
+            if (glControl2D == null || glControl2D.Width <= 0 || glControl2D.Height <= 0)
+                return;
+
+            glControl2D.Refresh();
+            Application.DoEvents();
+
+            glControl2D.MakeCurrent();
+            int w = glControl2D.Width;
+            int h = glControl2D.Height;
+            byte[] pixels = new byte[w * h * 4];
+            GL.ReadPixels(0, 0, w, h, PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+
+            // 上下反転
+            FlipVerticallyInPlace(pixels, w, h);
+
+            using (var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
+            {
+                var data = bmp.LockBits(new Rectangle(0, 0, w, h),
+                    System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try
+                {
+                    System.Runtime.InteropServices.Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
+                }
+                finally
+                {
+                    bmp.UnlockBits(data);
+                }
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }//マウスカーソルなしcontroll2Dのみ
+
+        private void CaptureGLControlWithCursor(string filePath)//マウスカーソルありGLControl2Dのみ
+        {
+
+            var rect = glControl2D.RectangleToScreen(glControl2D.ClientRectangle);
+
+            using (Bitmap bmp = new Bitmap(rect.Width, rect.Height))
+            {
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.CopyFromScreen(rect.Location, Point.Empty, rect.Size);
+
+
+                    var cursorPos = Cursor.Position;//! マウスカーソルのスクリーン座標
+                    var relPos = new Point(cursorPos.X - rect.Left, cursorPos.Y - rect.Top);//フォーム内の座標？
+                    Cursors.Cross.Draw(g, new Rectangle(relPos, Cursors.Cross.Size));//カーソルを描画
+                }
+                bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+        }
+
+
+        public void SaveGLAndMapFormCombinedPng(string filePath)
+        {
+            // GLControl2Dの内容を取得
+
+            glControl2D.Refresh();
+            Application.DoEvents();
+
+            Bitmap glBitmap = null;
+            if (glControl2D != null && glControl2D.Width > 0 && glControl2D.Height > 0)
+            {
+                glControl2D.MakeCurrent();
+                int w = glControl2D.Width;
+                int h = glControl2D.Height;
+                byte[] pixels = new byte[w * h * 4];
+                GL.ReadPixels(0, 0, w, h, PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+
+                // 上下反転
+                FlipVerticallyInPlace(pixels, w, h);
+
+                glBitmap = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                var data = glBitmap.LockBits(new Rectangle(0, 0, w, h),
+                    System.Drawing.Imaging.ImageLockMode.WriteOnly,
+                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                try
+                {
+                    System.Runtime.InteropServices.Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
+                }
+                finally
+                {
+
+                    glBitmap.UnlockBits(data);
+                }
+            }
+
+            // MapFormの描画
+            Bitmap mapBitmap = null;
+            if (m_frmMap != null)
+            {
+                m_frmMap.Refresh();
+                m_frmMap.Update();
+                Application.DoEvents();
+
+                mapBitmap = new Bitmap(m_frmMap.Width, m_frmMap.Height);
+                m_frmMap.DrawToBitmap(mapBitmap, new Rectangle(0, 0, mapBitmap.Width, mapBitmap.Height));
+            }
+
+            // 合成（横並び）
+            int totalW = (glBitmap?.Width ?? 0) + (mapBitmap?.Width ?? 0);
+            int totalH = Math.Max(glBitmap?.Height ?? 0, mapBitmap?.Height ?? 0);
+
+            using (var combined = new Bitmap(Math.Max(1, totalW), Math.Max(1, totalH)))
+
+
+            using (var g = Graphics.FromImage(combined))
+            {
+                if (glBitmap != null)
+                    g.DrawImage(glBitmap, 0, 0);
+                if (mapBitmap != null)
+                    g.DrawImage(mapBitmap, glBitmap?.Width ?? 0, 0);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                combined.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+            }
+
+            glBitmap?.Dispose();
+            mapBitmap?.Dispose();
+        }//マウスカーソルなしcontroll2D+mapform(表、ドット付き地図？)
+
+        #endregion
     }
 }

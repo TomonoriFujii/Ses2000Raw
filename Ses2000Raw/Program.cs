@@ -118,4 +118,21 @@ namespace Ses2000Raw
         Envelope = 2,
         DeconvoEnvelope = 3
     }
+    public class Anomary
+    {
+        public string FileName { get; set; }
+        public int AnonaryNo { get; set; }
+        public string Date { get; set; }
+        public string Time { get; set; }
+        public int PingNo { get; set; }
+        public double Easting{ get; set; }
+        public double Northing { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double BottomDepth { get; set; }
+        public double AnomaryDepth { get; set; }
+        public double BurialDepth { get; set; }
+        public string Screenshot1 { get; set; }
+        public string Screenshot2 { get; set; }
+    }
 }

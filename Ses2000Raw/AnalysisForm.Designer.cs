@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AnalysisForm));
             splitContainer1 = new SplitContainer();
             tabControl1 = new TabControl();
@@ -72,6 +73,7 @@
             lblDemodulate = new Label();
             label12 = new Label();
             grpBoxDisplay = new GroupBox();
+            chkShowBtk = new CheckBox();
             chkFlipX = new CheckBox();
             btnScaleSetting = new Button();
             chkHeaveCorrection = new CheckBox();
@@ -174,16 +176,21 @@
             label31 = new Label();
             label30 = new Label();
             tableLayoutPanel1 = new TableLayoutPanel();
+            labelPingNumber = new Label();
+            label32 = new Label();
             label21 = new Label();
             labelDate = new Label();
             label25 = new Label();
             labelTime = new Label();
             glControl2D = new OpenTK.GLControl.GLControl();
+            contextMenuStrip1 = new ContextMenuStrip(components);
+            toolStripMenuItem1 = new ToolStripMenuItem();
             colorDialog1 = new ColorDialog();
             toolStrip1 = new ToolStrip();
-            toolStripButton1 = new ToolStripButton();
+            toolStripAddContact = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
+            toolStripButtonAddContact = new ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -229,6 +236,7 @@
             tableLayoutPanel3.SuspendLayout();
             tableLayoutPanel2.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
+            contextMenuStrip1.SuspendLayout();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -247,7 +255,7 @@
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(glControl2D);
-            splitContainer1.Size = new Size(1219, 785);
+            splitContainer1.Size = new Size(1219, 862);
             splitContainer1.SplitterDistance = 331;
             splitContainer1.SplitterWidth = 5;
             splitContainer1.TabIndex = 0;
@@ -265,7 +273,7 @@
             tabControl1.Multiline = true;
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(331, 785);
+            tabControl1.Size = new Size(331, 862);
             tabControl1.SizeMode = TabSizeMode.Fixed;
             tabControl1.TabIndex = 0;
             // 
@@ -280,7 +288,7 @@
             tabPage1.Location = new Point(27, 4);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(300, 777);
+            tabPage1.Size = new Size(300, 854);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "Setting";
             tabPage1.UseVisualStyleBackColor = true;
@@ -299,9 +307,9 @@
             grpBox3DFrustum.Controls.Add(numViewY);
             grpBox3DFrustum.Controls.Add(label5);
             grpBox3DFrustum.Controls.Add(numViewZ);
-            grpBox3DFrustum.Location = new Point(4, 675);
+            grpBox3DFrustum.Location = new Point(4, 702);
             grpBox3DFrustum.Name = "grpBox3DFrustum";
-            grpBox3DFrustum.Size = new Size(242, 113);
+            grpBox3DFrustum.Size = new Size(241, 113);
             grpBox3DFrustum.TabIndex = 7;
             grpBox3DFrustum.TabStop = false;
             grpBox3DFrustum.Text = "3D View Frustum";
@@ -454,9 +462,9 @@
             grpBox3DMoving.Controls.Add(numRotateY);
             grpBox3DMoving.Controls.Add(label11);
             grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(4, 518);
+            grpBox3DMoving.Location = new Point(4, 545);
             grpBox3DMoving.Name = "grpBox3DMoving";
-            grpBox3DMoving.Size = new Size(242, 151);
+            grpBox3DMoving.Size = new Size(241, 151);
             grpBox3DMoving.TabIndex = 5;
             grpBox3DMoving.TabStop = false;
             grpBox3DMoving.Text = "3D View Moving";
@@ -737,6 +745,7 @@
             // 
             // grpBoxDisplay
             // 
+            grpBoxDisplay.Controls.Add(chkShowBtk);
             grpBoxDisplay.Controls.Add(chkFlipX);
             grpBoxDisplay.Controls.Add(btnScaleSetting);
             grpBoxDisplay.Controls.Add(chkHeaveCorrection);
@@ -754,10 +763,22 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(4, 302);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 210);
+            grpBoxDisplay.Size = new Size(241, 237);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
+            // 
+            // chkShowBtk
+            // 
+            chkShowBtk.AutoSize = true;
+            chkShowBtk.Location = new Point(12, 209);
+            chkShowBtk.Name = "chkShowBtk";
+            chkShowBtk.Size = new Size(152, 19);
+            chkShowBtk.TabIndex = 16;
+            chkShowBtk.Tag = "ShowBottomTrack";
+            chkShowBtk.Text = "Show Bottom Track Line";
+            chkShowBtk.UseVisualStyleBackColor = true;
+            chkShowBtk.CheckedChanged += chkBox_CheckedChanged;
             // 
             // chkFlipX
             // 
@@ -1089,7 +1110,7 @@
             tabPage2.Location = new Point(27, 4);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(300, 777);
+            tabPage2.Size = new Size(300, 854);
             tabPage2.TabIndex = 1;
             tabPage2.Text = "Signal";
             tabPage2.UseVisualStyleBackColor = true;
@@ -1100,14 +1121,14 @@
             formsPlot1.Dock = DockStyle.Fill;
             formsPlot1.Location = new Point(3, 3);
             formsPlot1.Name = "formsPlot1";
-            formsPlot1.Size = new Size(294, 771);
+            formsPlot1.Size = new Size(294, 848);
             formsPlot1.TabIndex = 0;
             // 
             // tabPage3
             // 
             tabPage3.Location = new Point(27, 4);
             tabPage3.Name = "tabPage3";
-            tabPage3.Size = new Size(300, 777);
+            tabPage3.Size = new Size(300, 854);
             tabPage3.TabIndex = 2;
             tabPage3.Text = "FFT";
             tabPage3.UseVisualStyleBackColor = true;
@@ -1136,7 +1157,7 @@
             tabPage4.Location = new Point(27, 4);
             tabPage4.Margin = new Padding(3, 4, 3, 4);
             tabPage4.Name = "tabPage4";
-            tabPage4.Size = new Size(300, 777);
+            tabPage4.Size = new Size(300, 854);
             tabPage4.TabIndex = 2;
             tabPage4.Text = "Ping Info";
             tabPage4.UseVisualStyleBackColor = true;
@@ -1152,9 +1173,9 @@
             tableLayoutPanel9.Name = "tableLayoutPanel9";
             tableLayoutPanel9.RowCount = 1;
             tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
+            tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F));
+            tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F));
+            tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F));
             tableLayoutPanel9.Size = new Size(262, 25);
             tableLayoutPanel9.TabIndex = 17;
             // 
@@ -1183,7 +1204,7 @@
             // label51
             // 
             label51.AutoSize = true;
-            label51.Location = new Point(17, 979);
+            label51.Location = new Point(17, 977);
             label51.Name = "label51";
             label51.Size = new Size(82, 15);
             label51.TabIndex = 16;
@@ -1256,7 +1277,7 @@
             // label50
             // 
             label50.AutoSize = true;
-            label50.Location = new Point(17, 894);
+            label50.Location = new Point(17, 899);
             label50.Name = "label50";
             label50.Size = new Size(59, 15);
             label50.TabIndex = 14;
@@ -1967,30 +1988,52 @@
             label30.AutoSize = true;
             label30.Location = new Point(17, 14);
             label30.Name = "label30";
-            label30.Size = new Size(61, 15);
+            label30.Size = new Size(115, 15);
             label30.TabIndex = 1;
-            label30.Text = "日付・時間";
+            label30.Text = "日付・時間・ping番号";
             // 
             // tableLayoutPanel1
             // 
-            tableLayoutPanel1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel1.ColumnCount = 2;
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tableLayoutPanel1.Controls.Add(labelPingNumber, 1, 2);
+            tableLayoutPanel1.Controls.Add(label32, 0, 2);
             tableLayoutPanel1.Controls.Add(label21, 0, 0);
             tableLayoutPanel1.Controls.Add(labelDate, 1, 0);
             tableLayoutPanel1.Controls.Add(label25, 0, 1);
             tableLayoutPanel1.Controls.Add(labelTime, 1, 1);
-            tableLayoutPanel1.Location = new Point(17, 38);
+            tableLayoutPanel1.Location = new Point(21, 33);
             tableLayoutPanel1.Margin = new Padding(3, 4, 3, 4);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
-            tableLayoutPanel1.RowCount = 2;
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.Size = new Size(259, 50);
+            tableLayoutPanel1.RowCount = 3;
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.34F));
+            tableLayoutPanel1.Size = new Size(257, 65);
             tableLayoutPanel1.TabIndex = 0;
+            // 
+            // labelPingNumber
+            // 
+            labelPingNumber.AutoSize = true;
+            labelPingNumber.Dock = DockStyle.Fill;
+            labelPingNumber.Location = new Point(131, 42);
+            labelPingNumber.Name = "labelPingNumber";
+            labelPingNumber.Size = new Size(123, 23);
+            labelPingNumber.TabIndex = 5;
+            labelPingNumber.Text = "---";
+            labelPingNumber.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // label32
+            // 
+            label32.AutoSize = true;
+            label32.Dock = DockStyle.Fill;
+            label32.Location = new Point(3, 42);
+            label32.Name = "label32";
+            label32.Size = new Size(122, 23);
+            label32.TabIndex = 4;
+            label32.Text = "Ping No.";
+            label32.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // label21
             // 
@@ -1998,7 +2041,7 @@
             label21.Dock = DockStyle.Fill;
             label21.Location = new Point(3, 0);
             label21.Name = "label21";
-            label21.Size = new Size(123, 25);
+            label21.Size = new Size(122, 21);
             label21.TabIndex = 0;
             label21.Text = "Date";
             label21.TextAlign = ContentAlignment.MiddleCenter;
@@ -2007,9 +2050,9 @@
             // 
             labelDate.AutoSize = true;
             labelDate.Dock = DockStyle.Fill;
-            labelDate.Location = new Point(132, 0);
+            labelDate.Location = new Point(131, 0);
             labelDate.Name = "labelDate";
-            labelDate.Size = new Size(124, 25);
+            labelDate.Size = new Size(123, 21);
             labelDate.TabIndex = 1;
             labelDate.Text = "----/--/--";
             labelDate.TextAlign = ContentAlignment.MiddleCenter;
@@ -2018,9 +2061,9 @@
             // 
             label25.AutoSize = true;
             label25.Dock = DockStyle.Fill;
-            label25.Location = new Point(3, 25);
+            label25.Location = new Point(3, 21);
             label25.Name = "label25";
-            label25.Size = new Size(123, 25);
+            label25.Size = new Size(122, 21);
             label25.TabIndex = 2;
             label25.Text = "Time";
             label25.TextAlign = ContentAlignment.MiddleCenter;
@@ -2029,9 +2072,9 @@
             // 
             labelTime.AutoSize = true;
             labelTime.Dock = DockStyle.Fill;
-            labelTime.Location = new Point(132, 25);
+            labelTime.Location = new Point(131, 21);
             labelTime.Name = "labelTime";
-            labelTime.Size = new Size(124, 25);
+            labelTime.Size = new Size(123, 21);
             labelTime.TabIndex = 3;
             labelTime.Text = "--:--:--.---";
             labelTime.TextAlign = ContentAlignment.MiddleCenter;
@@ -2040,6 +2083,7 @@
             // 
             glControl2D.API = OpenTK.Windowing.Common.ContextAPI.OpenGL;
             glControl2D.APIVersion = new Version(4, 6, 4, 0);
+            glControl2D.ContextMenuStrip = contextMenuStrip1;
             glControl2D.Dock = DockStyle.Fill;
             glControl2D.Flags = OpenTK.Windowing.Common.ContextFlags.Default;
             glControl2D.IsEventDriven = true;
@@ -2047,21 +2091,36 @@
             glControl2D.Name = "glControl2D";
             glControl2D.Profile = OpenTK.Windowing.Common.ContextProfile.Compatability;
             glControl2D.SharedContext = null;
-            glControl2D.Size = new Size(883, 785);
+            glControl2D.Size = new Size(883, 862);
             glControl2D.TabIndex = 0;
             glControl2D.Visible = false;
             glControl2D.Load += glControl2D_Load;
             glControl2D.Paint += glControl2D_Paint;
+            glControl2D.MouseClick += glControl2D_MouseClick;
             glControl2D.MouseDown += glControl2D_MouseDown;
             glControl2D.MouseLeave += glControl2D_MouseLeave;
             glControl2D.MouseMove += glControl2D_MouseMove;
             glControl2D.MouseUp += glControl2D_MouseUp;
             glControl2D.Resize += glControl2D_Resize;
             // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.ImageScalingSize = new Size(20, 20);
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1 });
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(180, 26);
+            contextMenuStrip1.ItemClicked += contextMenuStrip1_ItemClicked;
+            // 
+            // toolStripMenuItem1
+            // 
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Size = new Size(179, 22);
+            toolStripMenuItem1.Text = "toolStripMenuItem1";
+            // 
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(24, 24);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripButton1, toolStripSeparator1, tsBtnSaveImage });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripAddContact, toolStripSeparator1, tsBtnSaveImage, toolStripButtonAddContact });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(1219, 31);
@@ -2069,14 +2128,14 @@
             toolStrip1.Text = "toolStrip1";
             toolStrip1.ItemClicked += toolStrip1_ItemClicked;
             // 
-            // toolStripButton1
+            // toolStripAddContact
             // 
-            toolStripButton1.Image = (Image)resources.GetObject("toolStripButton1.Image");
-            toolStripButton1.ImageTransparentColor = Color.Magenta;
-            toolStripButton1.Name = "toolStripButton1";
-            toolStripButton1.Size = new Size(127, 28);
-            toolStripButton1.Tag = "SignalProcessing";
-            toolStripButton1.Text = "Singal Processing";
+            toolStripAddContact.Image = (Image)resources.GetObject("toolStripAddContact.Image");
+            toolStripAddContact.ImageTransparentColor = Color.Magenta;
+            toolStripAddContact.Name = "toolStripAddContact";
+            toolStripAddContact.Size = new Size(127, 28);
+            toolStripAddContact.Tag = "SignalProcessing";
+            toolStripAddContact.Text = "Singal Processing";
             // 
             // toolStripSeparator1
             // 
@@ -2091,13 +2150,25 @@
             tsBtnSaveImage.Size = new Size(94, 28);
             tsBtnSaveImage.Tag = "SaveImage";
             tsBtnSaveImage.Text = "Save Image";
-            tsBtnSaveImage.ToolTipText = "音響地層断面図を画像とて保存します";
+            tsBtnSaveImage.ToolTipText = "Save the acoustic stratigraphy cross-section as an image.";
+            // 
+            // toolStripButtonAddContact
+            // 
+            toolStripButtonAddContact.CheckOnClick = true;
+            toolStripButtonAddContact.Image = (Image)resources.GetObject("toolStripButtonAddContact.Image");
+            toolStripButtonAddContact.ImageTransparentColor = Color.Magenta;
+            toolStripButtonAddContact.Name = "toolStripButtonAddContact";
+            toolStripButtonAddContact.Size = new Size(116, 28);
+            toolStripButtonAddContact.Tag = "AddContact";
+            toolStripButtonAddContact.Text = "Add contact(&A)";
+            toolStripButtonAddContact.ToolTipText = "Place a pin to save location information.";
+            toolStripButtonAddContact.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
             // 
             // AnalysisForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1219, 816);
+            ClientSize = new Size(1219, 893);
             Controls.Add(splitContainer1);
             Controls.Add(toolStrip1);
             Name = "AnalysisForm";
@@ -2164,6 +2235,7 @@
             tableLayoutPanel2.PerformLayout();
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
+            contextMenuStrip1.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
             ResumeLayout(false);
@@ -2250,7 +2322,7 @@
         private CheckBox chkFlipX;
         private TabPage tabPage4;
         private TabPage tabPage3;
-        private ToolStripButton toolStripButton1;
+        private ToolStripButton toolStripAddContact;
         private ToolStripSeparator toolStripSeparator1;
         private ScottPlot.WinForms.FormsPlot formsPlot1;
         private TableLayoutPanel tableLayoutPanel1;
@@ -2327,5 +2399,11 @@
         private Label label54;
         private Label labelHeadingMotionSensor;
         private Label label52;
+        private ContextMenuStrip contextMenuStrip1;
+        private ToolStripMenuItem toolStripMenuItem1;
+        private ToolStripButton toolStripButtonAddContact;
+        private Label labelPingNumber;
+        private Label label32;
+        private CheckBox chkShowBtk;
     }
 }

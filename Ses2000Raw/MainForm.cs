@@ -22,6 +22,7 @@ namespace Ses2000Raw
 
         private MapForm m_frmMap;
 
+
         public MainForm()
         {
             InitializeComponent();
@@ -43,6 +44,31 @@ namespace Ses2000Raw
             m_frmMap.Show(this.dockPanel1, DockState.DockRight);
 
             ColorPalette.LoadColorTable();
+        }
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // AnalysisFormが表示されているか確認
+            foreach (var content in this.dockPanel1.Contents)
+            {
+                if (content is AnalysisForm analysisForm)
+                {
+                    // m_CSVFilePathがnullの場合、警告を表示
+                    if (string.IsNullOrEmpty(analysisForm.CSVFilePath))
+                    {
+                        var result = MessageBox.Show(
+                            "CSVファイルが保存されていません。保存せずに終了しますか？",
+                            "警告",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning
+                        );
+                        if (result == DialogResult.No)
+                        {
+                            e.Cancel = true; // 終了をキャンセル
+                            return;
+                        }
+                    }
+                }
+            }
         }
         /// <summary>
         /// [File] menu item clicked event
@@ -71,6 +97,11 @@ namespace Ses2000Raw
         /// <summary>
         /// Open Raw File
         /// </summary>
+
+
+        public string? RawFileName { get; private set; }
+
+
         private void OpenRawFile()
         {
             string strRaw;
@@ -81,6 +112,10 @@ namespace Ses2000Raw
             if (openFileDialog1.ShowDialog() != DialogResult.OK) return;
             
             strRaw = openFileDialog1.FileName;
+
+            RawFileName = strRaw;
+            Properties.Settings.Default.RawDir = Path.GetDirectoryName(strRaw);
+            Properties.Settings.Default.Save();
 
             FileHeader fileHeader;
             List<BlockHeader> blockHeaderList;
@@ -150,7 +185,7 @@ namespace Ses2000Raw
                 sbTitle.Append("kHz]");
             }
 
-            AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel);
+            AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel,RawFileName);
             analysisForm.MapView = m_frmMap;
             analysisForm.FileHeader = (FileHeader)fileHeader.Clone();
             for (int i = 0; i < blockHeaderList.Count; i++)
@@ -255,5 +290,14 @@ namespace Ses2000Raw
                 //activeForm.label22.Text = "Clicked!";
             }
         }
+
+
+
+
+
+
+
+
+
     }
 }
