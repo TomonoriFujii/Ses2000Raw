@@ -1803,7 +1803,7 @@ namespace Ses2000Raw
 
             GL.Disable(EnableCap.Texture2D);
 
-            if(this.chkShowBtk.Checked) DrawBottomLine();
+            if (this.chkShowBtk.Checked) DrawBottomLine();
 
             if (drawLabels)
             {
