@@ -75,6 +75,8 @@ namespace Ses2000Raw
         private double? m_mouseContentY;
         private double? m_selectedAnomalyDepthMeters;
         private int? m_selectedAnomalyPing;
+        private double? m_selectedAnomalyContentX;
+        private double? m_selectedAnomalyContentY;
 
         private MapForm? m_frmMap;
         private (double X, double Y)?[]? m_pingPositions;
@@ -1481,6 +1483,34 @@ namespace Ses2000Raw
 
             GL.Disable(EnableCap.Blend);
         }
+
+        private void DrawAddContactMarker()
+        {
+            if (!toolStripButtonAddContact.Checked) return;
+            if (m_selectedAnomalyContentX is not double x || m_selectedAnomalyContentY is not double y) return;
+
+            const double markerRadius = 6.0;
+            const double crossSize = 10.0;
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Color4(1f, 0.3f, 0.7f, 0.9f);
+
+            GL.PointSize((float)(markerRadius * 2));
+            GL.Begin(PrimitiveType.Points);
+            GL.Vertex2(x, y);
+            GL.End();
+
+            GL.LineWidth(2f);
+            GL.Begin(PrimitiveType.Lines);
+            GL.Vertex2(x - crossSize, y);
+            GL.Vertex2(x + crossSize, y);
+            GL.Vertex2(x, y - crossSize);
+            GL.Vertex2(x, y + crossSize);
+            GL.End();
+
+            GL.Disable(EnableCap.Blend);
+        }
         /// <summary>
         /// 波形グラフの描画
         /// </summary>
@@ -1804,6 +1834,8 @@ namespace Ses2000Raw
                 GL.Vertex2(contentW, mouseY);
                 GL.End();
             }
+
+            DrawAddContactMarker();
 
             GL.PopMatrix(); // 画面座標へ
 
@@ -2266,6 +2298,29 @@ namespace Ses2000Raw
             }
 
             return depth;
+        }
+
+        private double? GetContentYFromDepth(int pingIndex, double depthMeters)
+        {
+            if (m_offsetPxPerPing == null) return null;
+            if (pingIndex < 0 || pingIndex >= m_offsetPxPerPing.Length) return null;
+            if (m_iSampleNo <= 0) return null;
+            if (m_dScaleY <= 0 || m_dZDistance <= 0) return null;
+
+            double start = BlockHeaderList[pingIndex].MeasureStart;
+            double sampleIntervalM = m_dZDistance / 100.0;
+            double sampleIndex = (depthMeters - start) / sampleIntervalM;
+
+            if (chkHeaveCorrection.Checked)
+            {
+                double sampleIntervalCm = m_dZDistance;
+                double heave_cm = m_blockHeaderList[pingIndex].HeaveFromMotionSensor / 10.0;
+                double heaveSamples = (-1.0 * heave_cm) / sampleIntervalCm;
+                sampleIndex -= heaveSamples;
+            }
+
+            sampleIndex = Math.Clamp(sampleIndex, 0.0, m_iSampleNo - 1);
+            return m_offsetPxPerPing[pingIndex] + sampleIndex * m_dScaleY;
         }
 
         private void UpdateWaveformDepthGuide(double? depthMeters, bool refreshPlot = true)
@@ -2981,6 +3036,8 @@ namespace Ses2000Raw
             {
                 m_selectedAnomalyDepthMeters = depth;
                 m_selectedAnomalyPing = ping;
+                m_selectedAnomalyContentX = MapXByPing(ping);
+                m_selectedAnomalyContentY = GetContentYFromDepth(ping, depth);
                 m_clickStep = 1;
                 this.toolStripButtonAddContact.Enabled = false;
                 MessageBox.Show("海底面の位置をクリックしてください", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -3014,6 +3071,8 @@ namespace Ses2000Raw
             m_clickStep = 0;
             m_selectedAnomalyDepthMeters = null;
             m_selectedAnomalyPing = null;
+            m_selectedAnomalyContentX = null;
+            m_selectedAnomalyContentY = null;
             m_dBottomDepth = null;
             m_mouseContentX = null;
             m_mouseContentY = null;
@@ -3026,6 +3085,8 @@ namespace Ses2000Raw
             m_clickStep = 0;
             m_selectedAnomalyDepthMeters = null;
             m_selectedAnomalyPing = null;
+            m_selectedAnomalyContentX = null;
+            m_selectedAnomalyContentY = null;
             m_dBottomDepth = null;
             m_mouseDepthMeters = null;
             m_mouseContentX = null;
