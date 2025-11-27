@@ -1,87 +1,10 @@
-﻿using MathNet.Numerics.Statistics;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-//using ScottPlot.Plottable;
-//using static MultiSBP.WaveData;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Numerics;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using static System.Windows.Forms.AxHost;
+﻿using System.Numerics;
 
 namespace Ses2000Raw
 {
     public class DataClass
     {
-        private static object m_objLock = new object();  // ロック処理要オブジェクト
-
         #region Public Method
-        /// <summary>==
-        /// 
-        /// </summary>
-        /// <param name="btRaw"></param>
-        /// <param name="sign">符号</param>
-        public static Complex[] FFT(int numSamples, ref double[] aryRaw/*, int sign*/)
-        {
-            // byte[]を複素数配列に変換
-            Complex[] complexSrc = new Complex[numSamples];
-            Complex[] complexFFT = new Complex[numSamples];
-
-            // サンプル数が2のべき乗でないとFFTが使用できないので2048点処理する
-            for (int s = 0; s < numSamples; s++)
-            {
-                // 複素数配列を生成
-                complexSrc[s] = new Complex(aryRaw[s], 0);
-            }
-            double dFft = 1.0; // フーリエ変換
-            FourierTransformClass.Fourier(complexSrc, ref complexFFT, dFft);
-            return complexFFT;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="lpf">LPFのカットオフ周波数</param>
-        /// <param name="hpf">HPFのカットオフ周波数</param>
-        /// <param name="complexFFT"></param>
-        /// <returns></returns>
-        public static Complex[] Envelope(int n, ref Complex[] fft)
-        {
-            ApplyHilbertMaskInPlace(n, fft);
-
-            var ifft = new Complex[n];
-            FourierTransformClass.Fourier(fft, ref ifft, -1.0);
-            return ifft;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="numSamples">サンプル数（2のべき乗）</param>
-        /// <param name="fs">サンプリングレート（Ksps）</param>
-        /// <param name="lpf">LPFのカットオフ周波数</param>
-        /// <param name="hpf">HPFのカットオフ周波数</param>
-        /// <param name="applyEnvelope">エンベロープ実施フラグ</param>
-        /// <param name="complexFFT"></param>
-        /// <returns></returns>
-        public static Complex[] Bpf(int n, double fsHz, int lpf_kHz, int hpf_kHz, ref Complex[] fft)
-        {
-            double fLow = hpf_kHz * 1000.0;
-            double fHigh = lpf_kHz * 1000.0;
-
-            ApplyBpfInPlace(n, fsHz, fLow, fHigh, fft);
-
-            var ifft = new Complex[n];
-            FourierTransformClass.Fourier(fft, ref ifft, -1.0);
-            return ifft;
-        }
         /// <summary>
         /// 信号処理
         /// </summary>
@@ -145,24 +68,6 @@ namespace Ses2000Raw
         /// <param name="X"></param>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        //private static void ApplyBpfInPlace(int n, double fsHz, double fLowHz, double fHighHz, Complex[] X)
-        //{
-        //    if (X.Length != n) throw new ArgumentException("length mismatch");
-        //    if (!(0 <= fLowHz && fLowHz < fHighHz && fHighHz <= fsHz * 0.5))
-        //        throw new ArgumentOutOfRangeException(nameof(fHighHz), "0 <= fLow < fHigh <= fs/2");
-
-        //    double df = fsHz / n;
-        //    int n2 = n / 2;
-
-        //    for (int k = 0; k < n; k++)
-        //    {
-        //        // 負側も正側に写して判定
-        //        double f = (k <= n2) ? (k * df) : ((n - k) * df);
-        //        bool pass = (f >= fLowHz && f <= fHighHz);
-        //        if (!pass) X[k] = Complex.Zero;
-        //    }
-        //}
-
         private static void ApplyBpfInPlace(int n, double fsHz, double fLowHz, double fHighHz, Complex[] X)
         {
             if (X.Length != n) throw new ArgumentException("length mismatch");

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AnalysisForm));
             splitContainer1 = new SplitContainer();
             tabControl1 = new TabControl();
@@ -180,8 +179,6 @@
             label25 = new Label();
             labelTime = new Label();
             glControl2D = new OpenTK.GLControl.GLControl();
-            contextMenuStrip1 = new ContextMenuStrip(components);
-            toolStripMenuItem1 = new ToolStripMenuItem();
             colorDialog1 = new ColorDialog();
             toolStrip1 = new ToolStrip();
             toolStripButton1 = new ToolStripButton();
@@ -232,7 +229,6 @@
             tableLayoutPanel3.SuspendLayout();
             tableLayoutPanel2.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
-            contextMenuStrip1.SuspendLayout();
             toolStrip1.SuspendLayout();
             SuspendLayout();
             // 
@@ -1993,7 +1989,7 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
-            tableLayoutPanel1.Size = new Size(112, 50);
+            tableLayoutPanel1.Size = new Size(259, 50);
             tableLayoutPanel1.TabIndex = 0;
             // 
             // label21
@@ -2002,7 +1998,7 @@
             label21.Dock = DockStyle.Fill;
             label21.Location = new Point(3, 0);
             label21.Name = "label21";
-            label21.Size = new Size(50, 25);
+            label21.Size = new Size(123, 25);
             label21.TabIndex = 0;
             label21.Text = "Date";
             label21.TextAlign = ContentAlignment.MiddleCenter;
@@ -2011,9 +2007,9 @@
             // 
             labelDate.AutoSize = true;
             labelDate.Dock = DockStyle.Fill;
-            labelDate.Location = new Point(59, 0);
+            labelDate.Location = new Point(132, 0);
             labelDate.Name = "labelDate";
-            labelDate.Size = new Size(50, 25);
+            labelDate.Size = new Size(124, 25);
             labelDate.TabIndex = 1;
             labelDate.Text = "----/--/--";
             labelDate.TextAlign = ContentAlignment.MiddleCenter;
@@ -2024,7 +2020,7 @@
             label25.Dock = DockStyle.Fill;
             label25.Location = new Point(3, 25);
             label25.Name = "label25";
-            label25.Size = new Size(50, 25);
+            label25.Size = new Size(123, 25);
             label25.TabIndex = 2;
             label25.Text = "Time";
             label25.TextAlign = ContentAlignment.MiddleCenter;
@@ -2033,9 +2029,9 @@
             // 
             labelTime.AutoSize = true;
             labelTime.Dock = DockStyle.Fill;
-            labelTime.Location = new Point(59, 25);
+            labelTime.Location = new Point(132, 25);
             labelTime.Name = "labelTime";
-            labelTime.Size = new Size(50, 25);
+            labelTime.Size = new Size(124, 25);
             labelTime.TabIndex = 3;
             labelTime.Text = "--:--:--.---";
             labelTime.TextAlign = ContentAlignment.MiddleCenter;
@@ -2044,7 +2040,6 @@
             // 
             glControl2D.API = OpenTK.Windowing.Common.ContextAPI.OpenGL;
             glControl2D.APIVersion = new Version(4, 6, 4, 0);
-            glControl2D.ContextMenuStrip = contextMenuStrip1;
             glControl2D.Dock = DockStyle.Fill;
             glControl2D.Flags = OpenTK.Windowing.Common.ContextFlags.Default;
             glControl2D.IsEventDriven = true;
@@ -2057,25 +2052,11 @@
             glControl2D.Visible = false;
             glControl2D.Load += glControl2D_Load;
             glControl2D.Paint += glControl2D_Paint;
-            glControl2D.MouseClick += glControl2D_MouseClick;
             glControl2D.MouseDown += glControl2D_MouseDown;
             glControl2D.MouseLeave += glControl2D_MouseLeave;
             glControl2D.MouseMove += glControl2D_MouseMove;
             glControl2D.MouseUp += glControl2D_MouseUp;
             glControl2D.Resize += glControl2D_Resize;
-            // 
-            // contextMenuStrip1
-            // 
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1 });
-            contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(180, 26);
-            contextMenuStrip1.ItemClicked += contextMenuStrip1_ItemClicked;
-            // 
-            // toolStripMenuItem1
-            // 
-            toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(179, 22);
-            toolStripMenuItem1.Text = "toolStripMenuItem1";
             // 
             // toolStrip1
             // 
@@ -2183,7 +2164,6 @@
             tableLayoutPanel2.PerformLayout();
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
-            contextMenuStrip1.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
             ResumeLayout(false);
@@ -2347,7 +2327,5 @@
         private Label label54;
         private Label labelHeadingMotionSensor;
         private Label label52;
-        private ContextMenuStrip contextMenuStrip1;
-        private ToolStripMenuItem toolStripMenuItem1;
     }
 }

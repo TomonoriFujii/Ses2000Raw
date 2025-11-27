@@ -1702,7 +1702,7 @@ namespace Ses2000Raw
 
             GL.Disable(EnableCap.Texture2D);
 
-            //DrawBottomLine();
+            DrawBottomLine();
             if (drawLabels)
             {
                 if (chkDrawDepthScale.Checked) DrawDepthScale(contentW);
@@ -2878,15 +2878,5 @@ namespace Ses2000Raw
 
         #endregion
 
-
-        private void glControl2D_MouseClick(object sender, MouseEventArgs e)
-        {
-            Debug.WriteLine($"2D MouseClick: {e.Button} @ ({e.X}, {e.Y})");
-        }
-
-        private void contextMenuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-            
-        }
     }
 }
