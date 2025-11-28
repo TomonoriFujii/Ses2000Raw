@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,6 +41,11 @@ namespace Ses2000Raw
             this.trackBarLpf.Value = m_frmParent.Lpf_kHz;
             this.lblHpf.Text = this.trackBarHpf.Value.ToString();
             this.lblLpf.Text = this.trackBarLpf.Value.ToString();
+
+            this.txtSigmaTimeSamples.Text = m_frmParent.SigmaTimeSamples.ToString("G", CultureInfo.InvariantCulture);
+            this.txtGammaTime.Text = m_frmParent.GammaTime.ToString("G", CultureInfo.InvariantCulture);
+
+            UpdateDeconvolutionInputState();
         }
         /// <summary>
         /// chkBpf Checked Changed Event
@@ -85,12 +91,30 @@ namespace Ses2000Raw
                                   this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.DeconvoEnvelope) ? true : false;
                 bool bBpf = this.chkBpf.Checked;
 
+                double sigmaTimeSamples = m_frmParent.SigmaTimeSamples;
+                double gammaTime = m_frmParent.GammaTime;
+
+                if (bDeconvo)
+                {
+                    if (!double.TryParse(this.txtSigmaTimeSamples.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out sigmaTimeSamples))
+                        throw new ArgumentException("Sigma Time Samplesが数値として正しくありません。");
+                    if (sigmaTimeSamples <= 0)
+                        throw new ArgumentException("Sigma Time Samples は正の数である必要があります。");
+
+                    if (!double.TryParse(this.txtGammaTime.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out gammaTime))
+                        throw new ArgumentException("Gamma Timeが数値として正しくありません。");
+                    if (gammaTime <= 0)
+                        throw new ArgumentException("Gamma Time は正の数である必要があります。");
+                }
+
                 if(this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.None && !bBpf)
                 {
                     m_frmParent.DemodulateMode = (DemodulationMode)this.cmbDemodulate.SelectedIndex;
                     m_frmParent.ApplyBpf = bBpf;
                     m_frmParent.Hpf_kHz = this.trackBarHpf.Value;
                     m_frmParent.Lpf_kHz = this.trackBarLpf.Value;
+                    m_frmParent.SigmaTimeSamples = sigmaTimeSamples;
+                    m_frmParent.GammaTime = gammaTime;
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                     return;
@@ -131,7 +155,9 @@ namespace Ses2000Raw
                         hpf_kHz,
                         lpf_kHz,
                         bEnvelope,
-                        bDeconvo
+                        bDeconvo,
+                        sigmaTimeSamples,
+                        gammaTime
                     )
                 ).ConfigureAwait(true); // WinFormsなのでUIに戻す
 
@@ -176,6 +202,8 @@ namespace Ses2000Raw
                 m_frmParent.ApplyBpf = bBpf;
                 m_frmParent.Hpf_kHz = hpf_kHz;
                 m_frmParent.Lpf_kHz = lpf_kHz;
+                m_frmParent.SigmaTimeSamples = sigmaTimeSamples;
+                m_frmParent.GammaTime = gammaTime;
 
                 this.DialogResult = DialogResult.OK;
                 this.Close();
@@ -186,6 +214,22 @@ namespace Ses2000Raw
                 MessageBox.Show(this, ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
+        }
+
+        private void cmbDemodulate_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateDeconvolutionInputState();
+        }
+
+        private void UpdateDeconvolutionInputState()
+        {
+            bool enabled = this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.Deconvolution ||
+                           this.cmbDemodulate.SelectedIndex == (int)DemodulationMode.DeconvoEnvelope;
+
+            this.lblSigmaTimeSamples.Enabled = enabled;
+            this.txtSigmaTimeSamples.Enabled = enabled;
+            this.lblGammaTime.Enabled = enabled;
+            this.txtGammaTime.Enabled = enabled;
         }
     }
 }

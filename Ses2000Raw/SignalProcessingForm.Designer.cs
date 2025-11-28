@@ -30,6 +30,10 @@
         {
             label1 = new Label();
             cmbDemodulate = new ComboBox();
+            lblSigmaTimeSamples = new Label();
+            txtSigmaTimeSamples = new TextBox();
+            lblGammaTime = new Label();
+            txtGammaTime = new TextBox();
             groupBox1 = new GroupBox();
             lblLpfMax = new Label();
             lblLpfMin = new Label();
@@ -67,6 +71,39 @@
             cmbDemodulate.Name = "cmbDemodulate";
             cmbDemodulate.Size = new Size(201, 23);
             cmbDemodulate.TabIndex = 1;
+            cmbDemodulate.SelectedIndexChanged += cmbDemodulate_SelectedIndexChanged;
+            // 
+            // lblSigmaTimeSamples
+            // 
+            lblSigmaTimeSamples.AutoSize = true;
+            lblSigmaTimeSamples.Location = new Point(37, 52);
+            lblSigmaTimeSamples.Name = "lblSigmaTimeSamples";
+            lblSigmaTimeSamples.Size = new Size(113, 15);
+            lblSigmaTimeSamples.TabIndex = 2;
+            lblSigmaTimeSamples.Text = "Sigma Time Samples";
+            // 
+            // txtSigmaTimeSamples
+            // 
+            txtSigmaTimeSamples.Location = new Point(180, 49);
+            txtSigmaTimeSamples.Name = "txtSigmaTimeSamples";
+            txtSigmaTimeSamples.Size = new Size(139, 23);
+            txtSigmaTimeSamples.TabIndex = 3;
+            // 
+            // lblGammaTime
+            // 
+            lblGammaTime.AutoSize = true;
+            lblGammaTime.Location = new Point(37, 81);
+            lblGammaTime.Name = "lblGammaTime";
+            lblGammaTime.Size = new Size(75, 15);
+            lblGammaTime.TabIndex = 4;
+            lblGammaTime.Text = "Gamma Time";
+            // 
+            // txtGammaTime
+            // 
+            txtGammaTime.Location = new Point(180, 78);
+            txtGammaTime.Name = "txtGammaTime";
+            txtGammaTime.Size = new Size(139, 23);
+            txtGammaTime.TabIndex = 5;
             // 
             // groupBox1
             // 
@@ -80,10 +117,10 @@
             groupBox1.Controls.Add(trackBarHpf);
             groupBox1.Controls.Add(lblHpf);
             groupBox1.Controls.Add(label2);
-            groupBox1.Location = new Point(23, 58);
+            groupBox1.Location = new Point(23, 117);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new Size(355, 141);
-            groupBox1.TabIndex = 2;
+            groupBox1.TabIndex = 7;
             groupBox1.TabStop = false;
             // 
             // lblLpfMax
@@ -183,10 +220,10 @@
             // chkBpf
             // 
             chkBpf.AutoSize = true;
-            chkBpf.Location = new Point(37, 58);
+            chkBpf.Location = new Point(37, 115);
             chkBpf.Name = "chkBpf";
             chkBpf.Size = new Size(109, 19);
-            chkBpf.TabIndex = 0;
+            chkBpf.TabIndex = 6;
             chkBpf.Text = "Band-pass-filter";
             chkBpf.UseVisualStyleBackColor = true;
             chkBpf.CheckedChanged += chkBpf_CheckedChanged;
@@ -194,10 +231,10 @@
             // btnOk
             // 
             btnOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnOk.Location = new Point(235, 220);
+            btnOk.Location = new Point(235, 278);
             btnOk.Name = "btnOk";
             btnOk.Size = new Size(75, 23);
-            btnOk.TabIndex = 3;
+            btnOk.TabIndex = 8;
             btnOk.Text = "OK";
             btnOk.UseVisualStyleBackColor = true;
             btnOk.Click += btnOk_Click;
@@ -206,10 +243,10 @@
             // 
             btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnCancel.DialogResult = DialogResult.Cancel;
-            btnCancel.Location = new Point(316, 220);
+            btnCancel.Location = new Point(316, 278);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(75, 23);
-            btnCancel.TabIndex = 4;
+            btnCancel.TabIndex = 9;
             btnCancel.Text = "Cancel";
             btnCancel.UseVisualStyleBackColor = true;
             // 
@@ -218,7 +255,11 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = btnCancel;
-            ClientSize = new Size(403, 255);
+            ClientSize = new Size(403, 318);
+            Controls.Add(txtGammaTime);
+            Controls.Add(lblGammaTime);
+            Controls.Add(txtSigmaTimeSamples);
+            Controls.Add(lblSigmaTimeSamples);
             Controls.Add(btnCancel);
             Controls.Add(btnOk);
             Controls.Add(chkBpf);
@@ -256,5 +297,9 @@
         private Label lblHpfMax;
         private Button btnOk;
         private Button btnCancel;
+        private Label lblSigmaTimeSamples;
+        private TextBox txtSigmaTimeSamples;
+        private Label lblGammaTime;
+        private TextBox txtGammaTime;
     }
 }

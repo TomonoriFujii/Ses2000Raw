@@ -134,6 +134,9 @@ namespace Ses2000Raw
         private System.Drawing.Color m_colDistScaleColor = System.Drawing.Color.White;
         private System.Drawing.Color m_colDepScaleColor = System.Drawing.Color.White;
 
+        private double m_sigmaTimeSamples = DataClass.DefaultSigmaTimeSamples;
+        private double m_gammaTime = DataClass.DefaultGammaTime;
+
         private readonly ToolTip m_addContactToolTip = new();
         private string? m_addContactTooltipText = null;
         private Point? m_addContactTooltipPosition = null;
@@ -185,6 +188,18 @@ namespace Ses2000Raw
         {
             get { return m_colDepScaleColor; }
             set { m_colDepScaleColor = value; }
+        }
+
+        public double SigmaTimeSamples
+        {
+            get => m_sigmaTimeSamples;
+            set => m_sigmaTimeSamples = value;
+        }
+
+        public double GammaTime
+        {
+            get => m_gammaTime;
+            set => m_gammaTime = value;
         }
 
         public bool ToolStripButtonAddContactChecked

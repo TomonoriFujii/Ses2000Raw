@@ -144,7 +144,7 @@ namespace Ses2000Raw
         /// <param name="lpf"></param>
         /// <param name="envelopeFlag"></param>
         /// <returns></returns>
-        public static Result SignalProcessParallel(SynchronizationContext context, IProgress<int> progress, List<DataBlock> dataBlockList, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, bool deconvoFlag)
+        public static Result SignalProcessParallel(SynchronizationContext context, IProgress<int> progress, List<DataBlock> dataBlockList, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, bool deconvoFlag, double sigmaTimeSamples, double gammaTime)
         {
             Result ret = new Result();
             int iNumPing = dataBlockList.Count;
@@ -154,16 +154,16 @@ namespace Ses2000Raw
             {
                 if (deconvoFlag)
                 {
-                    var psfCache = new ConcurrentDictionary<int, Complex[]>();
+                    var psfCache = new ConcurrentDictionary<(int sampleLength, double sigmaTimeSamples), Complex[]>();
 
                     Parallel.For(0, iNumPing, (y, state) =>
                     {
                         if (ProgressForm.Cancel) state.Break();
 
                         int sampleLength = dataBlockList[y].Lf.Length;
-                        Complex[] psfSpectrum = psfCache.GetOrAdd(sampleLength, BuildTimePsfSpectrum);
+                        Complex[] psfSpectrum = psfCache.GetOrAdd((sampleLength, sigmaTimeSamples), key => BuildTimePsfSpectrum(key.sampleLength, key.sigmaTimeSamples));
 
-                        short[] deconvolved = DeconvolveWave(dataBlockList[y].Lf, sampleFreq, bpfFlag, hpf, lpf, envelopeFlag, psfSpectrum);
+                        short[] deconvolved = DeconvolveWave(dataBlockList[y].Lf, sampleFreq, bpfFlag, hpf, lpf, envelopeFlag, psfSpectrum, gammaTime);
                         processed[y] = deconvolved;
 
                         // 進捗（Progress<T> はUIに自動マーシャル）
@@ -218,19 +218,19 @@ namespace Ses2000Raw
         #endregion
 
         #region Deconvolution Helpers
-        private const double SigmaTimeSamples = 1.5;     // 時間方向PSFのσ（サンプル数）
-        private const double GammaTime = 1e-4;           // 時間方向デコンボ用正則化パラメータ
+        public const double DefaultSigmaTimeSamples = 1.5;     // 時間方向PSFのσ（サンプル数）
+        public const double DefaultGammaTime = 1e-4;           // 時間方向デコンボ用正則化パラメータ
 
         /// <summary>
         /// 時間方向のPSFスペクトルを生成する
         /// </summary>
         /// <param name="sampleLength">データ長</param>
         /// <returns>PSFの周波数領域表現</returns>
-        private static Complex[] BuildTimePsfSpectrum(int sampleLength)
+        private static Complex[] BuildTimePsfSpectrum(int sampleLength, double sigmaTimeSamples)
         {
             if (sampleLength <= 0) return Array.Empty<Complex>();
 
-            int lt = Math.Min((int)Math.Ceiling(6 * SigmaTimeSamples), sampleLength - 1);
+            int lt = Math.Min((int)Math.Ceiling(6 * sigmaTimeSamples), sampleLength - 1);
             if (lt <= 0)
             {
                 var flat = new Complex[sampleLength];
@@ -245,7 +245,7 @@ namespace Ses2000Raw
             for (int i = 0; i < lt; i++)
             {
                 int tIdx = i - half;
-                double value = Math.Exp(-(tIdx * tIdx) / (2 * SigmaTimeSamples * SigmaTimeSamples));
+                double value = Math.Exp(-(tIdx * tIdx) / (2 * sigmaTimeSamples * sigmaTimeSamples));
                 gt[i] = new Complex(value, 0);
             }
 
@@ -265,7 +265,7 @@ namespace Ses2000Raw
         /// <summary>
         /// 1Ping分の波形に対し、BPF→時間方向デコンボリューション→必要に応じEnvelopeを適用する
         /// </summary>
-        private static short[] DeconvolveWave(short[] lf, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, Complex[] psfSpectrum)
+        private static short[] DeconvolveWave(short[] lf, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, Complex[] psfSpectrum, double gammaTime)
         {
             int n = lf.Length;
             if (n == 0) return Array.Empty<short>();
@@ -287,7 +287,7 @@ namespace Ses2000Raw
             var deconvFreq = new Complex[n];
             for (int k = 0; k < n; k++)
             {
-                double denom = psfSpectrum[k].Magnitude * psfSpectrum[k].Magnitude + GammaTime;
+                double denom = psfSpectrum[k].Magnitude * psfSpectrum[k].Magnitude + gammaTime;
                 deconvFreq[k] = denom > 0 ? signalFreq[k] * Complex.Conjugate(psfSpectrum[k]) / denom : Complex.Zero;
             }
 

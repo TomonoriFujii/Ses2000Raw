@@ -684,7 +684,7 @@
             // lblLPF
             // 
             lblLPF.BorderStyle = BorderStyle.FixedSingle;
-            lblLPF.Location = new Point(129, 76);
+            lblLPF.Location = new Point(129, 78);
             lblLPF.Name = "lblLPF";
             lblLPF.Size = new Size(100, 23);
             lblLPF.TabIndex = 15;
@@ -694,7 +694,7 @@
             // lblHPF
             // 
             lblHPF.BorderStyle = BorderStyle.FixedSingle;
-            lblHPF.Location = new Point(11, 76);
+            lblHPF.Location = new Point(11, 78);
             lblHPF.Name = "lblHPF";
             lblHPF.Size = new Size(100, 23);
             lblHPF.TabIndex = 14;
@@ -704,7 +704,7 @@
             // label23
             // 
             label23.AutoSize = true;
-            label23.Location = new Point(129, 61);
+            label23.Location = new Point(129, 63);
             label23.Name = "label23";
             label23.Size = new Size(84, 15);
             label23.TabIndex = 13;
@@ -713,7 +713,7 @@
             // label22
             // 
             label22.AutoSize = true;
-            label22.Location = new Point(11, 61);
+            label22.Location = new Point(11, 63);
             label22.Name = "label22";
             label22.Size = new Size(88, 15);
             label22.TabIndex = 12;
@@ -722,9 +722,9 @@
             // lblDemodulate
             // 
             lblDemodulate.BorderStyle = BorderStyle.FixedSingle;
-            lblDemodulate.Location = new Point(88, 23);
+            lblDemodulate.Location = new Point(11, 35);
             lblDemodulate.Name = "lblDemodulate";
-            lblDemodulate.Size = new Size(142, 23);
+            lblDemodulate.Size = new Size(218, 23);
             lblDemodulate.TabIndex = 11;
             lblDemodulate.Tag = "0";
             lblDemodulate.Text = "None (Full Wave)";
@@ -733,7 +733,7 @@
             // label12
             // 
             label12.AutoSize = true;
-            label12.Location = new Point(11, 27);
+            label12.Location = new Point(11, 20);
             label12.Name = "label12";
             label12.Size = new Size(71, 15);
             label12.TabIndex = 1;
