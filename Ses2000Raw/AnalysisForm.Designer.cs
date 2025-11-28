@@ -182,7 +182,7 @@
             toolStripAddContact = new ToolStripButton();
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
-            toolStripButtonAddContact = new ToolStripButton();
+            tsBtnMarkAnomary = new ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -218,6 +218,7 @@
             ((System.ComponentModel.ISupportInitialize)numB).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numG).BeginInit();
             tabPage2.SuspendLayout();
+            tabPage3.SuspendLayout();
             tabPage4.SuspendLayout();
             tableLayoutPanel9.SuspendLayout();
             tableLayoutPanel8.SuspendLayout();
@@ -1119,7 +1120,7 @@
             formsPlot1.TabIndex = 0;
             // 
             // tabPage3
-            //
+            // 
             tabPage3.Controls.Add(formsPlotFFT);
             tabPage3.Location = new Point(27, 4);
             tabPage3.Name = "tabPage3";
@@ -1127,18 +1128,18 @@
             tabPage3.TabIndex = 2;
             tabPage3.Text = "FFT";
             tabPage3.UseVisualStyleBackColor = true;
-            //
+            // 
             // formsPlotFFT
-            //
+            // 
             formsPlotFFT.DisplayScale = 1F;
             formsPlotFFT.Dock = DockStyle.Fill;
             formsPlotFFT.Location = new Point(0, 0);
             formsPlotFFT.Name = "formsPlotFFT";
             formsPlotFFT.Size = new Size(265, 854);
             formsPlotFFT.TabIndex = 0;
-            //
+            // 
             // tabPage4
-            //
+            // 
             tabPage4.AutoScroll = true;
             tabPage4.Controls.Add(tableLayoutPanel9);
             tabPage4.Controls.Add(tableLayoutPanel8);
@@ -2044,7 +2045,7 @@
             // toolStrip1
             // 
             toolStrip1.ImageScalingSize = new Size(24, 24);
-            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripAddContact, toolStripSeparator1, tsBtnSaveImage, toolStripButtonAddContact });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripAddContact, toolStripSeparator1, tsBtnSaveImage, tsBtnMarkAnomary });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(1219, 31);
@@ -2076,16 +2077,15 @@
             tsBtnSaveImage.Text = "Save Image";
             tsBtnSaveImage.ToolTipText = "Save the acoustic stratigraphy cross-section as an image.";
             // 
-            // toolStripButtonAddContact
+            // tsBtnMarkAnomary
             // 
-            toolStripButtonAddContact.CheckOnClick = true;
-            toolStripButtonAddContact.Image = (Image)resources.GetObject("toolStripButtonAddContact.Image");
-            toolStripButtonAddContact.ImageTransparentColor = Color.Magenta;
-            toolStripButtonAddContact.Name = "toolStripButtonAddContact";
-            toolStripButtonAddContact.Size = new Size(101, 28);
-            toolStripButtonAddContact.Tag = "AddContact";
-            toolStripButtonAddContact.Text = "Add Contact";
-            toolStripButtonAddContact.ToolTipText = "Place a pin to save location information.";
+            tsBtnMarkAnomary.CheckOnClick = true;
+            tsBtnMarkAnomary.Image = (Image)resources.GetObject("tsBtnMarkAnomary.Image");
+            tsBtnMarkAnomary.ImageTransparentColor = Color.Magenta;
+            tsBtnMarkAnomary.Name = "tsBtnMarkAnomary";
+            tsBtnMarkAnomary.Size = new Size(113, 28);
+            tsBtnMarkAnomary.Tag = "MarkAnomary";
+            tsBtnMarkAnomary.Text = "Mark Anomary";
             // 
             // AnalysisForm
             // 
@@ -2138,6 +2138,7 @@
             ((System.ComponentModel.ISupportInitialize)numB).EndInit();
             ((System.ComponentModel.ISupportInitialize)numG).EndInit();
             tabPage2.ResumeLayout(false);
+            tabPage3.ResumeLayout(false);
             tabPage4.ResumeLayout(false);
             tableLayoutPanel9.ResumeLayout(false);
             tableLayoutPanel9.PerformLayout();
@@ -2315,7 +2316,7 @@
         private Label label52;
         private ContextMenuStrip contextMenuStrip1;
         private ToolStripMenuItem toolStripMenuItem1;
-        private ToolStripButton toolStripButtonAddContact;
+        private ToolStripButton tsBtnMarkAnomary;
         private Label labelPingNumber;
         private Label label32;
         private CheckBox chkShowBtk;

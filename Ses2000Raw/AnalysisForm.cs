@@ -182,15 +182,15 @@ namespace Ses2000Raw
 
         public bool ToolStripButtonAddContactChecked
         {
-            get => toolStripButtonAddContact.Checked;
-            set => toolStripButtonAddContact.Checked = value;
+            get => tsBtnMarkAnomary.Checked;
+            set => tsBtnMarkAnomary.Checked = value;
 
         }
 
         public bool ToolStripButtonAddContactEnabled
         {
-            get => toolStripButtonAddContact.Enabled;
-            set => toolStripButtonAddContact.Enabled = value;
+            get => tsBtnMarkAnomary.Enabled;
+            set => tsBtnMarkAnomary.Enabled = value;
         }
 
         public DemodulationMode DemodulateMode
@@ -266,7 +266,7 @@ namespace Ses2000Raw
             m_addContactToolTip.ReshowDelay = 0;
             m_addContactToolTip.ShowAlways = true;
 
-            toolStripButtonAddContact.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
+            tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
 
             m_frmMain = (MainForm)parent;
 
@@ -588,7 +588,7 @@ namespace Ses2000Raw
             }
 
             int ping = GetPingIndexAtMouseX(e.X);
-            bool isBottomSelectionStep = toolStripButtonAddContact.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue;
+            bool isBottomSelectionStep = tsBtnMarkAnomary.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue;
             if (isBottomSelectionStep)
             {
                 ping = m_selectedAnomalyPing.Value;
@@ -619,7 +619,7 @@ namespace Ses2000Raw
                 }
                 else
                 {
-                    glControl2D.Cursor = toolStripButtonAddContact.Checked ? Cursors.Cross : Cursors.Default;
+                    glControl2D.Cursor = tsBtnMarkAnomary.Checked ? Cursors.Cross : Cursors.Default;
                 }
                 UpdateMapCursorMarker(ping);
                 if (this.tabControl1.SelectedIndex == (int)TabPageIndex.Signal) PlotPingWaveform(ping);
@@ -642,7 +642,7 @@ namespace Ses2000Raw
                 glControl2D.Refresh();
             }
 
-            if (toolStripButtonAddContact.Checked && m_addContactTooltipText != null)
+            if (tsBtnMarkAnomary.Checked && m_addContactTooltipText != null)
             {
                 ShowAddContactInstruction(m_addContactTooltipText);
             }
@@ -665,7 +665,7 @@ namespace Ses2000Raw
         {
             if (e.Button != MouseButtons.Left) return;
             m_bDragging = false;
-            Cursor = toolStripButtonAddContact.Checked ? Cursors.Cross : Cursors.Default;
+            Cursor = tsBtnMarkAnomary.Checked ? Cursors.Cross : Cursors.Default;
             m_bDraggingAddContact = false;
         }
 
@@ -1584,7 +1584,7 @@ namespace Ses2000Raw
 
         private void DrawAddContactMarker()
         {
-            if (!toolStripButtonAddContact.Checked) return;
+            if (!tsBtnMarkAnomary.Checked) return;
             if (m_selectedAnomalyContentX is not double x || m_selectedAnomalyContentY is not double y) return;
 
             const double markerRadius = 6.0;
@@ -1970,7 +1970,7 @@ namespace Ses2000Raw
 
             if (m_mouseContentX is double mouseX)
             {
-                var (lineR, lineG, lineB, lineA) = toolStripButtonAddContact.Checked
+                var (lineR, lineG, lineB, lineA) = tsBtnMarkAnomary.Checked
                     ? (0f, 0.8f, 1f, 0.8f)
                     : (1f, 0f, 0f, 0.6f);
                 GL.Color4(lineR, lineG, lineB, lineA);
@@ -1982,7 +1982,7 @@ namespace Ses2000Raw
 
             if (m_mouseContentY is double mouseY)
             {
-                var (lineR, lineG, lineB, lineA) = toolStripButtonAddContact.Checked
+                var (lineR, lineG, lineB, lineA) = tsBtnMarkAnomary.Checked
                     ? (0f, 0.8f, 1f, 0.8f)
                     : (1f, 0f, 0f, 0.6f);
                 GL.Color4(lineR, lineG, lineB, lineA);
@@ -2308,7 +2308,7 @@ namespace Ses2000Raw
         private void AddContactProcess()
         {
             // 現在の状態
-            bool nowChecked = toolStripButtonAddContact.Checked;
+            bool nowChecked = tsBtnMarkAnomary.Checked;
 
             if (nowChecked)
             {
@@ -3248,7 +3248,7 @@ namespace Ses2000Raw
                 m_selectedAnomalyContentX = MapXByPing(ping);
                 m_selectedAnomalyContentY = GetContentYFromDepth(ping, depth);
                 m_clickStep = 1;
-                this.toolStripButtonAddContact.Enabled = false;
+                this.tsBtnMarkAnomary.Enabled = false;
                 ShowAddContactInstruction("海底面をクリックしてください");
                 glControl2D.Cursor = Cursors.Cross;
                 m_mouseContentX = MapXByPing(ping);
@@ -3306,8 +3306,8 @@ namespace Ses2000Raw
             m_mouseContentX = null;
             m_mouseContentY = null;
             m_bDraggingAddContact = false;
-            toolStripButtonAddContact.Enabled = true;
-            toolStripButtonAddContact.Checked = false;
+            tsBtnMarkAnomary.Enabled = true;
+            tsBtnMarkAnomary.Checked = false;
             glControl2D.Cursor = Cursors.Default;
             HideAddContactInstruction();
             glControl2D.Refresh();
@@ -3323,7 +3323,7 @@ namespace Ses2000Raw
                 // ドラッグ後のクリックは無視
                 return;
             }
-            if (toolStripButtonAddContact.Checked)
+            if (tsBtnMarkAnomary.Checked)
             {
                 int pingNo = (m_clickStep == 1 && m_selectedAnomalyPing.HasValue)
                     ? m_selectedAnomalyPing.Value
@@ -3348,7 +3348,9 @@ namespace Ses2000Raw
                 if (dBurialDepth.HasValue && m_selectedAnomalyDepthMeters.HasValue && m_dBottomDepth.HasValue)
                 {
                     int targetPing = m_selectedAnomalyPing ?? pingNo;
-                    int iAnomaryNo = m_frmMap.AnomaryList.Count + 1;
+                    int iAnomaryNo = m_frmMap.AnomaryList.Any()
+                        ? m_frmMap.AnomaryList.Max(anomary => anomary.AnonaryNo) + 1
+                        : 1;
                     var (noCurSorFilePath, withCurSorFilePath) = GenerateScreenshotFilePath(iAnomaryNo);//filepath作成
 
                     Anomary anomary = new Anomary()
