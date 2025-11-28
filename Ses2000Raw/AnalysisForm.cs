@@ -84,6 +84,10 @@ namespace Ses2000Raw
         private (double X, double Y)?[]? m_pingPositions;
         private int m_lastMapCursorPing = -1;
 
+        // FFT 表示のスケール固定用
+        private double m_fftPowerAxisMax = double.NaN;
+        private double m_fftFreqAxisMaxKHz = double.NaN;
+
         // ドラッグ・スクロール
         private bool m_bDragging = false;
         private Point m_dragStart;
@@ -343,6 +347,7 @@ namespace Ses2000Raw
             m_dZDistance = Method.CalcSampleInterval(m_dSampleFreqHz, dSV);
             m_iSampleNo = (m_channel == Channel.LF) ? m_blockHeaderList[0].LfDataLength : m_blockHeaderList[0].HfDataLength;
             m_iPingNo = m_blockHeaderList.Count;
+            m_fftFreqAxisMaxKHz = (m_dSampleFreqHz / 1000.0) * 0.5; // ナイキスト
             m_sFullWaveAmpMax = (short)m_dataBlockList
                                     .Where(b => b.Lf != null && b.Lf.Length > 0)
                                     .SelectMany(b => b.Lf)
@@ -1664,8 +1669,15 @@ namespace Ses2000Raw
             double maxPower = powerAxis.Length > 0 ? powerAxis.Max() : 1;
             double maxFreqKHz = freqAxis.Length > 0 ? freqAxis[^1] : 0;
 
-            plt.Axes.SetLimitsX(0, maxPower);
-            plt.Axes.SetLimitsY(maxFreqKHz, 0);
+            // スケールを固定するため、既知の最大値を保持しつつ拡張のみ許可
+            if (maxPower <= 0) maxPower = 1;
+            m_fftPowerAxisMax = double.IsNaN(m_fftPowerAxisMax) ? maxPower : Math.Max(m_fftPowerAxisMax, maxPower);
+
+            double freqLimitKHz = double.IsNaN(m_fftFreqAxisMaxKHz) ? maxFreqKHz : m_fftFreqAxisMaxKHz;
+            if (freqLimitKHz <= 0) freqLimitKHz = maxFreqKHz;
+
+            plt.Axes.SetLimitsX(0, m_fftPowerAxisMax);
+            plt.Axes.SetLimitsY(freqLimitKHz, 0);
 
             plt.Axes.InvertY();
             plt.Axes.AutoScaler.InvertedY = true;
