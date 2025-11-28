@@ -79,8 +79,8 @@
             chkHeaveCorrection = new CheckBox();
             chkDrawDistScale = new CheckBox();
             chkDrawDepthScale = new CheckBox();
-            numBottom = new NumericUpDown();
-            label15 = new Label();
+            cmbAttenuationModel = new ComboBox();
+            labelAttenuationModel = new Label();
             numAttDb = new NumericUpDown();
             label14 = new Label();
             label18 = new Label();
@@ -208,7 +208,6 @@
             ((System.ComponentModel.ISupportInitialize)numRotateZ).BeginInit();
             grpBoxSignal.SuspendLayout();
             grpBoxDisplay.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)numBottom).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numAttDb).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numAlpha).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numThreshold).BeginInit();
@@ -301,7 +300,7 @@
             grpBox3DFrustum.Controls.Add(numViewY);
             grpBox3DFrustum.Controls.Add(label5);
             grpBox3DFrustum.Controls.Add(numViewZ);
-            grpBox3DFrustum.Location = new Point(4, 702);
+            grpBox3DFrustum.Location = new Point(3, 708);
             grpBox3DFrustum.Name = "grpBox3DFrustum";
             grpBox3DFrustum.Size = new Size(241, 113);
             grpBox3DFrustum.TabIndex = 7;
@@ -456,7 +455,7 @@
             grpBox3DMoving.Controls.Add(numRotateY);
             grpBox3DMoving.Controls.Add(label11);
             grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(4, 545);
+            grpBox3DMoving.Location = new Point(3, 551);
             grpBox3DMoving.Name = "grpBox3DMoving";
             grpBox3DMoving.Size = new Size(241, 151);
             grpBox3DMoving.TabIndex = 5;
@@ -745,8 +744,8 @@
             grpBoxDisplay.Controls.Add(chkHeaveCorrection);
             grpBoxDisplay.Controls.Add(chkDrawDistScale);
             grpBoxDisplay.Controls.Add(chkDrawDepthScale);
-            grpBoxDisplay.Controls.Add(numBottom);
-            grpBoxDisplay.Controls.Add(label15);
+            grpBoxDisplay.Controls.Add(cmbAttenuationModel);
+            grpBoxDisplay.Controls.Add(labelAttenuationModel);
             grpBoxDisplay.Controls.Add(numAttDb);
             grpBoxDisplay.Controls.Add(label14);
             grpBoxDisplay.Controls.Add(label18);
@@ -757,7 +756,7 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(4, 302);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 237);
+            grpBoxDisplay.Size = new Size(241, 243);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
@@ -765,7 +764,7 @@
             // chkShowBtk
             // 
             chkShowBtk.AutoSize = true;
-            chkShowBtk.Location = new Point(12, 209);
+            chkShowBtk.Location = new Point(11, 211);
             chkShowBtk.Name = "chkShowBtk";
             chkShowBtk.Size = new Size(152, 19);
             chkShowBtk.TabIndex = 16;
@@ -777,7 +776,7 @@
             // chkFlipX
             // 
             chkFlipX.AutoSize = true;
-            chkFlipX.Location = new Point(12, 184);
+            chkFlipX.Location = new Point(11, 186);
             chkFlipX.Name = "chkFlipX";
             chkFlipX.Size = new Size(140, 19);
             chkFlipX.TabIndex = 15;
@@ -790,7 +789,7 @@
             // 
             btnScaleSetting.BackColor = Color.Transparent;
             btnScaleSetting.FlatStyle = FlatStyle.Flat;
-            btnScaleSetting.Location = new Point(145, 109);
+            btnScaleSetting.Location = new Point(151, 111);
             btnScaleSetting.Name = "btnScaleSetting";
             btnScaleSetting.Size = new Size(84, 44);
             btnScaleSetting.TabIndex = 13;
@@ -803,7 +802,7 @@
             chkHeaveCorrection.AutoSize = true;
             chkHeaveCorrection.Checked = true;
             chkHeaveCorrection.CheckState = CheckState.Checked;
-            chkHeaveCorrection.Location = new Point(12, 159);
+            chkHeaveCorrection.Location = new Point(12, 161);
             chkHeaveCorrection.Name = "chkHeaveCorrection";
             chkHeaveCorrection.Size = new Size(151, 19);
             chkHeaveCorrection.TabIndex = 14;
@@ -817,7 +816,7 @@
             chkDrawDistScale.AutoSize = true;
             chkDrawDistScale.Checked = true;
             chkDrawDistScale.CheckState = CheckState.Checked;
-            chkDrawDistScale.Location = new Point(13, 109);
+            chkDrawDistScale.Location = new Point(12, 111);
             chkDrawDistScale.Name = "chkDrawDistScale";
             chkDrawDistScale.Size = new Size(131, 19);
             chkDrawDistScale.TabIndex = 11;
@@ -831,7 +830,7 @@
             chkDrawDepthScale.AutoSize = true;
             chkDrawDepthScale.Checked = true;
             chkDrawDepthScale.CheckState = CheckState.Checked;
-            chkDrawDepthScale.Location = new Point(13, 134);
+            chkDrawDepthScale.Location = new Point(12, 136);
             chkDrawDepthScale.Name = "chkDrawDepthScale";
             chkDrawDepthScale.Size = new Size(118, 19);
             chkDrawDepthScale.TabIndex = 12;
@@ -840,32 +839,31 @@
             chkDrawDepthScale.UseVisualStyleBackColor = true;
             chkDrawDepthScale.CheckedChanged += chkBox_CheckedChanged;
             // 
-            // numBottom
+            // cmbAttenuationModel
             // 
-            numBottom.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-            numBottom.Location = new Point(90, 76);
-            numBottom.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numBottom.Minimum = new decimal(new int[] { 2000000, 0, 0, int.MinValue });
-            numBottom.Name = "numBottom";
-            numBottom.Size = new Size(65, 23);
-            numBottom.TabIndex = 7;
-            numBottom.Tag = "Bottom";
-            numBottom.ValueChanged += numericUpDown_ValueChanged;
+            cmbAttenuationModel.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbAttenuationModel.FormattingEnabled = true;
+            cmbAttenuationModel.Items.AddRange(new object[] { "Exponential (dB)", "Linear (dB/sample)", "No attenuation" });
+            cmbAttenuationModel.Location = new Point(12, 78);
+            cmbAttenuationModel.Name = "cmbAttenuationModel";
+            cmbAttenuationModel.Size = new Size(152, 23);
+            cmbAttenuationModel.TabIndex = 10;
+            cmbAttenuationModel.SelectedIndexChanged += cmbAttenuationModel_SelectedIndexChanged;
             // 
-            // label15
+            // labelAttenuationModel
             // 
-            label15.AutoSize = true;
-            label15.Location = new Point(90, 61);
-            label15.Name = "label15";
-            label15.Size = new Size(46, 15);
-            label15.TabIndex = 6;
-            label15.Text = "Bottom";
+            labelAttenuationModel.AutoSize = true;
+            labelAttenuationModel.Location = new Point(12, 63);
+            labelAttenuationModel.Name = "labelAttenuationModel";
+            labelAttenuationModel.Size = new Size(107, 15);
+            labelAttenuationModel.TabIndex = 17;
+            labelAttenuationModel.Text = "Attenuation Model";
             // 
             // numAttDb
             // 
             numAttDb.DecimalPlaces = 1;
             numAttDb.Increment = new decimal(new int[] { 5, 0, 0, 65536 });
-            numAttDb.Location = new Point(165, 76);
+            numAttDb.Location = new Point(170, 78);
             numAttDb.Name = "numAttDb";
             numAttDb.Size = new Size(65, 23);
             numAttDb.TabIndex = 9;
@@ -876,7 +874,7 @@
             // label14
             // 
             label14.AutoSize = true;
-            label14.Location = new Point(165, 58);
+            label14.Location = new Point(170, 63);
             label14.Name = "label14";
             label14.Size = new Size(23, 15);
             label14.TabIndex = 8;
@@ -885,7 +883,7 @@
             // label18
             // 
             label18.AutoSize = true;
-            label18.Location = new Point(140, 20);
+            label18.Location = new Point(99, 20);
             label18.Name = "label18";
             label18.Size = new Size(59, 15);
             label18.TabIndex = 2;
@@ -895,7 +893,7 @@
             // 
             numAlpha.DecimalPlaces = 3;
             numAlpha.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numAlpha.Location = new Point(13, 76);
+            numAlpha.Location = new Point(170, 35);
             numAlpha.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
             numAlpha.Name = "numAlpha";
             numAlpha.Size = new Size(65, 23);
@@ -908,10 +906,10 @@
             // 
             numThreshold.DecimalPlaces = 4;
             numThreshold.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
-            numThreshold.Location = new Point(140, 35);
+            numThreshold.Location = new Point(99, 35);
             numThreshold.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
             numThreshold.Name = "numThreshold";
-            numThreshold.Size = new Size(90, 23);
+            numThreshold.Size = new Size(65, 23);
             numThreshold.TabIndex = 3;
             numThreshold.Tag = "Threshold";
             numThreshold.ValueChanged += numericUpDown_ValueChanged;
@@ -919,7 +917,7 @@
             // label13
             // 
             label13.AutoSize = true;
-            label13.Location = new Point(12, 61);
+            label13.Location = new Point(170, 20);
             label13.Name = "label13";
             label13.Size = new Size(38, 15);
             label13.TabIndex = 4;
@@ -932,7 +930,7 @@
             numIntensity.Location = new Point(13, 35);
             numIntensity.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
             numIntensity.Name = "numIntensity";
-            numIntensity.Size = new Size(90, 23);
+            numIntensity.Size = new Size(80, 23);
             numIntensity.TabIndex = 1;
             numIntensity.Tag = "Intensity";
             numIntensity.Value = new decimal(new int[] { 5, 0, 0, 327680 });
@@ -2127,7 +2125,6 @@
             grpBoxSignal.PerformLayout();
             grpBoxDisplay.ResumeLayout(false);
             grpBoxDisplay.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)numBottom).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAttDb).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAlpha).EndInit();
             ((System.ComponentModel.ISupportInitialize)numThreshold).EndInit();
@@ -2174,7 +2171,6 @@
         private OpenTK.GLControl.GLControl glControl2D;
         private GroupBox grpBoxDisplay;
         private Button btnScaleSetting;
-        private Label label15;
         private Label label14;
         private Label label18;
         private Label label13;
@@ -2206,7 +2202,8 @@
         private CheckBox chkHeaveCorrection;
         private CheckBox chkDrawDistScale;
         private CheckBox chkDrawDepthScale;
-        private NumericUpDown numBottom;
+        private ComboBox cmbAttenuationModel;
+        private Label labelAttenuationModel;
         private NumericUpDown numAttDb;
         private NumericUpDown numAlpha;
         private NumericUpDown numThreshold;

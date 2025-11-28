@@ -414,6 +414,7 @@ namespace Ses2000Raw
 
             glControl2D.MouseWheel += glControl2D_MouseWheel;
 
+            cmbAttenuationModel.SelectedIndex = 0;
 
             m_dRatioX = (double)numScaleY.Value;
             m_dRatioY = (double)numScaleZ.Value;
@@ -690,6 +691,12 @@ namespace Ses2000Raw
             m_bDragging = false;
             Cursor = tsBtnMarkAnomary.Checked ? Cursors.Cross : Cursors.Default;
             m_bDraggingAddContact = false;
+        }
+
+        private void cmbAttenuationModel_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            m_bTextureDirty = true;
+            glControl2D.Refresh();
         }
 
         private void cmbColor_SelectedIndexChanged(object sender, EventArgs e)
@@ -2218,19 +2225,6 @@ namespace Ses2000Raw
             m_bTextureDirty = true;
         }
 
-        private void EnsureAttenuationTable()
-        {
-            if (m_attZ == null || m_attZ.Length != m_iTexHeight)
-                m_attZ = new double[m_iTexHeight];
-
-            double dAtt = Convert.ToDouble(numAttDb.Value);
-            double attCoef = dAtt / 667.0 / 20.0;
-            int iBottom = Math.Clamp(Convert.ToInt32(numBottom.Value), 0, m_iTexHeight);
-
-            for (int z = 0; z < m_iTexHeight; z++)
-                m_attZ[z] = (z < iBottom) ? 1.0 : Math.Pow(10.0, attCoef * (z - iBottom));
-        }
-
         private void BuildPaletteLut()
         {
             m_lut = new byte[256 * 4];
@@ -2272,6 +2266,25 @@ namespace Ses2000Raw
             }
         }
 
+        private enum AttenuationModel
+        {
+            Exponential,
+            Linear,
+            None
+        }
+
+        private static double ComputeAttenuation(int delta, double attCoef, AttenuationModel attenuationModel)
+        {
+            if (delta <= 0) return 1.0;
+
+            return attenuationModel switch
+            {
+                AttenuationModel.Linear => Math.Max(0.0, 1.0 + attCoef * delta),
+                AttenuationModel.None => 1.0,
+                _ => Math.Pow(10.0, attCoef * delta),
+            };
+        }
+
         private void BuildRgbaImage()
         {
             int w = m_iTexWidth;
@@ -2284,9 +2297,11 @@ namespace Ses2000Raw
             double thr = Convert.ToDouble(numThreshold.Value);
             byte alphaFull = (byte)(Math.Clamp((float)numAlpha.Value, 0f, 1f) * 255);
 
-            // 減衰パラメータ（dAtt[db] を 667cm/20dBスケールへ換算して指数化）
+            // 減衰パラメータ（dAtt[db] を 667cm/20dBスケールへ換算）
             double dAttDb = Convert.ToDouble(numAttDb.Value);
-            double attCoef = dAttDb / 667.0 / 20.0; // 既存式を流用：delta[サンプル] と組み合わせる
+            double attCoef = dAttDb / 667.0 / 20.0; // delta[サンプル] と組み合わせる
+
+            var attenuationModel = (AttenuationModel)cmbAttenuationModel.SelectedIndex;
 
             double sampleIntervalCm = m_dZDistance;
 
@@ -2329,7 +2344,7 @@ namespace Ses2000Raw
                     bottom = Math.Clamp(bottom, 0, h - 1);
 
                     int delta = zShifted - bottom; // ボトムからのサンプル差
-                    double att = (delta > 0) ? Math.Pow(10.0, attCoef * delta) : 1.0;
+                    double att = ComputeAttenuation(delta, attCoef, attenuationModel);
 
                     double v = s * dIntensity * att;
                     double nv = Math.Min(Math.Abs(v), 1.0);
@@ -2343,7 +2358,6 @@ namespace Ses2000Raw
                 }
             });
         }
-
 
         private void UploadTexture()
         {

@@ -120,8 +120,8 @@ namespace Ses2000Raw
     }
     public class Anomary
     {
-        public string FileName { get; set; }
         public int AnonaryNo { get; set; }
+        public string FileName { get; set; }
         public string Date { get; set; }
         public string Time { get; set; }
         public int PingNo { get; set; }
