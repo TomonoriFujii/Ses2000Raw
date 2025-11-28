@@ -1644,23 +1644,31 @@ namespace Ses2000Raw
             }
 
             int halfLength = fftResult.Length / 2;
-            double freqResolution = sampleFreqHz / fftResult.Length;
             double[] freqAxis = new double[halfLength];
             double[] powerAxis = new double[halfLength];
 
+            double freqResolutionKHz = (sampleFreqHz / 1000.0) / fftResult.Length;
             for (int i = 0; i < halfLength; i++)
             {
-                freqAxis[i] = i * freqResolution;
+                freqAxis[i] = i * freqResolutionKHz;
                 powerAxis[i] = fftResult[i].Magnitude * fftResult[i].Magnitude;
             }
 
             var plt = formsPlotFFT.Plot;
             plt.Clear();
-            var sc = plt.Add.Scatter(powerAxis, freqAxis, ScottPlot.Color.FromColor(System.Drawing.Color.DeepSkyBlue));
+            var sc = plt.Add.Scatter(powerAxis, freqAxis, ScottPlot.Color.FromColor(System.Drawing.Color.GreenYellow));
             sc.MarkerSize = 0;
-            plt.Axes.Left.Label.Text = "Frequency (Hz)";
+            plt.Axes.Left.Label.Text = "Frequency (kHz)";
             plt.Axes.Bottom.Label.Text = "Power";
-            plt.Axes.AutoScale();
+
+            double maxPower = powerAxis.Length > 0 ? powerAxis.Max() : 1;
+            double maxFreqKHz = freqAxis.Length > 0 ? freqAxis[^1] : 0;
+
+            plt.Axes.SetLimitsX(0, maxPower);
+            plt.Axes.SetLimitsY(maxFreqKHz, 0);
+
+            plt.Axes.InvertY();
+            plt.Axes.AutoScaler.InvertedY = true;
 
             formsPlotFFT.Refresh();
             m_lastPlottedFftPing = pingIndex;
