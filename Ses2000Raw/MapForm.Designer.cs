@@ -205,6 +205,7 @@
             dataGridViewAnomary.Name = "dataGridViewAnomary";
             dataGridViewAnomary.ReadOnly = true;
             dataGridViewAnomary.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            dataGridViewAnomary.RowHeadersVisible = false;
             dataGridViewAnomary.RowHeadersWidth = 51;
             dataGridViewAnomary.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dataGridViewAnomary.Size = new Size(800, 134);

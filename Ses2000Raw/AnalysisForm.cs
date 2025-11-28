@@ -3,6 +3,7 @@ using MathNet.Numerics.LinearAlgebra.Factorization;
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -156,7 +157,13 @@ namespace Ses2000Raw
         public MapForm? MapView
         {
             get { return m_frmMap; }
-            set { m_frmMap = value; }
+            set
+            {
+                UnsubscribeAnomaryList();
+                m_frmMap = value;
+                SubscribeAnomaryList();
+                glControl2D?.Refresh();
+            }
         }
 
         public double DistScaleIntervalM
@@ -1245,6 +1252,36 @@ namespace Ses2000Raw
             m_frmMap.UpdateCursorPosition(pos.Value.X, pos.Value.Y);
             m_lastMapCursorPing = pingIndex;
         }
+
+        private void SubscribeAnomaryList()
+        {
+            if (m_frmMap?.AnomaryList != null)
+            {
+                m_frmMap.AnomaryList.ListChanged += OnAnomaryListChanged;
+            }
+        }
+
+        private void UnsubscribeAnomaryList()
+        {
+            if (m_frmMap?.AnomaryList != null)
+            {
+                m_frmMap.AnomaryList.ListChanged -= OnAnomaryListChanged;
+            }
+        }
+
+        private void OnAnomaryListChanged(object? sender, ListChangedEventArgs e)
+        {
+            if (IsDisposed)
+                return;
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => OnAnomaryListChanged(sender, e)));
+                return;
+            }
+
+            glControl2D?.Refresh();
+        }
         private double GetPixelsPerMeterY()
         {
             double dz_m = m_dZDistance / 100.0;
@@ -1582,7 +1619,7 @@ namespace Ses2000Raw
             GL.Disable(EnableCap.Blend);
         }
 
-        private void DrawAddContactMarker()
+        private void DrawAnomaryMarker()
         {
             if (!tsBtnMarkAnomary.Checked) return;
             if (m_selectedAnomalyContentX is not double x || m_selectedAnomalyContentY is not double y) return;
@@ -1592,7 +1629,7 @@ namespace Ses2000Raw
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Color4(1f, 0.3f, 0.7f, 0.9f);
+            GL.Color4(0.1f, 0.9f, 0.3f, 0.9f);
 
             GL.PointSize((float)(markerRadius * 2));
             GL.Begin(PrimitiveType.Points);
@@ -1605,6 +1642,58 @@ namespace Ses2000Raw
             GL.Vertex2(x + crossSize, y);
             GL.Vertex2(x, y - crossSize);
             GL.Vertex2(x, y + crossSize);
+            GL.End();
+
+            GL.Disable(EnableCap.Blend);
+        }
+
+        private void DrawRegisteredAnomaryMarkers()
+        {
+            var anomaryList = m_frmMap?.AnomaryList;
+            if (anomaryList == null || anomaryList.Count == 0) return;
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Color4(1f, 0.3f, 0.7f, 0.9f);
+
+            const float markerPointSize = 10f;
+            const double crossHalf = 6.0;
+
+            GL.PointSize(markerPointSize);
+            GL.Begin(PrimitiveType.Points);
+
+            foreach (var anomary in anomaryList)
+            {
+                int pingIndex = anomary.PingNo;
+                if (pingIndex < 0 || pingIndex >= m_iPingNo) continue;
+
+                double? y = GetContentYFromDepth(pingIndex, anomary.AnomaryDepth);
+                if (y is not double markerY) continue;
+
+                double markerX = MapXByPing(pingIndex);
+                GL.Vertex2(markerX, markerY);
+            }
+
+            GL.End();
+
+            GL.LineWidth(2f);
+            GL.Begin(PrimitiveType.Lines);
+
+            foreach (var anomary in anomaryList)
+            {
+                int pingIndex = anomary.PingNo;
+                if (pingIndex < 0 || pingIndex >= m_iPingNo) continue;
+
+                double? y = GetContentYFromDepth(pingIndex, anomary.AnomaryDepth);
+                if (y is not double markerY) continue;
+
+                double markerX = MapXByPing(pingIndex);
+                GL.Vertex2(markerX - crossHalf, markerY);
+                GL.Vertex2(markerX + crossHalf, markerY);
+                GL.Vertex2(markerX, markerY - crossHalf);
+                GL.Vertex2(markerX, markerY + crossHalf);
+            }
+
             GL.End();
 
             GL.Disable(EnableCap.Blend);
@@ -1992,7 +2081,8 @@ namespace Ses2000Raw
                 GL.End();
             }
 
-            DrawAddContactMarker();
+            DrawRegisteredAnomaryMarkers();
+            DrawAnomaryMarker();
 
             GL.PopMatrix(); // 画面座標へ
 
@@ -3655,6 +3745,12 @@ namespace Ses2000Raw
         }//マウスカーソルなしcontroll2D+mapform(表、ドット付き地図？)
 
         #endregion
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            UnsubscribeAnomaryList();
+            base.OnFormClosed(e);
+        }
 
 
     }
