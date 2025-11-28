@@ -571,7 +571,8 @@ namespace Ses2000Raw
             }
 
             int ping = GetPingIndexAtMouseX(e.X);
-            if (toolStripButtonAddContact.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue)
+            bool isBottomSelectionStep = toolStripButtonAddContact.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue;
+            if (isBottomSelectionStep)
             {
                 ping = m_selectedAnomalyPing.Value;
             }
@@ -579,14 +580,30 @@ namespace Ses2000Raw
             double? prevMouseContentY = m_mouseContentY;
             bool hasValidPing = (ping >= 0 && ping < m_iPingNo);
             m_mouseContentX = hasValidPing
-                ? (toolStripButtonAddContact.Checked && m_clickStep == 1 && m_selectedAnomalyPing.HasValue
-                    ? MapXByPing(ping)
-                    : m_dScrollX + e.X)
+                ? (isBottomSelectionStep ? MapXByPing(ping) : m_dScrollX + e.X)
                 : null;
             m_mouseContentY = hasValidPing ? m_dScrollY + e.Y : null;
             if (hasValidPing)
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
+                if (isBottomSelectionStep && m_selectedAnomalyDepthMeters.HasValue)
+                {
+                    bool cursorIsBelowAnomaly = !m_mouseDepthMeters.HasValue || m_mouseDepthMeters.Value >= m_selectedAnomalyDepthMeters.Value;
+                    if (cursorIsBelowAnomaly)
+                    {
+                        m_mouseContentY = m_selectedAnomalyContentY;
+                        glControl2D.Cursor = Cursors.Default;
+                    }
+                    else
+                    {
+                        m_mouseContentY = m_dScrollY + e.Y;
+                        glControl2D.Cursor = Cursors.Cross;
+                    }
+                }
+                else
+                {
+                    glControl2D.Cursor = toolStripButtonAddContact.Checked ? Cursors.Cross : Cursors.Default;
+                }
                 UpdateMapCursorMarker(ping);
                 if (this.tabControl1.SelectedIndex == (int)TabPageIndex.Signal) PlotPingWaveform(ping);
                 else if (this.tabControl1.SelectedIndex == (int)TabPageIndex.FFT) PlotPingFft(ping);
@@ -3188,6 +3205,11 @@ namespace Ses2000Raw
             {
                 if (m_selectedAnomalyDepthMeters.HasValue && m_selectedAnomalyPing.HasValue)
                 {
+                    if (depth >= m_selectedAnomalyDepthMeters.Value)
+                    {
+                        MessageBox.Show("音響異常より浅い海底面を指定してください", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return null;
+                    }
                     m_dBottomDepth = depth;
                     double burialDepth = Math.Round(Math.Abs(m_dBottomDepth.Value - m_selectedAnomalyDepthMeters.Value), 2);//深さのため、絶対値計算。小数点第２位まで表示
                     return burialDepth;
