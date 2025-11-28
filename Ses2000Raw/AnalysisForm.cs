@@ -217,8 +217,21 @@ namespace Ses2000Raw
             set
             {
                 this.lblDemodulate.Tag = value;
-                this.lblDemodulate.Text = value == DemodulationMode.Envelope ?
-                    Properties.Resources.Envelope : Properties.Resources.FullWave;
+                switch(value)
+                {
+                    case DemodulationMode.None:
+                        this.lblDemodulate.Text = Properties.Resources.FullWave;
+                        break;
+                    case DemodulationMode.Deconvolution:
+                        this.lblDemodulate.Text = Properties.Resources.Deconvolution;
+                        break;
+                    case DemodulationMode.Envelope:
+                        this.lblDemodulate.Text = Properties.Resources.Envelope;
+                        break;
+                    case DemodulationMode.DeconvoEnvelope:
+                        this.lblDemodulate.Text = Properties.Resources.DeconvEnvelope;
+                        break;
+                }
             }
         }
         public int Hpf_kHz

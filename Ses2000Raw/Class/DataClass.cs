@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using System.Collections.Concurrent;
+using System.Linq;
+using System.Numerics;
 
 namespace Ses2000Raw
 {
@@ -150,27 +152,49 @@ namespace Ses2000Raw
             int iProgressCnt = 0;
             try
             {
-                Parallel.For(0, iNumPing, (y, state) =>
+                if (deconvoFlag)
                 {
-                    if (ProgressForm.Cancel) state.Break();
+                    var psfCache = new ConcurrentDictionary<int, Complex[]>();
 
-                    int iNumSample = dataBlockList[y].Lf.Length;
-                    int iPower = (int)Math.Log(iNumSample, 2);
-                    int iFftNs;
-                    if ((iNumSample & (iNumSample - 1)) == 0)
-                        iFftNs = (int)Math.Pow(2, iPower);      // サンプル数が2のべき乗の場合
-                    else
-                        iFftNs = (int)Math.Pow(2, iPower + 1);  // サンプル数が2のべき乗でない場合
+                    Parallel.For(0, iNumPing, (y, state) =>
+                    {
+                        if (ProgressForm.Cancel) state.Break();
+
+                        int sampleLength = dataBlockList[y].Lf.Length;
+                        Complex[] psfSpectrum = psfCache.GetOrAdd(sampleLength, BuildTimePsfSpectrum);
+
+                        short[] deconvolved = DeconvolveWave(dataBlockList[y].Lf, sampleFreq, bpfFlag, hpf, lpf, envelopeFlag, psfSpectrum);
+                        processed[y] = deconvolved;
+
+                        // 進捗（Progress<T> はUIに自動マーシャル）
+                        progress.Report(Interlocked.Increment(ref iProgressCnt));
+
+                    });
+                }
+                else
+                {
+                    Parallel.For(0, iNumPing, (y, state) =>
+                    {
+                        if (ProgressForm.Cancel) state.Break();
+
+                        int iNumSample = dataBlockList[y].Lf.Length;
+                        int iPower = (int)Math.Log(iNumSample, 2);
+                        int iFftNs;
+                        if ((iNumSample & (iNumSample - 1)) == 0)
+                            iFftNs = (int)Math.Pow(2, iPower);      // サンプル数が2のべき乗の場合
+                        else
+                            iFftNs = (int)Math.Pow(2, iPower + 1);  // サンプル数が2のべき乗でない場合
 
 
-                    // 信号処理
-                    short[] envWaves = SignalProcess(dataBlockList[y].Lf, sampleFreq, iFftNs, bpfFlag, hpf, lpf, envelopeFlag, deconvoFlag);
-                    processed[y] = envWaves;
+                        // 信号処理
+                        short[] envWaves = SignalProcess(dataBlockList[y].Lf, sampleFreq, iFftNs, bpfFlag, hpf, lpf, envelopeFlag, deconvoFlag);
+                        processed[y] = envWaves;
 
-                    // 進捗（Progress<T> はUIに自動マーシャル）
-                    progress.Report(Interlocked.Increment(ref iProgressCnt));
+                        // 進捗（Progress<T> はUIに自動マーシャル）
+                        progress.Report(Interlocked.Increment(ref iProgressCnt));
 
-                });
+                    });
+                }
                 if (ProgressForm.Cancel)
                 {
                     ret.RetCode = ResultCode.Cancel;
@@ -190,6 +214,119 @@ namespace Ses2000Raw
                 ret.Message = "インポート処理中に予期せぬエラーが発生しました。\n" + er.Message;
                 return ret;
             }
+        }
+        #endregion
+
+        #region Deconvolution Helpers
+        private const double SigmaTimeSamples = 1.5;     // 時間方向PSFのσ（サンプル数）
+        private const double GammaTime = 1e-4;           // 時間方向デコンボ用正則化パラメータ
+
+        /// <summary>
+        /// 時間方向のPSFスペクトルを生成する
+        /// </summary>
+        /// <param name="sampleLength">データ長</param>
+        /// <returns>PSFの周波数領域表現</returns>
+        private static Complex[] BuildTimePsfSpectrum(int sampleLength)
+        {
+            if (sampleLength <= 0) return Array.Empty<Complex>();
+
+            int lt = Math.Min((int)Math.Ceiling(6 * SigmaTimeSamples), sampleLength - 1);
+            if (lt <= 0)
+            {
+                var flat = new Complex[sampleLength];
+                for (int i = 0; i < sampleLength; i++) flat[i] = Complex.One;
+                return flat;
+            }
+
+            if (lt % 2 == 0) lt += 1;
+
+            int half = (lt - 1) / 2;
+            var gt = new Complex[sampleLength];
+            for (int i = 0; i < lt; i++)
+            {
+                int tIdx = i - half;
+                double value = Math.Exp(-(tIdx * tIdx) / (2 * SigmaTimeSamples * SigmaTimeSamples));
+                gt[i] = new Complex(value, 0);
+            }
+
+            double sum = gt.Take(lt).Sum(c => c.Real);
+            if (sum > 0)
+            {
+                for (int i = 0; i < lt; i++)
+                    gt[i] /= sum;
+            }
+
+            Complex[] spectrum = new Complex[sampleLength];
+            FourierTransformClass.Fourier(gt, ref spectrum, 1.0);
+
+            return spectrum;
+        }
+
+        /// <summary>
+        /// 1Ping分の波形に対し、BPF→時間方向デコンボリューション→必要に応じEnvelopeを適用する
+        /// </summary>
+        private static short[] DeconvolveWave(short[] lf, int sampleFreq, bool bpfFlag, int hpf, int lpf, bool envelopeFlag, Complex[] psfSpectrum)
+        {
+            int n = lf.Length;
+            if (n == 0) return Array.Empty<short>();
+
+            var time = new Complex[n];
+            for (int i = 0; i < n; i++)
+                time[i] = new Complex(lf[i], 0);
+
+            Complex[] signalFreq = new Complex[n];
+            FourierTransformClass.Fourier(time, ref signalFreq, 1.0);
+
+            if (bpfFlag)
+            {
+                double fLow = hpf * 1000.0;
+                double fHigh = lpf * 1000.0;
+                ApplyBpfInPlace(n, sampleFreq, fLow, fHigh, signalFreq);
+            }
+
+            var deconvFreq = new Complex[n];
+            for (int k = 0; k < n; k++)
+            {
+                double denom = psfSpectrum[k].Magnitude * psfSpectrum[k].Magnitude + GammaTime;
+                deconvFreq[k] = denom > 0 ? signalFreq[k] * Complex.Conjugate(psfSpectrum[k]) / denom : Complex.Zero;
+            }
+
+            Complex[] deconvTime = new Complex[n];
+            FourierTransformClass.Fourier(deconvFreq, ref deconvTime, -1.0);
+
+            if (envelopeFlag)
+            {
+                Complex[] analyticFreq = new Complex[n];
+                FourierTransformClass.Fourier(deconvTime, ref analyticFreq, 1.0);
+                ApplyHilbertMaskInPlace(n, analyticFreq);
+
+                Complex[] analyticTime = new Complex[n];
+                FourierTransformClass.Fourier(analyticFreq, ref analyticTime, -1.0);
+
+                double[] magnitude = new double[n];
+                for (int i = 0; i < n; i++)
+                    magnitude[i] = analyticTime[i].Magnitude;
+
+                return ToInt16(magnitude);
+            }
+
+            double[] real = new double[n];
+            for (int i = 0; i < n; i++)
+                real[i] = deconvTime[i].Real;
+
+            return ToInt16(real);
+        }
+
+        private static short[] ToInt16(double[] values)
+        {
+            var ret = new short[values.Length];
+            for (int i = 0; i < values.Length; i++)
+            {
+                double v = Math.Round(values[i]);
+                v = Math.Clamp(v, short.MinValue, short.MaxValue);
+                ret[i] = (short)v;
+            }
+            return ret;
         }
         #endregion
     }
