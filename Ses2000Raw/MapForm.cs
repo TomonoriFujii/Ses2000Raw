@@ -35,9 +35,6 @@ namespace Ses2000Raw
         private FeatureSet? m_contactFeatureSet;//クリックした点を残すレイヤー
         private IMapPointLayer? m_contactLayer;
 
-        
-        
-
         private BindingList<Anomary> m_anomaryList;
         public BindingList<Anomary> AnomaryList
         {
@@ -45,9 +42,15 @@ namespace Ses2000Raw
             set { m_anomaryList = value; }
         }
 
-        public MapForm()
+        MainForm? m_frmMain;
+
+        public MapForm(Form parent)
         {
-            InitializeComponent(); map1.ProjectionModeDefine = ActionMode.Never;
+            InitializeComponent();
+
+            m_frmMain = parent as MainForm;
+
+            map1.ProjectionModeDefine = ActionMode.Never;
             map1.ProjectionModeReproject = ActionMode.Never;
 
             //map1.BackColor = Color.Black;
@@ -453,8 +456,6 @@ namespace Ses2000Raw
                 InitialDirectory = dir,
                 FileName = DateTime.Now.ToString("yyyyMMddHHmmss_") + "Anomary.csv"
                 //AutoUpgradeEnabled = false
-
-
             })
             {
                 if (sfd.ShowDialog(this) == DialogResult.OK)
@@ -464,7 +465,6 @@ namespace Ses2000Raw
                         string filePath = sfd.FileName;
                         using (var sw = new StreamWriter(filePath, false, System.Text.Encoding.UTF8))
                         {
-
                             // ヘッダー行
                             var headers = this.dataGridViewAnomary.Columns.Cast<DataGridViewColumn>()
                                                                            .Select(col => "\"" + col.HeaderText.Replace("\"", "\"\"") + "\"");
@@ -478,6 +478,7 @@ namespace Ses2000Raw
                                 sw.WriteLine(string.Join(",", cells));
                             }
                             MessageBox.Show("CSV保存が完了しました。", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            m_frmMain.PendingCsvData = false;
                         }
                     }
                     catch (IOException ex)

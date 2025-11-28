@@ -81,6 +81,7 @@ namespace Ses2000Raw
         private double? m_selectedAnomalyContentX;
         private double? m_selectedAnomalyContentY;
 
+        private MainForm? m_frmMain;
         private MapForm? m_frmMap;
         private (double X, double Y)?[]? m_pingPositions;
         private int m_lastMapCursorPing = -1;
@@ -252,9 +253,12 @@ namespace Ses2000Raw
         /// コンストラクタ
         /// </summary>
         /// <param name="title"></param>
-        public AnalysisForm(string title, Channel channel, string RawFileName)
+        public AnalysisForm(string title, Channel channel, string RawFileName, Form parent)
         {
             InitializeComponent();
+
+            m_frmMain = (MainForm)parent;
+
             this.Text = title;
             m_rawFileName = RawFileName;
             //m_rawFilePath = Path.GetDirectoryName(RawFileName);
@@ -3292,6 +3296,9 @@ namespace Ses2000Raw
                     CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
                     CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
                     ResetAddContactState();
+
+                    m_frmMain.PendingCsvData = true;
+                    
                 }
                 return;
             }

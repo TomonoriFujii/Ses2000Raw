@@ -22,6 +22,13 @@ namespace Ses2000Raw
 
         private MapForm m_frmMap;
 
+        private bool m_bPendingCsvData = false;
+        public bool PendingCsvData
+        {
+            get { return m_bPendingCsvData; }
+            set { m_bPendingCsvData = value; }
+        }
+
 
         public MainForm()
         {
@@ -40,33 +47,23 @@ namespace Ses2000Raw
             this.ForeColor = Constant.FORECOLOR;
 
             this.lblTitle.Text = "SES-Reflect";
-            m_frmMap = new MapForm();
+            m_frmMap = new MapForm(this);
             m_frmMap.Show(this.dockPanel1, DockState.DockRight);
 
             ColorPalette.LoadColorTable();
         }
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // AnalysisFormが表示されているか確認
-            foreach (var content in this.dockPanel1.Contents)
+            if(m_bPendingCsvData)
             {
-                if (content is AnalysisForm analysisForm)
+                var result = MessageBox.Show("CSVファイルに出力されていないデータが存在ます。保存せずに終了しますか？",
+                                                "警告",
+                                                MessageBoxButtons.YesNo,
+                                                MessageBoxIcon.Warning);
+                if (result == DialogResult.No)
                 {
-                    // m_CSVFilePathがnullの場合、警告を表示
-                    if (string.IsNullOrEmpty(analysisForm.CSVFilePath))
-                    {
-                        var result = MessageBox.Show(
-                            "CSVファイルが保存されていません。保存せずに終了しますか？",
-                            "警告",
-                            MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Warning
-                        );
-                        if (result == DialogResult.No)
-                        {
-                            e.Cancel = true; // 終了をキャンセル
-                            return;
-                        }
-                    }
+                    e.Cancel = true; // 終了をキャンセル
+                    return;
                 }
             }
         }
@@ -200,7 +197,7 @@ namespace Ses2000Raw
                 sbTitle.Append("kHz]");
             }
 
-            AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel, RawFileName);
+            AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel, RawFileName, this);
             analysisForm.MapView = m_frmMap;
             analysisForm.FileHeader = (FileHeader)fileHeader.Clone();
             for (int i = 0; i < blockHeaderList.Count; i++)
