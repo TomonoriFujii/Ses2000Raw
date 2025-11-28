@@ -105,6 +105,7 @@
             tabPage2 = new TabPage();
             formsPlot1 = new ScottPlot.WinForms.FormsPlot();
             tabPage3 = new TabPage();
+            formsPlotFFT = new ScottPlot.WinForms.FormsPlot();
             tabPage4 = new TabPage();
             tableLayoutPanel9 = new TableLayoutPanel();
             labelSoundVelocity = new Label();
@@ -1118,16 +1119,26 @@
             formsPlot1.TabIndex = 0;
             // 
             // tabPage3
-            // 
+            //
+            tabPage3.Controls.Add(formsPlotFFT);
             tabPage3.Location = new Point(27, 4);
             tabPage3.Name = "tabPage3";
             tabPage3.Size = new Size(265, 854);
             tabPage3.TabIndex = 2;
             tabPage3.Text = "FFT";
             tabPage3.UseVisualStyleBackColor = true;
-            // 
+            //
+            // formsPlotFFT
+            //
+            formsPlotFFT.DisplayScale = 1F;
+            formsPlotFFT.Dock = DockStyle.Fill;
+            formsPlotFFT.Location = new Point(0, 0);
+            formsPlotFFT.Name = "formsPlotFFT";
+            formsPlotFFT.Size = new Size(265, 854);
+            formsPlotFFT.TabIndex = 0;
+            //
             // tabPage4
-            // 
+            //
             tabPage4.AutoScroll = true;
             tabPage4.Controls.Add(tableLayoutPanel9);
             tabPage4.Controls.Add(tableLayoutPanel8);
@@ -2236,6 +2247,7 @@
         private ToolStripButton toolStripAddContact;
         private ToolStripSeparator toolStripSeparator1;
         private ScottPlot.WinForms.FormsPlot formsPlot1;
+        private ScottPlot.WinForms.FormsPlot formsPlotFFT;
         private TableLayoutPanel tableLayoutPanel1;
         private Label label21;
         private Label labelDate;

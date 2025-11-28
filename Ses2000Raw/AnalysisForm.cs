@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Numerics;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -70,6 +71,7 @@ namespace Ses2000Raw
         // 波形ビューの状態
         private double? m_mouseDepthMeters;
         private int m_lastPlottedPing = -1;
+        private int m_lastPlottedFftPing = -1;
         private ScottPlot.Plottables.HorizontalLine? m_depthGuideLine;
         private double? m_mouseContentX;
         private double? m_mouseContentY;
@@ -317,6 +319,17 @@ namespace Ses2000Raw
 
             // 5) 反映
             formsPlot1.Refresh();
+
+            // FFT 表示のダークテーマ設定
+            formsPlotFFT.Plot.Add.Palette = new ScottPlot.Palettes.Penumbra();
+            formsPlotFFT.Plot.FigureBackground.Color = ScottPlot.Color.FromHex("#181818");
+            formsPlotFFT.Plot.DataBackground.Color = ScottPlot.Color.FromHex("#1f1f1f");
+            formsPlotFFT.Plot.Axes.Color(ScottPlot.Color.FromHex("#d7d7d7"));
+            formsPlotFFT.Plot.Grid.MajorLineColor = ScottPlot.Color.FromHex("#404040");
+            formsPlotFFT.Plot.Legend.BackgroundColor = ScottPlot.Color.FromHex("#404040");
+            formsPlotFFT.Plot.Legend.FontColor = ScottPlot.Color.FromHex("#d7d7d7");
+            formsPlotFFT.Plot.Legend.OutlineColor = ScottPlot.Color.FromHex("#d7d7d7");
+            formsPlotFFT.Refresh();
         }
         /// <summary>
         /// 
@@ -566,6 +579,7 @@ namespace Ses2000Raw
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
                 UpdateMapCursorMarker(ping);
                 if (this.tabControl1.SelectedIndex == (int)TabPageIndex.Signal) PlotPingWaveform(ping);
+                else if (this.tabControl1.SelectedIndex == (int)TabPageIndex.FFT) PlotPingFft(ping);
                 else if (this.tabControl1.SelectedIndex == (int)TabPageIndex.PingInfo) ShowPingInfo(ping, BlockHeaderList[ping]);
             }
             else
@@ -575,6 +589,8 @@ namespace Ses2000Raw
                 UpdateMapCursorMarker(-1);
                 m_mouseContentX = null;
                 m_mouseContentY = null;
+                if (this.tabControl1.SelectedIndex == (int)TabPageIndex.FFT)
+                    ClearFftPlot();
             }
 
             if (prevMouseContentX != m_mouseContentX || prevMouseContentY != m_mouseContentY)
@@ -1585,6 +1601,77 @@ namespace Ses2000Raw
 
             formsPlot1.Refresh();
 
+        }
+
+        private void PlotPingFft(int pingIndex)
+        {
+            if (formsPlotFFT == null) return;
+            if (pingIndex < 0 || pingIndex >= m_dataBlockList.Count)
+            {
+                ClearFftPlot();
+                return;
+            }
+
+            if (pingIndex == m_lastPlottedFftPing)
+                return;
+
+            short[]? wave = m_dataBlockList[pingIndex].Lf;
+            if (wave == null || wave.Length == 0)
+            {
+                ClearFftPlot();
+                return;
+            }
+
+            double sampleFreqHz = BlockHeaderList[pingIndex].SampleFrequencyForLf;
+            if (sampleFreqHz <= 0)
+            {
+                ClearFftPlot();
+                return;
+            }
+
+            var complexSrc = new Complex[wave.Length];
+            for (int i = 0; i < wave.Length; i++)
+            {
+                complexSrc[i] = new Complex(wave[i], 0);
+            }
+
+            Complex[]? fftResult = null;
+            FourierTransformClass.Fourier(complexSrc, ref fftResult, 1.0);
+            if (fftResult == null || fftResult.Length == 0)
+            {
+                ClearFftPlot();
+                return;
+            }
+
+            int halfLength = fftResult.Length / 2;
+            double freqResolution = sampleFreqHz / fftResult.Length;
+            double[] freqAxis = new double[halfLength];
+            double[] powerAxis = new double[halfLength];
+
+            for (int i = 0; i < halfLength; i++)
+            {
+                freqAxis[i] = i * freqResolution;
+                powerAxis[i] = fftResult[i].Magnitude * fftResult[i].Magnitude;
+            }
+
+            var plt = formsPlotFFT.Plot;
+            plt.Clear();
+            var sc = plt.Add.Scatter(powerAxis, freqAxis, ScottPlot.Color.FromColor(System.Drawing.Color.DeepSkyBlue));
+            sc.MarkerSize = 0;
+            plt.Axes.Left.Label.Text = "Frequency (Hz)";
+            plt.Axes.Bottom.Label.Text = "Power";
+            plt.Axes.AutoScale();
+
+            formsPlotFFT.Refresh();
+            m_lastPlottedFftPing = pingIndex;
+        }
+
+        private void ClearFftPlot()
+        {
+            if (formsPlotFFT == null) return;
+            formsPlotFFT.Plot.Clear();
+            formsPlotFFT.Refresh();
+            m_lastPlottedFftPing = -1;
         }
         private void PlotPingWaveform(int pingIndex)
         {
