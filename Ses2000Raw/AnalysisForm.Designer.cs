@@ -236,6 +236,7 @@
             splitContainer1.BackColor = Color.Transparent;
             splitContainer1.Dock = DockStyle.Fill;
             splitContainer1.FixedPanel = FixedPanel.Panel1;
+            splitContainer1.IsSplitterFixed = true;
             splitContainer1.Location = new Point(0, 31);
             splitContainer1.Name = "splitContainer1";
             // 
@@ -247,7 +248,7 @@
             // 
             splitContainer1.Panel2.Controls.Add(glControl2D);
             splitContainer1.Size = new Size(1219, 862);
-            splitContainer1.SplitterDistance = 331;
+            splitContainer1.SplitterDistance = 296;
             splitContainer1.SplitterWidth = 5;
             splitContainer1.TabIndex = 0;
             // 
@@ -264,7 +265,7 @@
             tabControl1.Multiline = true;
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(331, 862);
+            tabControl1.Size = new Size(296, 862);
             tabControl1.SizeMode = TabSizeMode.Fixed;
             tabControl1.TabIndex = 0;
             // 
@@ -279,7 +280,7 @@
             tabPage1.Location = new Point(27, 4);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(300, 854);
+            tabPage1.Size = new Size(265, 854);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "Setting";
             tabPage1.UseVisualStyleBackColor = true;
@@ -787,12 +788,13 @@
             // 
             btnScaleSetting.BackColor = Color.Transparent;
             btnScaleSetting.FlatStyle = FlatStyle.Flat;
-            btnScaleSetting.Location = new Point(150, 109);
+            btnScaleSetting.Location = new Point(145, 109);
             btnScaleSetting.Name = "btnScaleSetting";
-            btnScaleSetting.Size = new Size(87, 47);
+            btnScaleSetting.Size = new Size(84, 44);
             btnScaleSetting.TabIndex = 13;
             btnScaleSetting.Text = "Scale Setting";
             btnScaleSetting.UseVisualStyleBackColor = false;
+            btnScaleSetting.Click += btnScaleSetting_Click;
             // 
             // chkHeaveCorrection
             // 
@@ -1101,7 +1103,7 @@
             tabPage2.Location = new Point(27, 4);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(300, 854);
+            tabPage2.Size = new Size(265, 854);
             tabPage2.TabIndex = 1;
             tabPage2.Text = "Signal";
             tabPage2.UseVisualStyleBackColor = true;
@@ -1112,14 +1114,14 @@
             formsPlot1.Dock = DockStyle.Fill;
             formsPlot1.Location = new Point(3, 3);
             formsPlot1.Name = "formsPlot1";
-            formsPlot1.Size = new Size(294, 848);
+            formsPlot1.Size = new Size(259, 848);
             formsPlot1.TabIndex = 0;
             // 
             // tabPage3
             // 
             tabPage3.Location = new Point(27, 4);
             tabPage3.Name = "tabPage3";
-            tabPage3.Size = new Size(300, 854);
+            tabPage3.Size = new Size(265, 854);
             tabPage3.TabIndex = 2;
             tabPage3.Text = "FFT";
             tabPage3.UseVisualStyleBackColor = true;
@@ -1139,13 +1141,14 @@
             tabPage4.Location = new Point(27, 4);
             tabPage4.Margin = new Padding(3, 4, 3, 4);
             tabPage4.Name = "tabPage4";
-            tabPage4.Size = new Size(300, 854);
+            tabPage4.Size = new Size(265, 854);
             tabPage4.TabIndex = 2;
             tabPage4.Text = "Ping Info";
             tabPage4.UseVisualStyleBackColor = true;
             // 
             // tableLayoutPanel9
             // 
+            tableLayoutPanel9.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel9.ColumnCount = 2;
             tableLayoutPanel9.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel9.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1156,16 +1159,16 @@
             tableLayoutPanel9.Name = "tableLayoutPanel9";
             tableLayoutPanel9.RowCount = 1;
             tableLayoutPanel9.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel9.Size = new Size(260, 20);
+            tableLayoutPanel9.Size = new Size(237, 20);
             tableLayoutPanel9.TabIndex = 17;
             // 
             // labelSoundVelocity
             // 
             labelSoundVelocity.AutoSize = true;
             labelSoundVelocity.Dock = DockStyle.Fill;
-            labelSoundVelocity.Location = new Point(133, 0);
+            labelSoundVelocity.Location = new Point(121, 0);
             labelSoundVelocity.Name = "labelSoundVelocity";
-            labelSoundVelocity.Size = new Size(124, 20);
+            labelSoundVelocity.Size = new Size(113, 20);
             labelSoundVelocity.TabIndex = 2;
             labelSoundVelocity.Text = "---";
             labelSoundVelocity.TextAlign = ContentAlignment.MiddleLeft;
@@ -1176,13 +1179,14 @@
             label82.Dock = DockStyle.Fill;
             label82.Location = new Point(3, 0);
             label82.Name = "label82";
-            label82.Size = new Size(124, 20);
+            label82.Size = new Size(112, 20);
             label82.TabIndex = 1;
             label82.Text = "Velocity";
             label82.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel8
             // 
+            tableLayoutPanel8.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel8.ColumnCount = 2;
             tableLayoutPanel8.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel8.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1196,16 +1200,16 @@
             tableLayoutPanel8.RowCount = 2;
             tableLayoutPanel8.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel8.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel8.Size = new Size(260, 40);
+            tableLayoutPanel8.Size = new Size(237, 40);
             tableLayoutPanel8.TabIndex = 15;
             // 
             // labelGainValueHf
             // 
             labelGainValueHf.AutoSize = true;
             labelGainValueHf.Dock = DockStyle.Fill;
-            labelGainValueHf.Location = new Point(133, 20);
+            labelGainValueHf.Location = new Point(121, 20);
             labelGainValueHf.Name = "labelGainValueHf";
-            labelGainValueHf.Size = new Size(124, 20);
+            labelGainValueHf.Size = new Size(113, 20);
             labelGainValueHf.TabIndex = 4;
             labelGainValueHf.Text = "-";
             labelGainValueHf.TextAlign = ContentAlignment.MiddleLeft;
@@ -1216,7 +1220,7 @@
             label80.Dock = DockStyle.Fill;
             label80.Location = new Point(3, 20);
             label80.Name = "label80";
-            label80.Size = new Size(124, 20);
+            label80.Size = new Size(112, 20);
             label80.TabIndex = 3;
             label80.Text = "HF Gain";
             label80.TextAlign = ContentAlignment.MiddleLeft;
@@ -1225,9 +1229,9 @@
             // 
             labelGainValueLf.AutoSize = true;
             labelGainValueLf.Dock = DockStyle.Fill;
-            labelGainValueLf.Location = new Point(133, 0);
+            labelGainValueLf.Location = new Point(121, 0);
             labelGainValueLf.Name = "labelGainValueLf";
-            labelGainValueLf.Size = new Size(124, 20);
+            labelGainValueLf.Size = new Size(113, 20);
             labelGainValueLf.TabIndex = 2;
             labelGainValueLf.Text = "-";
             labelGainValueLf.TextAlign = ContentAlignment.MiddleLeft;
@@ -1238,13 +1242,14 @@
             label78.Dock = DockStyle.Fill;
             label78.Location = new Point(3, 0);
             label78.Name = "label78";
-            label78.Size = new Size(124, 20);
+            label78.Size = new Size(112, 20);
             label78.TabIndex = 1;
             label78.Text = "LF Gain";
             label78.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel7
             // 
+            tableLayoutPanel7.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel7.ColumnCount = 2;
             tableLayoutPanel7.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel7.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1261,16 +1266,16 @@
             tableLayoutPanel7.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel7.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel7.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel7.Size = new Size(260, 60);
+            tableLayoutPanel7.Size = new Size(237, 60);
             tableLayoutPanel7.TabIndex = 13;
             // 
             // labelPulseLength
             // 
             labelPulseLength.AutoSize = true;
             labelPulseLength.Dock = DockStyle.Fill;
-            labelPulseLength.Location = new Point(133, 40);
+            labelPulseLength.Location = new Point(121, 40);
             labelPulseLength.Name = "labelPulseLength";
-            labelPulseLength.Size = new Size(124, 20);
+            labelPulseLength.Size = new Size(113, 20);
             labelPulseLength.TabIndex = 6;
             labelPulseLength.Text = "---";
             labelPulseLength.TextAlign = ContentAlignment.MiddleLeft;
@@ -1281,7 +1286,7 @@
             label76.Dock = DockStyle.Fill;
             label76.Location = new Point(3, 40);
             label76.Name = "label76";
-            label76.Size = new Size(124, 20);
+            label76.Size = new Size(112, 20);
             label76.TabIndex = 5;
             label76.Text = "PulseLength";
             label76.TextAlign = ContentAlignment.MiddleLeft;
@@ -1290,9 +1295,9 @@
             // 
             labelPulseToPulseDistance.AutoSize = true;
             labelPulseToPulseDistance.Dock = DockStyle.Fill;
-            labelPulseToPulseDistance.Location = new Point(133, 20);
+            labelPulseToPulseDistance.Location = new Point(121, 20);
             labelPulseToPulseDistance.Name = "labelPulseToPulseDistance";
-            labelPulseToPulseDistance.Size = new Size(124, 20);
+            labelPulseToPulseDistance.Size = new Size(113, 20);
             labelPulseToPulseDistance.TabIndex = 4;
             labelPulseToPulseDistance.Text = "---.---";
             labelPulseToPulseDistance.TextAlign = ContentAlignment.MiddleLeft;
@@ -1304,7 +1309,7 @@
             label74.Font = new Font("Yu Gothic UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 128);
             label74.Location = new Point(3, 20);
             label74.Name = "label74";
-            label74.Size = new Size(124, 20);
+            label74.Size = new Size(112, 20);
             label74.TabIndex = 3;
             label74.Text = "Pulse to Pulse(m)";
             label74.TextAlign = ContentAlignment.MiddleLeft;
@@ -1313,9 +1318,9 @@
             // 
             labelPulses1.AutoSize = true;
             labelPulses1.Dock = DockStyle.Fill;
-            labelPulses1.Location = new Point(133, 0);
+            labelPulses1.Location = new Point(121, 0);
             labelPulses1.Name = "labelPulses1";
-            labelPulses1.Size = new Size(124, 20);
+            labelPulses1.Size = new Size(113, 20);
             labelPulses1.TabIndex = 2;
             labelPulses1.Text = "-";
             labelPulses1.TextAlign = ContentAlignment.MiddleLeft;
@@ -1326,13 +1331,14 @@
             label72.Dock = DockStyle.Fill;
             label72.Location = new Point(3, 0);
             label72.Name = "label72";
-            label72.Size = new Size(124, 20);
+            label72.Size = new Size(112, 20);
             label72.TabIndex = 1;
             label72.Text = "Pulse(s)";
             label72.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel6
             // 
+            tableLayoutPanel6.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel6.ColumnCount = 2;
             tableLayoutPanel6.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel6.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1349,16 +1355,16 @@
             tableLayoutPanel6.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel6.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel6.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel6.Size = new Size(260, 60);
+            tableLayoutPanel6.Size = new Size(237, 60);
             tableLayoutPanel6.TabIndex = 10;
             // 
             // labelSampleFreqLf
             // 
             labelSampleFreqLf.AutoSize = true;
             labelSampleFreqLf.Dock = DockStyle.Fill;
-            labelSampleFreqLf.Location = new Point(133, 40);
+            labelSampleFreqLf.Location = new Point(121, 40);
             labelSampleFreqLf.Name = "labelSampleFreqLf";
-            labelSampleFreqLf.Size = new Size(124, 20);
+            labelSampleFreqLf.Size = new Size(113, 20);
             labelSampleFreqLf.TabIndex = 6;
             labelSampleFreqLf.Text = "---";
             labelSampleFreqLf.TextAlign = ContentAlignment.MiddleLeft;
@@ -1369,7 +1375,7 @@
             label70.Dock = DockStyle.Fill;
             label70.Location = new Point(3, 40);
             label70.Name = "label70";
-            label70.Size = new Size(124, 20);
+            label70.Size = new Size(112, 20);
             label70.TabIndex = 5;
             label70.Text = "SampleFreq (Lf)";
             label70.TextAlign = ContentAlignment.MiddleLeft;
@@ -1378,9 +1384,9 @@
             // 
             labelHfFrequency.AutoSize = true;
             labelHfFrequency.Dock = DockStyle.Fill;
-            labelHfFrequency.Location = new Point(133, 20);
+            labelHfFrequency.Location = new Point(121, 20);
             labelHfFrequency.Name = "labelHfFrequency";
-            labelHfFrequency.Size = new Size(124, 20);
+            labelHfFrequency.Size = new Size(113, 20);
             labelHfFrequency.TabIndex = 4;
             labelHfFrequency.Text = "---";
             labelHfFrequency.TextAlign = ContentAlignment.MiddleLeft;
@@ -1391,7 +1397,7 @@
             label68.Dock = DockStyle.Fill;
             label68.Location = new Point(3, 20);
             label68.Name = "label68";
-            label68.Size = new Size(124, 20);
+            label68.Size = new Size(112, 20);
             label68.TabIndex = 3;
             label68.Text = "HfFrequency1";
             label68.TextAlign = ContentAlignment.MiddleLeft;
@@ -1400,9 +1406,9 @@
             // 
             labelLfFrequency.AutoSize = true;
             labelLfFrequency.Dock = DockStyle.Fill;
-            labelLfFrequency.Location = new Point(133, 0);
+            labelLfFrequency.Location = new Point(121, 0);
             labelLfFrequency.Name = "labelLfFrequency";
-            labelLfFrequency.Size = new Size(124, 20);
+            labelLfFrequency.Size = new Size(113, 20);
             labelLfFrequency.TabIndex = 2;
             labelLfFrequency.Text = "---";
             labelLfFrequency.TextAlign = ContentAlignment.MiddleLeft;
@@ -1413,13 +1419,14 @@
             label66.Dock = DockStyle.Fill;
             label66.Location = new Point(3, 0);
             label66.Name = "label66";
-            label66.Size = new Size(124, 20);
+            label66.Size = new Size(112, 20);
             label66.TabIndex = 1;
             label66.Text = "LfFrequency1";
             label66.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel5
             // 
+            tableLayoutPanel5.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel5.ColumnCount = 2;
             tableLayoutPanel5.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel5.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1433,16 +1440,16 @@
             tableLayoutPanel5.RowCount = 2;
             tableLayoutPanel5.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel5.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel5.Size = new Size(260, 40);
+            tableLayoutPanel5.Size = new Size(237, 40);
             tableLayoutPanel5.TabIndex = 7;
             // 
             // labelPitchSteering
             // 
             labelPitchSteering.AutoSize = true;
             labelPitchSteering.Dock = DockStyle.Fill;
-            labelPitchSteering.Location = new Point(133, 20);
+            labelPitchSteering.Location = new Point(121, 20);
             labelPitchSteering.Name = "labelPitchSteering";
-            labelPitchSteering.Size = new Size(124, 20);
+            labelPitchSteering.Size = new Size(113, 20);
             labelPitchSteering.TabIndex = 4;
             labelPitchSteering.Text = "-";
             labelPitchSteering.TextAlign = ContentAlignment.MiddleLeft;
@@ -1453,7 +1460,7 @@
             label64.Dock = DockStyle.Fill;
             label64.Location = new Point(3, 20);
             label64.Name = "label64";
-            label64.Size = new Size(124, 20);
+            label64.Size = new Size(112, 20);
             label64.TabIndex = 3;
             label64.Text = "Steering Pitch";
             label64.TextAlign = ContentAlignment.MiddleLeft;
@@ -1462,9 +1469,9 @@
             // 
             labelRollSteering.AutoSize = true;
             labelRollSteering.Dock = DockStyle.Fill;
-            labelRollSteering.Location = new Point(133, 0);
+            labelRollSteering.Location = new Point(121, 0);
             labelRollSteering.Name = "labelRollSteering";
-            labelRollSteering.Size = new Size(124, 20);
+            labelRollSteering.Size = new Size(113, 20);
             labelRollSteering.TabIndex = 2;
             labelRollSteering.Text = "-";
             labelRollSteering.TextAlign = ContentAlignment.MiddleLeft;
@@ -1475,13 +1482,14 @@
             label62.Dock = DockStyle.Fill;
             label62.Location = new Point(3, 0);
             label62.Name = "label62";
-            label62.Size = new Size(124, 20);
+            label62.Size = new Size(112, 20);
             label62.TabIndex = 1;
             label62.Text = "Steering Roll";
             label62.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel4
             // 
+            tableLayoutPanel4.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel4.ColumnCount = 2;
             tableLayoutPanel4.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel4.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1504,16 +1512,16 @@
             tableLayoutPanel4.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel4.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel4.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel4.Size = new Size(260, 100);
+            tableLayoutPanel4.Size = new Size(237, 100);
             tableLayoutPanel4.TabIndex = 6;
             // 
             // labelHeaveMotionSensor
             // 
             labelHeaveMotionSensor.AutoSize = true;
             labelHeaveMotionSensor.Dock = DockStyle.Fill;
-            labelHeaveMotionSensor.Location = new Point(133, 80);
+            labelHeaveMotionSensor.Location = new Point(121, 80);
             labelHeaveMotionSensor.Name = "labelHeaveMotionSensor";
-            labelHeaveMotionSensor.Size = new Size(124, 20);
+            labelHeaveMotionSensor.Size = new Size(113, 20);
             labelHeaveMotionSensor.TabIndex = 9;
             labelHeaveMotionSensor.Text = "-";
             labelHeaveMotionSensor.TextAlign = ContentAlignment.MiddleLeft;
@@ -1524,7 +1532,7 @@
             label60.Dock = DockStyle.Fill;
             label60.Location = new Point(3, 80);
             label60.Name = "label60";
-            label60.Size = new Size(124, 20);
+            label60.Size = new Size(112, 20);
             label60.TabIndex = 8;
             label60.Text = "Heave";
             label60.TextAlign = ContentAlignment.MiddleLeft;
@@ -1533,9 +1541,9 @@
             // 
             labelYawMotionSensor.AutoSize = true;
             labelYawMotionSensor.Dock = DockStyle.Fill;
-            labelYawMotionSensor.Location = new Point(133, 60);
+            labelYawMotionSensor.Location = new Point(121, 60);
             labelYawMotionSensor.Name = "labelYawMotionSensor";
-            labelYawMotionSensor.Size = new Size(124, 20);
+            labelYawMotionSensor.Size = new Size(113, 20);
             labelYawMotionSensor.TabIndex = 7;
             labelYawMotionSensor.Text = "-";
             labelYawMotionSensor.TextAlign = ContentAlignment.MiddleLeft;
@@ -1546,7 +1554,7 @@
             label58.Dock = DockStyle.Fill;
             label58.Location = new Point(3, 60);
             label58.Name = "label58";
-            label58.Size = new Size(124, 20);
+            label58.Size = new Size(112, 20);
             label58.TabIndex = 6;
             label58.Text = "Yaw";
             label58.TextAlign = ContentAlignment.MiddleLeft;
@@ -1555,9 +1563,9 @@
             // 
             labelPitchMotionSensor.AutoSize = true;
             labelPitchMotionSensor.Dock = DockStyle.Fill;
-            labelPitchMotionSensor.Location = new Point(133, 40);
+            labelPitchMotionSensor.Location = new Point(121, 40);
             labelPitchMotionSensor.Name = "labelPitchMotionSensor";
-            labelPitchMotionSensor.Size = new Size(124, 20);
+            labelPitchMotionSensor.Size = new Size(113, 20);
             labelPitchMotionSensor.TabIndex = 5;
             labelPitchMotionSensor.Text = "-";
             labelPitchMotionSensor.TextAlign = ContentAlignment.MiddleLeft;
@@ -1568,7 +1576,7 @@
             label56.Dock = DockStyle.Fill;
             label56.Location = new Point(3, 40);
             label56.Name = "label56";
-            label56.Size = new Size(124, 20);
+            label56.Size = new Size(112, 20);
             label56.TabIndex = 4;
             label56.Text = "Pitch";
             label56.TextAlign = ContentAlignment.MiddleLeft;
@@ -1577,9 +1585,9 @@
             // 
             labelRollMotionSensor.AutoSize = true;
             labelRollMotionSensor.Dock = DockStyle.Fill;
-            labelRollMotionSensor.Location = new Point(133, 20);
+            labelRollMotionSensor.Location = new Point(121, 20);
             labelRollMotionSensor.Name = "labelRollMotionSensor";
-            labelRollMotionSensor.Size = new Size(124, 20);
+            labelRollMotionSensor.Size = new Size(113, 20);
             labelRollMotionSensor.TabIndex = 3;
             labelRollMotionSensor.Text = "-";
             labelRollMotionSensor.TextAlign = ContentAlignment.MiddleLeft;
@@ -1590,7 +1598,7 @@
             label54.Dock = DockStyle.Fill;
             label54.Location = new Point(3, 20);
             label54.Name = "label54";
-            label54.Size = new Size(124, 20);
+            label54.Size = new Size(112, 20);
             label54.TabIndex = 2;
             label54.Text = "Roll";
             label54.TextAlign = ContentAlignment.MiddleLeft;
@@ -1599,9 +1607,9 @@
             // 
             labelHeadingMotionSensor.AutoSize = true;
             labelHeadingMotionSensor.Dock = DockStyle.Fill;
-            labelHeadingMotionSensor.Location = new Point(133, 0);
+            labelHeadingMotionSensor.Location = new Point(121, 0);
             labelHeadingMotionSensor.Name = "labelHeadingMotionSensor";
-            labelHeadingMotionSensor.Size = new Size(124, 20);
+            labelHeadingMotionSensor.Size = new Size(113, 20);
             labelHeadingMotionSensor.TabIndex = 1;
             labelHeadingMotionSensor.Text = "-";
             labelHeadingMotionSensor.TextAlign = ContentAlignment.MiddleLeft;
@@ -1612,13 +1620,14 @@
             label52.Dock = DockStyle.Fill;
             label52.Location = new Point(3, 0);
             label52.Name = "label52";
-            label52.Size = new Size(124, 20);
+            label52.Size = new Size(112, 20);
             label52.TabIndex = 0;
             label52.Text = "Heading";
             label52.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel3
             // 
+            tableLayoutPanel3.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel3.ColumnCount = 2;
             tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1632,16 +1641,16 @@
             tableLayoutPanel3.RowCount = 2;
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel3.Size = new Size(260, 40);
+            tableLayoutPanel3.Size = new Size(237, 40);
             tableLayoutPanel3.TabIndex = 4;
             // 
             // labelMeasureLength
             // 
             labelMeasureLength.AutoSize = true;
             labelMeasureLength.Dock = DockStyle.Fill;
-            labelMeasureLength.Location = new Point(133, 20);
+            labelMeasureLength.Location = new Point(121, 20);
             labelMeasureLength.Name = "labelMeasureLength";
-            labelMeasureLength.Size = new Size(124, 20);
+            labelMeasureLength.Size = new Size(113, 20);
             labelMeasureLength.TabIndex = 3;
             labelMeasureLength.Text = "--";
             labelMeasureLength.TextAlign = ContentAlignment.MiddleLeft;
@@ -1652,7 +1661,7 @@
             label34.Dock = DockStyle.Fill;
             label34.Location = new Point(3, 20);
             label34.Name = "label34";
-            label34.Size = new Size(124, 20);
+            label34.Size = new Size(112, 20);
             label34.TabIndex = 2;
             label34.Text = "MeasureLength";
             label34.TextAlign = ContentAlignment.MiddleLeft;
@@ -1661,9 +1670,9 @@
             // 
             labelMeasureStart.AutoSize = true;
             labelMeasureStart.Dock = DockStyle.Fill;
-            labelMeasureStart.Location = new Point(133, 0);
+            labelMeasureStart.Location = new Point(121, 0);
             labelMeasureStart.Name = "labelMeasureStart";
-            labelMeasureStart.Size = new Size(124, 20);
+            labelMeasureStart.Size = new Size(113, 20);
             labelMeasureStart.TabIndex = 1;
             labelMeasureStart.Text = "--";
             labelMeasureStart.TextAlign = ContentAlignment.MiddleLeft;
@@ -1674,13 +1683,14 @@
             label29.Dock = DockStyle.Fill;
             label29.Location = new Point(3, 0);
             label29.Name = "label29";
-            label29.Size = new Size(124, 20);
+            label29.Size = new Size(112, 20);
             label29.TabIndex = 0;
             label29.Text = "MeasureStart";
             label29.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel2
             // 
+            tableLayoutPanel2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel2.ColumnCount = 2;
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1712,16 +1722,16 @@
             tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel2.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel2.Size = new Size(260, 160);
+            tableLayoutPanel2.Size = new Size(237, 160);
             tableLayoutPanel2.TabIndex = 2;
             // 
             // labelSisString8
             // 
             labelSisString8.AutoSize = true;
             labelSisString8.Dock = DockStyle.Fill;
-            labelSisString8.Location = new Point(133, 140);
+            labelSisString8.Location = new Point(121, 140);
             labelSisString8.Name = "labelSisString8";
-            labelSisString8.Size = new Size(124, 20);
+            labelSisString8.Size = new Size(113, 20);
             labelSisString8.TabIndex = 15;
             labelSisString8.Text = "---.---";
             labelSisString8.TextAlign = ContentAlignment.MiddleLeft;
@@ -1732,7 +1742,7 @@
             label48.Dock = DockStyle.Fill;
             label48.Location = new Point(3, 140);
             label48.Name = "label48";
-            label48.Size = new Size(124, 20);
+            label48.Size = new Size(112, 20);
             label48.TabIndex = 14;
             label48.Text = "SisString8";
             label48.TextAlign = ContentAlignment.MiddleLeft;
@@ -1741,9 +1751,9 @@
             // 
             labelSisString7.AutoSize = true;
             labelSisString7.Dock = DockStyle.Fill;
-            labelSisString7.Location = new Point(133, 120);
+            labelSisString7.Location = new Point(121, 120);
             labelSisString7.Name = "labelSisString7";
-            labelSisString7.Size = new Size(124, 20);
+            labelSisString7.Size = new Size(113, 20);
             labelSisString7.TabIndex = 13;
             labelSisString7.Text = "--";
             labelSisString7.TextAlign = ContentAlignment.MiddleLeft;
@@ -1754,7 +1764,7 @@
             label46.Dock = DockStyle.Fill;
             label46.Location = new Point(3, 120);
             label46.Name = "label46";
-            label46.Size = new Size(124, 20);
+            label46.Size = new Size(112, 20);
             label46.TabIndex = 12;
             label46.Text = "SisString7";
             label46.TextAlign = ContentAlignment.MiddleLeft;
@@ -1763,9 +1773,9 @@
             // 
             labelSisString6.AutoSize = true;
             labelSisString6.Dock = DockStyle.Fill;
-            labelSisString6.Location = new Point(133, 100);
+            labelSisString6.Location = new Point(121, 100);
             labelSisString6.Name = "labelSisString6";
-            labelSisString6.Size = new Size(124, 20);
+            labelSisString6.Size = new Size(113, 20);
             labelSisString6.TabIndex = 11;
             labelSisString6.Text = "---.---";
             labelSisString6.TextAlign = ContentAlignment.MiddleLeft;
@@ -1776,7 +1786,7 @@
             label44.Dock = DockStyle.Fill;
             label44.Location = new Point(3, 100);
             label44.Name = "label44";
-            label44.Size = new Size(124, 20);
+            label44.Size = new Size(112, 20);
             label44.TabIndex = 10;
             label44.Text = "SisString6";
             label44.TextAlign = ContentAlignment.MiddleLeft;
@@ -1785,9 +1795,9 @@
             // 
             labelSisString5.AutoSize = true;
             labelSisString5.Dock = DockStyle.Fill;
-            labelSisString5.Location = new Point(133, 80);
+            labelSisString5.Location = new Point(121, 80);
             labelSisString5.Name = "labelSisString5";
-            labelSisString5.Size = new Size(124, 20);
+            labelSisString5.Size = new Size(113, 20);
             labelSisString5.TabIndex = 9;
             labelSisString5.Text = "---.---";
             labelSisString5.TextAlign = ContentAlignment.MiddleLeft;
@@ -1798,7 +1808,7 @@
             label39.Dock = DockStyle.Fill;
             label39.Location = new Point(3, 80);
             label39.Name = "label39";
-            label39.Size = new Size(124, 20);
+            label39.Size = new Size(112, 20);
             label39.TabIndex = 8;
             label39.Text = "SisString5";
             label39.TextAlign = ContentAlignment.MiddleLeft;
@@ -1807,9 +1817,9 @@
             // 
             labelSisString4.AutoSize = true;
             labelSisString4.Dock = DockStyle.Fill;
-            labelSisString4.Location = new Point(133, 60);
+            labelSisString4.Location = new Point(121, 60);
             labelSisString4.Name = "labelSisString4";
-            labelSisString4.Size = new Size(124, 20);
+            labelSisString4.Size = new Size(113, 20);
             labelSisString4.TabIndex = 7;
             labelSisString4.Text = "---.---";
             labelSisString4.TextAlign = ContentAlignment.MiddleLeft;
@@ -1820,7 +1830,7 @@
             label37.Dock = DockStyle.Fill;
             label37.Location = new Point(3, 60);
             label37.Name = "label37";
-            label37.Size = new Size(124, 20);
+            label37.Size = new Size(112, 20);
             label37.TabIndex = 6;
             label37.Text = "SisString4";
             label37.TextAlign = ContentAlignment.MiddleLeft;
@@ -1829,9 +1839,9 @@
             // 
             labelSisString3.AutoSize = true;
             labelSisString3.Dock = DockStyle.Fill;
-            labelSisString3.Location = new Point(133, 40);
+            labelSisString3.Location = new Point(121, 40);
             labelSisString3.Name = "labelSisString3";
-            labelSisString3.Size = new Size(124, 20);
+            labelSisString3.Size = new Size(113, 20);
             labelSisString3.TabIndex = 5;
             labelSisString3.Text = "---.---";
             labelSisString3.TextAlign = ContentAlignment.MiddleLeft;
@@ -1842,7 +1852,7 @@
             label35.Dock = DockStyle.Fill;
             label35.Location = new Point(3, 40);
             label35.Name = "label35";
-            label35.Size = new Size(124, 20);
+            label35.Size = new Size(112, 20);
             label35.TabIndex = 4;
             label35.Text = "SisString3";
             label35.TextAlign = ContentAlignment.MiddleLeft;
@@ -1851,9 +1861,9 @@
             // 
             labelSisString2.AutoSize = true;
             labelSisString2.Dock = DockStyle.Fill;
-            labelSisString2.Location = new Point(133, 20);
+            labelSisString2.Location = new Point(121, 20);
             labelSisString2.Name = "labelSisString2";
-            labelSisString2.Size = new Size(124, 20);
+            labelSisString2.Size = new Size(113, 20);
             labelSisString2.TabIndex = 3;
             labelSisString2.Text = "---.---";
             labelSisString2.TextAlign = ContentAlignment.MiddleLeft;
@@ -1864,7 +1874,7 @@
             label33.Dock = DockStyle.Fill;
             label33.Location = new Point(3, 20);
             label33.Name = "label33";
-            label33.Size = new Size(124, 20);
+            label33.Size = new Size(112, 20);
             label33.TabIndex = 2;
             label33.Text = "SisString2";
             label33.TextAlign = ContentAlignment.MiddleLeft;
@@ -1873,9 +1883,9 @@
             // 
             labelSisString1.AutoSize = true;
             labelSisString1.Dock = DockStyle.Fill;
-            labelSisString1.Location = new Point(133, 0);
+            labelSisString1.Location = new Point(121, 0);
             labelSisString1.Name = "labelSisString1";
-            labelSisString1.Size = new Size(124, 20);
+            labelSisString1.Size = new Size(113, 20);
             labelSisString1.TabIndex = 1;
             labelSisString1.Text = "---.---";
             labelSisString1.TextAlign = ContentAlignment.MiddleLeft;
@@ -1886,13 +1896,14 @@
             label31.Dock = DockStyle.Fill;
             label31.Location = new Point(3, 0);
             label31.Name = "label31";
-            label31.Size = new Size(124, 20);
+            label31.Size = new Size(112, 20);
             label31.TabIndex = 0;
             label31.Text = "SisString1";
             label31.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel1
             // 
+            tableLayoutPanel1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             tableLayoutPanel1.ColumnCount = 2;
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -1909,16 +1920,16 @@
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            tableLayoutPanel1.Size = new Size(260, 60);
+            tableLayoutPanel1.Size = new Size(237, 60);
             tableLayoutPanel1.TabIndex = 0;
             // 
             // labelPingNumber
             // 
             labelPingNumber.AutoSize = true;
             labelPingNumber.Dock = DockStyle.Fill;
-            labelPingNumber.Location = new Point(133, 40);
+            labelPingNumber.Location = new Point(121, 40);
             labelPingNumber.Name = "labelPingNumber";
-            labelPingNumber.Size = new Size(124, 20);
+            labelPingNumber.Size = new Size(113, 20);
             labelPingNumber.TabIndex = 5;
             labelPingNumber.Text = "---";
             labelPingNumber.TextAlign = ContentAlignment.MiddleLeft;
@@ -1930,7 +1941,7 @@
             label32.Location = new Point(0, 40);
             label32.Margin = new Padding(0);
             label32.Name = "label32";
-            label32.Size = new Size(130, 20);
+            label32.Size = new Size(118, 20);
             label32.TabIndex = 4;
             label32.Text = "Ping No.";
             label32.TextAlign = ContentAlignment.MiddleLeft;
@@ -1942,7 +1953,7 @@
             label21.Location = new Point(0, 0);
             label21.Margin = new Padding(0);
             label21.Name = "label21";
-            label21.Size = new Size(130, 20);
+            label21.Size = new Size(118, 20);
             label21.TabIndex = 0;
             label21.Text = "Date";
             label21.TextAlign = ContentAlignment.MiddleLeft;
@@ -1951,9 +1962,9 @@
             // 
             labelDate.AutoSize = true;
             labelDate.Dock = DockStyle.Fill;
-            labelDate.Location = new Point(133, 0);
+            labelDate.Location = new Point(121, 0);
             labelDate.Name = "labelDate";
-            labelDate.Size = new Size(124, 20);
+            labelDate.Size = new Size(113, 20);
             labelDate.TabIndex = 1;
             labelDate.Text = "----/--/--";
             labelDate.TextAlign = ContentAlignment.MiddleLeft;
@@ -1965,7 +1976,7 @@
             label25.Location = new Point(0, 20);
             label25.Margin = new Padding(0);
             label25.Name = "label25";
-            label25.Size = new Size(130, 20);
+            label25.Size = new Size(118, 20);
             label25.TabIndex = 2;
             label25.Text = "Time";
             label25.TextAlign = ContentAlignment.MiddleLeft;
@@ -1974,9 +1985,9 @@
             // 
             labelTime.AutoSize = true;
             labelTime.Dock = DockStyle.Fill;
-            labelTime.Location = new Point(133, 20);
+            labelTime.Location = new Point(121, 20);
             labelTime.Name = "labelTime";
-            labelTime.Size = new Size(124, 20);
+            labelTime.Size = new Size(113, 20);
             labelTime.TabIndex = 3;
             labelTime.Text = "--:--:--.---";
             labelTime.TextAlign = ContentAlignment.MiddleLeft;
@@ -1993,7 +2004,7 @@
             glControl2D.Name = "glControl2D";
             glControl2D.Profile = OpenTK.Windowing.Common.ContextProfile.Compatability;
             glControl2D.SharedContext = null;
-            glControl2D.Size = new Size(883, 862);
+            glControl2D.Size = new Size(918, 862);
             glControl2D.TabIndex = 0;
             glControl2D.Visible = false;
             glControl2D.Load += glControl2D_Load;
@@ -2060,11 +2071,10 @@
             toolStripButtonAddContact.Image = (Image)resources.GetObject("toolStripButtonAddContact.Image");
             toolStripButtonAddContact.ImageTransparentColor = Color.Magenta;
             toolStripButtonAddContact.Name = "toolStripButtonAddContact";
-            toolStripButtonAddContact.Size = new Size(116, 28);
+            toolStripButtonAddContact.Size = new Size(101, 28);
             toolStripButtonAddContact.Tag = "AddContact";
-            toolStripButtonAddContact.Text = "Add contact(&A)";
+            toolStripButtonAddContact.Text = "Add Contact";
             toolStripButtonAddContact.ToolTipText = "Place a pin to save location information.";
-            toolStripButtonAddContact.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
             // 
             // AnalysisForm
             // 

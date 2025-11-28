@@ -10,7 +10,7 @@
     <Compile Update="DarkForm\TitleStrip.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Update="UsageAddContactForm.cs">
+    <Compile Update="ScaleSettingForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="MapForm.cs">

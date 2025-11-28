@@ -37,6 +37,7 @@
             dataGridViewAnomary = new DataGridView();
             toolStrip1 = new ToolStrip();
             toolStripButton1 = new ToolStripButton();
+            toolStripButton2 = new ToolStripButton();
             sisString5DataGridViewTextBoxColumn = new DataGridViewTextBoxColumn();
             sisString6DataGridViewTextBoxColumn = new DataGridViewTextBoxColumn();
             sisString7DataGridViewTextBoxColumn = new DataGridViewTextBoxColumn();
@@ -209,12 +210,11 @@
             dataGridViewAnomary.Size = new Size(800, 134);
             dataGridViewAnomary.TabIndex = 0;
             dataGridViewAnomary.CellClick += dataGridViewPingInfo_CellClick;
-            dataGridViewAnomary.RowHeaderMouseDoubleClick += dataGridViewPingInfo_RowHeaderMouseDoubleClick;
-            dataGridViewAnomary.SelectionChanged += dataGridViewPingInfo_SelectionChanged;
+            dataGridViewAnomary.SelectionChanged += dataGridViewAnomaryInfo_SelectionChanged;
             // 
             // toolStrip1
             // 
-            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripButton1 });
+            toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripButton1, toolStripButton2 });
             toolStrip1.Location = new Point(0, 0);
             toolStrip1.Name = "toolStrip1";
             toolStrip1.Size = new Size(800, 25);
@@ -230,6 +230,15 @@
             toolStripButton1.Size = new Size(84, 22);
             toolStripButton1.Tag = "csv";
             toolStripButton1.Text = "Export CSV";
+            // 
+            // toolStripButton2
+            // 
+            toolStripButton2.Image = (Image)resources.GetObject("toolStripButton2.Image");
+            toolStripButton2.ImageTransparentColor = Color.Magenta;
+            toolStripButton2.Name = "toolStripButton2";
+            toolStripButton2.Size = new Size(60, 22);
+            toolStripButton2.Tag = "Delete";
+            toolStripButton2.Text = "Delete";
             // 
             // sisString5DataGridViewTextBoxColumn
             // 
@@ -1002,5 +1011,6 @@
         private BindingSource blockHeaderBindingSource1;
         private ToolStrip toolStrip1;
         private ToolStripButton toolStripButton1;
+        private ToolStripButton toolStripButton2;
     }
 }

@@ -120,6 +120,11 @@ namespace Ses2000Raw
         private List<BlockHeader> m_blockHeaderList;
         private List<DataBlock> m_dataBlockList;
 
+        private double m_dDistScaeleIntervalM = 5.0; // 距離スケール間隔[m]
+        private double m_dDepScaleIntervalM = 1.0; // 深度スケール間隔[m]
+        private System.Drawing.Color m_colDistScaleColor = System.Drawing.Color.White;
+        private System.Drawing.Color m_colDepScaleColor = System.Drawing.Color.White;
+
         // プロパティ
         public FileHeader FileHeader
         {
@@ -140,6 +145,27 @@ namespace Ses2000Raw
         {
             get { return m_frmMap; }
             set { m_frmMap = value; }
+        }
+
+        public double DistScaleIntervalM
+        {
+            get { return m_dDistScaeleIntervalM; }
+            set { m_dDistScaeleIntervalM = value; }
+        }
+        public double DepScaleIntervalM
+        {
+            get { return m_dDepScaleIntervalM; }
+            set { m_dDepScaleIntervalM = value; }
+        }
+        public System.Drawing.Color DistScaleColor
+        {
+            get { return m_colDistScaleColor; }
+            set { m_colDistScaleColor = value; }
+        }
+        public System.Drawing.Color DepScaleColor
+        {
+            get { return m_colDepScaleColor; }
+            set { m_colDepScaleColor = value; }
         }
 
         public bool ToolStripButtonAddContactChecked
@@ -204,9 +230,15 @@ namespace Ses2000Raw
         // GLコントロール状態
         private bool m_bLoadTK = false;
         private Channel m_channel;
+
+        private enum TabPageIndex
+        {
+            Setting = 0,
+            Signal = 1,
+            FFT = 2,
+            PingInfo = 3
+        }
         #endregion
-
-
 
         #region 初期化
         /// <summary>
@@ -532,9 +564,9 @@ namespace Ses2000Raw
             if (hasValidPing)
             {
                 m_mouseDepthMeters = GetDepthMetersAtMouse(ping, e.Y);
-                PlotPingWave(ping);
-                ShowInfo(ping, BlockHeaderList[ping]);
-                //ShowInfoToDataGridView(ping, BlockHeaderList[ping]);
+                UpdateMapCursorMarker(ping);
+                if (this.tabControl1.SelectedIndex == (int)TabPageIndex.Signal) PlotPingWaveform(ping);
+                else if (this.tabControl1.SelectedIndex == (int)TabPageIndex.PingInfo) ShowPingInfo(ping, BlockHeaderList[ping]);
             }
             else
             {
@@ -674,15 +706,6 @@ namespace Ses2000Raw
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnSignalProcessing_Click(object sender, EventArgs e)
-        {
-            SignalProcessingForm frmSp = new SignalProcessingForm(this, m_dSampleFreqHz);
-            if (frmSp.ShowDialog(this) == DialogResult.OK)
-            {
-                m_bTextureDirty = true;
-                glControl2D.Refresh();
-            }
-        }
         /// <summary>
         /// 
         /// </summary>
@@ -700,6 +723,17 @@ namespace Ses2000Raw
                 case "SaveImage":
                     SaveImageProcess();
                     break;
+                case "AddContact":
+                    AddContactProcess();
+                    break;
+            }
+        }
+        private void btnScaleSetting_Click(object sender, EventArgs e)
+        {
+            ScaleSettingForm frm = new ScaleSettingForm(this);
+            if(frm.ShowDialog(this) == DialogResult.OK)
+            {
+                glControl2D.Refresh();
             }
         }
         #endregion
@@ -1216,7 +1250,6 @@ namespace Ses2000Raw
         {
             if (m_dTotalDistM <= 0.0) return;
 
-            double stepM = 5.0;
             double totalM = m_dTotalDistM;
 
             GL.Enable(EnableCap.Texture2D);
@@ -1226,7 +1259,7 @@ namespace Ses2000Raw
 
             float y = 6f, padX = 4f, padY = 2f, labelOffsetX = 6f;
 
-            for (double m = 0.0; m <= totalM + 1e-9; m += stepM)
+            for (double m = 0.0; m <= totalM + 1e-9; m += m_dDistScaeleIntervalM)
             {
                 double x = MapXByMeter(m);                // ★反転対応
                 if (x < viewLeftPx - 1 || x > viewRightPx + 1) continue;
@@ -1247,7 +1280,7 @@ namespace Ses2000Raw
 
                 // 本体
                 GL.Enable(EnableCap.Texture2D);
-                GL.Color4(1f, 1f, 1f, 1f);
+                GL.Color4(m_colDistScaleColor.R / 255f, m_colDistScaleColor.G / 255f, m_colDistScaleColor.B / 255f, 1f);
                 GL.BindTexture(TextureTarget.Texture2D, tex);
                 GL.Begin(PrimitiveType.Quads);
                 GL.TexCoord2(0, 0); GL.Vertex2(xScreen, y);
@@ -1284,16 +1317,15 @@ namespace Ses2000Raw
         {
             if (m_dTotalDistM <= 0.0) return;
 
-            double stepM = 5.0; // 目盛間隔
             double totalM = m_dTotalDistM;
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.LineWidth(1f);
-            GL.Color4(0.8f, 0.8f, 1f, 0.8f);
+            GL.Color4(m_colDistScaleColor.R / 255f, m_colDistScaleColor.G / 255f, m_colDistScaleColor.B / 255f, 0.5f);
             GL.Begin(PrimitiveType.Lines);
 
-            for (double m = 0.0; m <= totalM + 1e-9; m += stepM)
+            for (double m = 0.0; m <= totalM + 1e-9; m += m_dDistScaeleIntervalM)
             {
                 double x = MapXByMeter(m); // ★反転対応
                 if (x < viewLeftPx - 1 || x > viewRightPx + 1) continue; // ビュー外はスキップ
@@ -1329,7 +1361,8 @@ namespace Ses2000Raw
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.Color4(1f, 1f, 1f, 1f);
 
-            for (int m = startMeters; m <= endMeters; m++)
+            //for (int m = startMeters; m <= endMeters; m++)
+            for (double m = startMeters; m <= endMeters; m += m_dDepScaleIntervalM)
             {
                 int iRef = FindRefPingForMeter(m, dz_m);
                 double s = m_blockHeaderList[iRef].MeasureStart;
@@ -1356,7 +1389,8 @@ namespace Ses2000Raw
                 GL.End();
 
                 GL.Enable(EnableCap.Texture2D);
-                GL.Color4(1f, 1f, 1f, 1f);
+                //GL.Color4(1f, 1f, 1f, 1f);
+                GL.Color4(m_colDepScaleColor.R / 255f, m_colDepScaleColor.G / 255f, m_colDepScaleColor.B / 255f, 1f);
                 GL.BindTexture(TextureTarget.Texture2D, tex);
                 GL.Begin(PrimitiveType.Quads);
                 GL.TexCoord2(0, 0); GL.Vertex2(x, yScreen - h - padY);
@@ -1387,9 +1421,9 @@ namespace Ses2000Raw
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.LineWidth(1f);
-            GL.Color4(0.8f, 0.8f, 1f, 0.8f);
+            GL.Color4(m_colDepScaleColor.R / 255f, m_colDepScaleColor.G / 255f, m_colDepScaleColor.B / 255f, 0.5f);
 
-            for (int m = startMeters; m <= endMeters; m++)
+            for (double m = startMeters; m <= endMeters; m += m_dDepScaleIntervalM)
             {
                 bool drawing = false;
                 GL.Begin(PrimitiveType.LineStrip);
@@ -1552,9 +1586,9 @@ namespace Ses2000Raw
             formsPlot1.Refresh();
 
         }
-        private void PlotPingWave(int pingIndex)
+        private void PlotPingWaveform(int pingIndex)
         {
-            UpdateMapCursorMarker(pingIndex);
+            //UpdateMapCursorMarker(pingIndex);
 
             if (pingIndex < 0 || pingIndex >= m_dataBlockList.Count) return;
 
@@ -1582,115 +1616,84 @@ namespace Ses2000Raw
         /// </summary>
         /// <param name="date"></param>
 
-        private void ShowInfo(int pingNumber, BlockHeader ping)//! ping: BlockHeader[ping]のこと
+        private void ShowPingInfo(int pingNumber, BlockHeader ping)//! ping: BlockHeader[ping]のこと
         {
+            this.tabPage4.ResumeLayout();
+            try
+            {
+                ushort subFormat = m_fileHeader.SubFormat;
 
+                //日付表示
+                string date = ping.Date;
+                labelDate.Text = Method.ConvertDateString(date, "yyyy/MM/dd");
 
+                //時間表示
+                string time = ping.Time;
+                List<String> timeCut = time.Split('.').ToList();
+                labelTime.Text = timeCut[0];
 
-            //日付表示
-            string date = ping.Date;
-            labelDate.Text = Method.ConvertDateString(date, "yyyy/MM/dd");
+                //Ping Number表示
+                labelPingNumber.Text = pingNumber.ToString();
 
+                //SisString1~8表示
+                labelSisString1.Text = ping.SisString1;
+                labelSisString2.Text = ping.SisString2;
+                labelSisString3.Text = ping.SisString3;
+                labelSisString4.Text = ping.SisString4;
+                labelSisString5.Text = ping.SisString5;
+                labelSisString6.Text = ping.SisString6;
+                labelSisString7.Text = ping.SisString7;
+                labelSisString8.Text = ping.SisString8;
 
+                //Measure 表示
+                labelMeasureStart.Text = ping.MeasureStart.ToString() + " m";
+                labelMeasureLength.Text = ping.MeasureLength.ToString() + " m";
 
-            //時間表示
-            string time = ping.Time;
-            List<String> timeCut = time.Split('.').ToList();
-            labelTime.Text = timeCut[0];
+                //Motion Sensor Angle表示
+                if (subFormat < 14)
+                {
+                    labelHeadingMotionSensor.Text = (ping.HeadingAngleFromMotionSensor / 10.0).ToString("F1") + " °";
+                    labelRollMotionSensor.Text = (ping.RollAngleFromMotionSensor / 10.0).ToString("F1") + " °";
+                    labelPitchMotionSensor.Text = (ping.PitchAngleFromMotionSensor / 10.0).ToString("F1") + " °";
+                    labelYawMotionSensor.Text = (ping.YawAngleFromMotionSensor / 10.0).ToString("F1") + " °";
+                }
+                else
+                {
+                    labelHeadingMotionSensor.Text = (ping.HeadingAngleFromMotionSensor / 50.0).ToString("F1") + " °";
+                    labelRollMotionSensor.Text = (ping.RollAngleFromMotionSensor / 50.0).ToString("F1") + " °";
+                    labelPitchMotionSensor.Text = (ping.PitchAngleFromMotionSensor / 50.0).ToString("F1") + " °";
+                    labelYawMotionSensor.Text = (ping.YawAngleFromMotionSensor / 50.0).ToString("F1") + " °";
+                }
+                labelHeaveMotionSensor.Text = ping.HeaveFromMotionSensor.ToString() + " mm";
 
-            //Ping Number表示
-            labelPingNumber.Text = pingNumber.ToString();
+                //steering表示
+                labelRollSteering.Text = (ping.SteeringRollAngle / 2.0).ToString("F1") + " °";
+                labelPitchSteering.Text = (ping.SteeringPitchAngle / 2.0).ToString("F1") + " °";
 
+                //Frequency表示
+                labelLfFrequency.Text = ping.Frequency1.ToString() + " Hz";  //? lf?
+                labelHfFrequency.Text = ping.HfFrequency1.ToString() + " Hz";//? hf?
+                labelSampleFreqLf.Text = ping.SampleFrequencyForLf.ToString() + " Hz";
 
-            //SisString1~8表示
-            String sisStirng1 = ping.SisString1;
-            String sisStirng2 = ping.SisString2;
-            String sisStirng3 = ping.SisString3;
-            String sisStirng4 = ping.SisString4;
-            String sisStirng5 = ping.SisString5;
-            String sisStirng6 = ping.SisString6;
-            String sisStirng7 = ping.SisString7;
-            String sisStirng8 = ping.SisString8;
+                //Pulse表示
+                labelPulses1.Text = ping.Pulses1.ToString();
+                labelPulseToPulseDistance.Text = ping.PulseToPulseDistance.ToString() + " m";
+                labelPulseLength.Text = ping.PulseLength.ToString() + " µs";
 
-            labelSisString1.Text = sisStirng1;
-            labelSisString2.Text = sisStirng2;
-            labelSisString3.Text = sisStirng3;
-            labelSisString4.Text = sisStirng4;
-            labelSisString5.Text = sisStirng5;
-            labelSisString6.Text = sisStirng6;
-            labelSisString7.Text = sisStirng7;
-            labelSisString8.Text = sisStirng8;
+                //Gain Value表示
+                labelGainValueLf.Text = ping.GainValueOfLf.ToString() + " dB";
+                labelGainValueHf.Text = ping.GainValueOfHf.ToString() + " dB";
 
-
-
-
-            //Measure 表示
-            String measureStart = ping.MeasureStart.ToString();
-            String measureLength = ping.MeasureLength.ToString();
-
-            labelMeasureStart.Text = measureStart;
-            labelMeasureLength.Text = measureLength;
-
-
-
-
-            //Motion Sensor Angle表示
-            String headingMotionSensor = ping.HeadingAngleFromMotionSensor.ToString();
-            String rollMotionSensor = ping.RollAngleFromMotionSensor.ToString();
-            String pitchMotionSensor = ping.PitchAngleFromMotionSensor.ToString();
-            String yawMotionSensor = ping.YawAngleFromMotionSensor.ToString();
-            String heaveMotionSensor = ping.HeaveFromMotionSensor.ToString();
-
-            labelHeadingMotionSensor.Text = headingMotionSensor;
-            labelRollMotionSensor.Text = rollMotionSensor;
-            labelPitchMotionSensor.Text = pitchMotionSensor;
-            labelYawMotionSensor.Text = yawMotionSensor;
-            labelHeaveMotionSensor.Text = heaveMotionSensor;
-
-
-            //steering表示
-            String rollAngleSteering = ping.SteeringRollAngle.ToString();
-            String pitchAngleSteering = ping.SteeringPitchAngle.ToString();
-
-            labelRollSteering.Text = rollAngleSteering;
-            labelPitchSteering.Text = pitchAngleSteering;
-
-
-            //Frequency表示
-            String lfFrequency = ping.Frequency1.ToString();  //? lf?
-            String hfFrequency = ping.HfFrequency1.ToString();//? hf?
-            String SampleFrequencyLf = ping.SampleFrequencyForLf.ToString();
-
-            labelLfFrequency.Text = lfFrequency;
-            labelHfFrequency.Text = hfFrequency;
-            labelSampleFreqLf.Text = SampleFrequencyLf;
-
-
-            //Pulse表示
-
-            String pulses1 = ping.Pulses1.ToString();//? pulses1?何を表している？
-            String PulseToPulseDistance = ping.PulseToPulseDistance.ToString();
-            String pulseLength = ping.PulseLength.ToString();
-
-            labelPulses1.Text = pulses1;
-            labelPulseToPulseDistance.Text = PulseToPulseDistance;
-            labelPulseLength.Text = pulseLength;
-
-
-            //Gain Value表示
-            String gainValueLf = ping.GainValueOfLf.ToString();
-            String gainValueHf = ping.GainValueOfHf.ToString();
-
-            labelGainValueLf.Text = gainValueLf;
-            labelGainValueHf.Text = gainValueHf;
-
-
-            //Sound Velocity表示
-            String soundVelocity = ping.SoundVelocity.ToString();
-
-            labelSoundVelocity.Text = soundVelocity;
-
-
+                //Sound Velocity表示
+                labelSoundVelocity.Text = ping.SoundVelocity.ToString() + " m/s";
+            }
+            catch
+            {
+            }
+            finally
+            {
+                this.tabPage4.ResumeLayout();
+            }
         }
         #endregion
 
@@ -2143,6 +2146,23 @@ namespace Ses2000Raw
                     //SaveFullImagePng(sfd.FileName, outputWidthPx: 6000, includeLabels: true);
                     SaveFullImageAtCurrentScreenScale(sfd.FileName, includeLabels: true);
                 }
+            }
+        }
+        /// <summary>
+        /// Add Contact
+        /// </summary>
+        private void AddContactProcess()
+        {
+            // 現在の状態
+            bool nowChecked = toolStripButtonAddContact.Checked;
+
+            if (nowChecked)
+            {
+                BeginAddContactSelection();
+            }
+            else
+            {
+                ResetAddContactState();
             }
         }
         /// <summary>
@@ -3159,8 +3179,6 @@ namespace Ses2000Raw
 
                     CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
                     CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
-
-                    MessageBox.Show($"コンタクトが追加されました。深度 : {dBurialDepth}", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ResetAddContactState();
                 }
                 return;
@@ -3173,29 +3191,6 @@ namespace Ses2000Raw
         }
 
         #endregion
-
-
-
-
-
-        private void toolStripButtonAddContact_CheckedChanged(object sender, EventArgs e)
-        {
-            // 現在の状態
-            bool nowChecked = toolStripButtonAddContact.Checked;
-
-            if (nowChecked)
-            {
-                BeginAddContactSelection();
-            }
-            else
-            {
-                ResetAddContactState();
-            }
-
-        }
-
-
-
 
         #region スクリーンショット保存関連 ファイルパス生成など
         private (string noCursorFilePath, string withCursorFilePath) GenerateScreenshotFilePath(int anomaryNo)
@@ -3460,5 +3455,7 @@ namespace Ses2000Raw
         }//マウスカーソルなしcontroll2D+mapform(表、ドット付き地図？)
 
         #endregion
+
+
     }
 }

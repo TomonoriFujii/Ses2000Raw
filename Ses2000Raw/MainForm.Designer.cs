@@ -49,7 +49,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { tsMenutemFile });
             menuStrip1.Location = new Point(1, 32);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(1630, 24);
+            menuStrip1.Size = new Size(1662, 24);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -85,26 +85,25 @@
             toolStrip1.Items.AddRange(new ToolStripItem[] { toolStripButton1 });
             toolStrip1.Location = new Point(1, 56);
             toolStrip1.Name = "toolStrip1";
-            toolStrip1.Size = new Size(1630, 25);
+            toolStrip1.Size = new Size(1662, 25);
             toolStrip1.TabIndex = 1;
             toolStrip1.Text = "toolStrip1";
             // 
             // toolStripButton1
             // 
-            toolStripButton1.DisplayStyle = ToolStripItemDisplayStyle.Image;
             toolStripButton1.Image = (Image)resources.GetObject("toolStripButton1.Image");
             toolStripButton1.ImageTransparentColor = Color.Magenta;
             toolStripButton1.Name = "toolStripButton1";
-            toolStripButton1.Size = new Size(23, 22);
-            toolStripButton1.Text = "toolStripButton1";
+            toolStripButton1.Size = new Size(137, 22);
+            toolStripButton1.Text = "Open SES-2000-RAW";
             toolStripButton1.Click += toolStripButton1_Click;
             // 
             // statusStrip1
             // 
-            statusStrip1.Location = new Point(1, 955);
+            statusStrip1.Location = new Point(1, 1033);
             statusStrip1.Name = "statusStrip1";
             statusStrip1.RenderMode = ToolStripRenderMode.ManagerRenderMode;
-            statusStrip1.Size = new Size(1630, 22);
+            statusStrip1.Size = new Size(1662, 22);
             statusStrip1.TabIndex = 2;
             statusStrip1.Text = "statusStrip1";
             // 
@@ -116,7 +115,7 @@
             dockPanel1.Name = "dockPanel1";
             dockPanel1.Padding = new Padding(6);
             dockPanel1.ShowAutoHideContentOnHover = false;
-            dockPanel1.Size = new Size(1630, 874);
+            dockPanel1.Size = new Size(1662, 952);
             dockPanel1.TabIndex = 3;
             dockPanel1.Theme = vS2015DarkTheme1;
             // 
@@ -128,7 +127,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1632, 978);
+            ClientSize = new Size(1664, 1056);
             Controls.Add(dockPanel1);
             Controls.Add(statusStrip1);
             Controls.Add(toolStrip1);

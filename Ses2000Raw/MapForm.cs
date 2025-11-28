@@ -3,20 +3,20 @@ using DotSpatial.Data;
 using DotSpatial.Symbology;
 using DotSpatial.Topology;
 using NetTopologySuite.Geometries;
+using ScottPlot.Colormaps;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
-
-using FeatureType = DotSpatial.Data.FeatureType;
-using PointShape = DotSpatial.Symbology.PointShape;
 //using Coordinate = DotSpatial.Topology.Coordinate;
 using Coordinate = NetTopologySuite.Geometries.Coordinate;
+using FeatureType = DotSpatial.Data.FeatureType;
 //using LineString = DotSpatial.Topology.LineString;
 using LineString = NetTopologySuite.Geometries.LineString;
-using System.ComponentModel;
+using PointShape = DotSpatial.Symbology.PointShape;
 
 namespace Ses2000Raw
 {
@@ -73,6 +73,7 @@ namespace Ses2000Raw
             this.dataGridViewAnomary.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
 
             this.dataGridViewAnomary.EnableHeadersVisualStyles = false;
+            this.dataGridViewAnomary.EnableHeadersVisualStyles = false;
 
             this.dataGridViewAnomary.BackgroundColor = Constant.BACKCOLOR;
             this.dataGridViewAnomary.GridColor = Color.FromArgb(63, 63, 70);
@@ -82,6 +83,12 @@ namespace Ses2000Raw
             this.dataGridViewAnomary.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(62, 62, 64);
             this.dataGridViewAnomary.ColumnHeadersDefaultCellStyle.SelectionForeColor = Constant.FORECOLOR;
             this.dataGridViewAnomary.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+            this.dataGridViewAnomary.RowHeadersDefaultCellStyle.BackColor = Color.FromArgb(51, 51, 55);
+            this.dataGridViewAnomary.RowHeadersDefaultCellStyle.ForeColor = Constant.FORECOLOR;
+            this.dataGridViewAnomary.RowHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(62, 62, 64);
+            this.dataGridViewAnomary.RowHeadersDefaultCellStyle.SelectionForeColor = Constant.FORECOLOR;
+            this.dataGridViewAnomary.RowHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             this.dataGridViewAnomary.DefaultCellStyle.BackColor = Constant.BACKCOLOR;
             this.dataGridViewAnomary.DefaultCellStyle.ForeColor = Constant.FORECOLOR;
@@ -174,7 +181,6 @@ namespace Ses2000Raw
             ClearCursorInternal();
 
             m_cursorFeatureSet = new FeatureSet(FeatureType.Point);
-            //_cursorFeatureSet.AddFeature(new Coordinate(x, y));
             m_cursorFeatureSet.AddFeature(new NetTopologySuite.Geometries.Point(x, y));
 
             m_cursorLayer = map1.Layers.Add(m_cursorFeatureSet) as IMapPointLayer;
@@ -353,24 +359,19 @@ namespace Ses2000Raw
 
         private void DeleteSelectedPoint()
         {
-            DialogResult result = MessageBox.Show("黄色で選択されたポイントを削除しますか？", "確認", MessageBoxButtons.YesNo);
+            DialogResult result = MessageBox.Show("選択された行を削除しますか？", "確認", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
             if (result == DialogResult.Yes)
             {
                 // 「はい」が押されたときの処理
-                //MessageBox.Show("削除しました");
                 m_contactFeatureSet.Features.Remove(m_targetFeature);
                 RemoveHighlightLayer();
-                RenumberReflectionNames(dataGridViewAnomary);//追加順番を保ったまま、途中行が削除されても数字を振りなおす機能
+                //RenumberReflectionNames(dataGridViewAnomary);//追加順番を保ったまま、途中行が削除されても数字を振りなおす機能
 
                 int deletePingInfo = dataGridViewAnomary.SelectedRows[0].Index;
                 dataGridViewAnomary.Rows.RemoveAt(deletePingInfo);
                 dataGridViewAnomary.ClearSelection();
 
                 m_targetFeature = null; // 利用後はリセット
-            }
-            else if (result == DialogResult.No)
-            {
-
             }
         }
 
@@ -385,55 +386,14 @@ namespace Ses2000Raw
             }
         }
 
-        private void RenumberReflectionNames(DataGridView dgv)
-        {
-            int number = 1;
-            foreach (DataGridViewRow row in dgv.Rows)
-            {
-                if (!row.IsNewRow) // 新規行は除外
-                {
-                    row.Cells["ReflectionName"].Value = number++;
-                }
-            }
-        }
-
-        private void dataGridViewPingInfo_RowHeaderMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
-        {
-
-            int pingNumber;
-            try//空白行が常に存在し、そこをクリックするとnullreferenceが発生するためtry.catchはなしでreturn
-            {
-                var cell = dataGridViewAnomary.Rows[e.RowIndex].Cells["PingNumber"];
-                pingNumber = (int)dataGridViewAnomary.Rows[e.RowIndex].Cells["PingNumber"].Value;
-                HighlightSinglePoint(pingNumber); //ハイライト後、削除するか確認(delete selectedpoint)
-
-                {//? ここそのままにしようか迷う
-                    DeleteSelectedPoint();
-                    RenumberReflectionNames(dataGridViewAnomary);//追加順番を保ったまま、途中行が削除されても数字を振りなおす機能
-
-
-                    foreach (var layer in map1.Layers.ToList())
-                    {
-                        if (layer.LegendText == "Highlight")
-                            map1.Layers.Remove(layer);
-                    }
-
-                    map1.Refresh();
-                }
-            }
-            catch (Exception ex)
-            {
-                //MessageBox.Show($"PingNumber取得エラー: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-        }
-
         private void dataGridViewPingInfo_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             try
             {
-                HighlightSinglePoint((int)dataGridViewAnomary.Rows[e.RowIndex].Cells["PingNumber"].Value);
+                if (e.RowIndex < 0) return;
+
+                Anomary obj = (Anomary)dataGridViewAnomary.Rows[e.RowIndex].DataBoundItem;
+                HighlightSinglePoint(obj.PingNo);
             }
             catch (Exception ex)
             {
@@ -442,7 +402,7 @@ namespace Ses2000Raw
             }
         }
 
-        private void dataGridViewPingInfo_SelectionChanged(object sender, EventArgs e)
+        private void dataGridViewAnomaryInfo_SelectionChanged(object sender, EventArgs e)
         {
             var grid = dataGridViewAnomary;
             // 複数行選択されている場合は選択解除
@@ -466,15 +426,12 @@ namespace Ses2000Raw
                 case "csv":
                     ExportCSVProcess();
                     break;
-
+                case "Delete":
+                    DeleteProcess();
+                    break;
                 default:
                     break;
             }
-
-
-
-            
-
         }
         /// <summary>
         /// Export CSV Process
@@ -487,7 +444,7 @@ namespace Ses2000Raw
                 return;
             }
 
-            string dir = Properties.Settings.Default.RawDir + @"\AddContactData\CSVfile";
+            string dir = Properties.Settings.Default.RawDir + @"\Anomary";
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             using (var sfd = new SaveFileDialog()
@@ -495,6 +452,8 @@ namespace Ses2000Raw
                 Filter = "CSVファイル|*.csv",
                 InitialDirectory = dir,
                 FileName = DateTime.Now.ToString("yyyyMMddHHmmss_") + "Anomary.csv"
+                //AutoUpgradeEnabled = false
+
 
             })
             {
@@ -536,6 +495,23 @@ namespace Ses2000Raw
                     }
                 }
             }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        private void DeleteProcess()
+        {
+            if (dataGridViewAnomary.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("削除する行を選択してください。", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int rowIndex = dataGridViewAnomary.SelectedRows[0].Index;
+
+            Anomary obj = (Anomary)dataGridViewAnomary.Rows[rowIndex].DataBoundItem;
+            HighlightSinglePoint(obj.PingNo); // ハイライト表示
+            DeleteSelectedPoint(); // 削除処理
+            map1.Refresh();
         }
     }
 
