@@ -727,6 +727,7 @@ namespace Ses2000Raw
                 case "Alpha":
                 case "Bottom":
                 case "AttDb":
+                case "AttDistanceCm":
                     break;
 
                 case "ScaleY":
@@ -2299,7 +2300,8 @@ namespace Ses2000Raw
 
             // 減衰パラメータ（dAtt[db] を 667cm/20dBスケールへ換算）
             double dAttDb = Convert.ToDouble(numAttDb.Value);
-            double attCoef = dAttDb / 667.0 / 20.0; // delta[サンプル] と組み合わせる
+            double attenuationDistanceCm = Math.Max(Convert.ToDouble(numAttDistanceCm.Value), 0.001);
+            double attCoef = dAttDb / attenuationDistanceCm / 20.0; // delta[サンプル] と組み合わせる
 
             var attenuationModel = (AttenuationModel)cmbAttenuationModel.SelectedIndex;
 

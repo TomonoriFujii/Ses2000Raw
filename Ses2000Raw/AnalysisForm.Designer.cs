@@ -80,7 +80,9 @@
             chkDrawDistScale = new CheckBox();
             chkDrawDepthScale = new CheckBox();
             cmbAttenuationModel = new ComboBox();
+            labelAttDistance = new Label();
             labelAttenuationModel = new Label();
+            numAttDistanceCm = new NumericUpDown();
             numAttDb = new NumericUpDown();
             label14 = new Label();
             label18 = new Label();
@@ -208,6 +210,7 @@
             ((System.ComponentModel.ISupportInitialize)numRotateZ).BeginInit();
             grpBoxSignal.SuspendLayout();
             grpBoxDisplay.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numAttDistanceCm).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numAttDb).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numAlpha).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numThreshold).BeginInit();
@@ -300,7 +303,7 @@
             grpBox3DFrustum.Controls.Add(numViewY);
             grpBox3DFrustum.Controls.Add(label5);
             grpBox3DFrustum.Controls.Add(numViewZ);
-            grpBox3DFrustum.Location = new Point(3, 708);
+            grpBox3DFrustum.Location = new Point(4, 733);
             grpBox3DFrustum.Name = "grpBox3DFrustum";
             grpBox3DFrustum.Size = new Size(241, 113);
             grpBox3DFrustum.TabIndex = 7;
@@ -455,7 +458,7 @@
             grpBox3DMoving.Controls.Add(numRotateY);
             grpBox3DMoving.Controls.Add(label11);
             grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(3, 551);
+            grpBox3DMoving.Location = new Point(4, 576);
             grpBox3DMoving.Name = "grpBox3DMoving";
             grpBox3DMoving.Size = new Size(241, 151);
             grpBox3DMoving.TabIndex = 5;
@@ -745,7 +748,9 @@
             grpBoxDisplay.Controls.Add(chkDrawDistScale);
             grpBoxDisplay.Controls.Add(chkDrawDepthScale);
             grpBoxDisplay.Controls.Add(cmbAttenuationModel);
+            grpBoxDisplay.Controls.Add(labelAttDistance);
             grpBoxDisplay.Controls.Add(labelAttenuationModel);
+            grpBoxDisplay.Controls.Add(numAttDistanceCm);
             grpBoxDisplay.Controls.Add(numAttDb);
             grpBoxDisplay.Controls.Add(label14);
             grpBoxDisplay.Controls.Add(label18);
@@ -756,7 +761,7 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(4, 302);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 243);
+            grpBoxDisplay.Size = new Size(241, 268);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
@@ -764,10 +769,10 @@
             // chkShowBtk
             // 
             chkShowBtk.AutoSize = true;
-            chkShowBtk.Location = new Point(11, 211);
+            chkShowBtk.Location = new Point(12, 240);
             chkShowBtk.Name = "chkShowBtk";
             chkShowBtk.Size = new Size(152, 19);
-            chkShowBtk.TabIndex = 16;
+            chkShowBtk.TabIndex = 17;
             chkShowBtk.Tag = "ShowBottomTrack";
             chkShowBtk.Text = "Show Bottom Track Line";
             chkShowBtk.UseVisualStyleBackColor = true;
@@ -776,10 +781,10 @@
             // chkFlipX
             // 
             chkFlipX.AutoSize = true;
-            chkFlipX.Location = new Point(11, 186);
+            chkFlipX.Location = new Point(12, 215);
             chkFlipX.Name = "chkFlipX";
             chkFlipX.Size = new Size(140, 19);
-            chkFlipX.TabIndex = 15;
+            chkFlipX.TabIndex = 16;
             chkFlipX.Tag = "FlipX";
             chkFlipX.Text = "Flip Image End to End";
             chkFlipX.UseVisualStyleBackColor = true;
@@ -789,10 +794,10 @@
             // 
             btnScaleSetting.BackColor = Color.Transparent;
             btnScaleSetting.FlatStyle = FlatStyle.Flat;
-            btnScaleSetting.Location = new Point(151, 111);
+            btnScaleSetting.Location = new Point(151, 140);
             btnScaleSetting.Name = "btnScaleSetting";
             btnScaleSetting.Size = new Size(84, 44);
-            btnScaleSetting.TabIndex = 13;
+            btnScaleSetting.TabIndex = 14;
             btnScaleSetting.Text = "Scale Setting";
             btnScaleSetting.UseVisualStyleBackColor = false;
             btnScaleSetting.Click += btnScaleSetting_Click;
@@ -802,10 +807,10 @@
             chkHeaveCorrection.AutoSize = true;
             chkHeaveCorrection.Checked = true;
             chkHeaveCorrection.CheckState = CheckState.Checked;
-            chkHeaveCorrection.Location = new Point(12, 161);
+            chkHeaveCorrection.Location = new Point(12, 190);
             chkHeaveCorrection.Name = "chkHeaveCorrection";
             chkHeaveCorrection.Size = new Size(151, 19);
-            chkHeaveCorrection.TabIndex = 14;
+            chkHeaveCorrection.TabIndex = 15;
             chkHeaveCorrection.Tag = "HeaveCorrection";
             chkHeaveCorrection.Text = "Apply Heave Correction";
             chkHeaveCorrection.UseVisualStyleBackColor = true;
@@ -816,10 +821,10 @@
             chkDrawDistScale.AutoSize = true;
             chkDrawDistScale.Checked = true;
             chkDrawDistScale.CheckState = CheckState.Checked;
-            chkDrawDistScale.Location = new Point(12, 111);
+            chkDrawDistScale.Location = new Point(12, 140);
             chkDrawDistScale.Name = "chkDrawDistScale";
             chkDrawDistScale.Size = new Size(131, 19);
-            chkDrawDistScale.TabIndex = 11;
+            chkDrawDistScale.TabIndex = 12;
             chkDrawDistScale.Tag = "DrawDistanceScale";
             chkDrawDistScale.Text = "Draw Distance Scale";
             chkDrawDistScale.UseVisualStyleBackColor = true;
@@ -830,10 +835,10 @@
             chkDrawDepthScale.AutoSize = true;
             chkDrawDepthScale.Checked = true;
             chkDrawDepthScale.CheckState = CheckState.Checked;
-            chkDrawDepthScale.Location = new Point(12, 136);
+            chkDrawDepthScale.Location = new Point(12, 165);
             chkDrawDepthScale.Name = "chkDrawDepthScale";
             chkDrawDepthScale.Size = new Size(118, 19);
-            chkDrawDepthScale.TabIndex = 12;
+            chkDrawDepthScale.TabIndex = 13;
             chkDrawDepthScale.Tag = "DrawDepthScale";
             chkDrawDepthScale.Text = "Draw Depth Scale";
             chkDrawDepthScale.UseVisualStyleBackColor = true;
@@ -850,6 +855,15 @@
             cmbAttenuationModel.TabIndex = 10;
             cmbAttenuationModel.SelectedIndexChanged += cmbAttenuationModel_SelectedIndexChanged;
             // 
+            // labelAttDistance
+            // 
+            labelAttDistance.AutoSize = true;
+            labelAttDistance.Location = new Point(12, 109);
+            labelAttDistance.Name = "labelAttDistance";
+            labelAttDistance.Size = new Size(135, 15);
+            labelAttDistance.TabIndex = 18;
+            labelAttDistance.Text = "Att Distance (cm / 20dB)";
+            // 
             // labelAttenuationModel
             // 
             labelAttenuationModel.AutoSize = true;
@@ -858,6 +872,18 @@
             labelAttenuationModel.Size = new Size(107, 15);
             labelAttenuationModel.TabIndex = 17;
             labelAttenuationModel.Text = "Attenuation Model";
+            // 
+            // numAttDistanceCm
+            // 
+            numAttDistanceCm.Location = new Point(170, 107);
+            numAttDistanceCm.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
+            numAttDistanceCm.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numAttDistanceCm.Name = "numAttDistanceCm";
+            numAttDistanceCm.Size = new Size(65, 23);
+            numAttDistanceCm.TabIndex = 11;
+            numAttDistanceCm.Tag = "AttDistanceCm";
+            numAttDistanceCm.Value = new decimal(new int[] { 667, 0, 0, 0 });
+            numAttDistanceCm.ValueChanged += numericUpDown_ValueChanged;
             // 
             // numAttDb
             // 
@@ -2125,6 +2151,7 @@
             grpBoxSignal.PerformLayout();
             grpBoxDisplay.ResumeLayout(false);
             grpBoxDisplay.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numAttDistanceCm).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAttDb).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAlpha).EndInit();
             ((System.ComponentModel.ISupportInitialize)numThreshold).EndInit();
@@ -2204,6 +2231,8 @@
         private CheckBox chkDrawDepthScale;
         private ComboBox cmbAttenuationModel;
         private Label labelAttenuationModel;
+        private Label labelAttDistance;
+        private NumericUpDown numAttDistanceCm;
         private NumericUpDown numAttDb;
         private NumericUpDown numAlpha;
         private NumericUpDown numThreshold;
