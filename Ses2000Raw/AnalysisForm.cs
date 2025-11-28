@@ -268,6 +268,9 @@ namespace Ses2000Raw
         {
             InitializeComponent();
 
+            KeyPreview = true;
+            KeyDown += AnalysisForm_KeyDown;
+
             m_addContactToolTip.AutoPopDelay = int.MaxValue;
             m_addContactToolTip.InitialDelay = 0;
             m_addContactToolTip.ReshowDelay = 0;
@@ -2413,6 +2416,15 @@ namespace Ses2000Raw
         private void toolStripButtonAddContact_CheckedChanged(object sender, EventArgs e)
         {
             AddContactProcess();
+        }
+
+        private void AnalysisForm_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape && tsBtnMarkAnomary.Checked)
+            {
+                ResetAddContactState();
+                e.Handled = true;
+            }
         }
 
         private void ShowAddContactInstruction(string message)
