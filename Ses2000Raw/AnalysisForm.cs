@@ -17,6 +17,7 @@ using ScottPlot;
 using ScottPlot.Rendering;
 using DotSpatial.Topology.Operation.Valid;
 using PointShape = DotSpatial.Symbology.PointShape;
+using ScottPlot.TickGenerators;
 
 namespace Ses2000Raw
 {
@@ -1665,6 +1666,10 @@ namespace Ses2000Raw
             sc.MarkerSize = 0;
             plt.Axes.Left.Label.Text = "Frequency (kHz)";
             plt.Axes.Bottom.Label.Text = "Power";
+            plt.Axes.Bottom.TickLabelStyle.IsVisible = false;
+            plt.Axes.Bottom.MajorTickStyle.Length = 0;
+            plt.Axes.Bottom.MinorTickStyle.Length = 0;
+            //plt.Axes.Bottom.Label.Text = "";
 
             double maxPower = powerAxis.Length > 0 ? powerAxis.Max() : 1;
             double maxFreqKHz = freqAxis.Length > 0 ? freqAxis[^1] : 0;
