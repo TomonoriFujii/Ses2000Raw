@@ -91,6 +91,21 @@ namespace Ses2000Raw
                     break;
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void toolStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            if (e.ClickedItem.Tag == null) return;
+            switch (e.ClickedItem.Tag.ToString())
+            {
+                case "Open":
+                    OpenRawFile();
+                    break;
+            }
+        }
         #endregion
 
         #region Method
@@ -110,7 +125,7 @@ namespace Ses2000Raw
 
             openFileDialog1.Filter = "SES2000 Raw File (*.raw)|*.raw";
             if (openFileDialog1.ShowDialog() != DialogResult.OK) return;
-            
+
             strRaw = openFileDialog1.FileName;
 
             RawFileName = strRaw;
@@ -133,7 +148,7 @@ namespace Ses2000Raw
 
             List<string> angles = new List<string>();
             List<string> frequencys = new List<string>();
-            
+
             // Angle
             if (fileHeader.BeamSteeringType == 0)
             {
@@ -163,14 +178,14 @@ namespace Ses2000Raw
                     .ToList()
                     .ForEach(bh => frequencys.Add((bh.Frequency1 / 1000).ToString()));
             }
-            
+
             LoadParamForm paramForm = new LoadParamForm(angles, frequencys);
             if (paramForm.ShowDialog(this) != DialogResult.OK) return;
 
             //string strTitle = System.IO.Path.GetFileName(strRaw) + " [" + paramForm.ExtractionInfo.Channel.ToString() + ", " + paramForm.ExtractionInfo.Angle.ToString() + "°, " + paramForm.ExtractionInfo.Frequency.ToString() + "kHz]";
             StringBuilder sbTitle = new StringBuilder();
             sbTitle.Append(Path.GetFileName(strRaw));
-            if( fileHeader.BeamSteeringType != 0)
+            if (fileHeader.BeamSteeringType != 0)
             {
                 sbTitle.Append(" [");
                 sbTitle.Append(paramForm.ExtractionInfo.Angle.ToString());
@@ -185,7 +200,7 @@ namespace Ses2000Raw
                 sbTitle.Append("kHz]");
             }
 
-            AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel,RawFileName);
+            AnalysisForm analysisForm = new AnalysisForm(sbTitle.ToString(), paramForm.ExtractionInfo.Channel, RawFileName);
             analysisForm.MapView = m_frmMap;
             analysisForm.FileHeader = (FileHeader)fileHeader.Clone();
             for (int i = 0; i < blockHeaderList.Count; i++)
@@ -290,13 +305,6 @@ namespace Ses2000Raw
                 //activeForm.label22.Text = "Clicked!";
             }
         }
-
-
-
-
-
-
-
 
 
     }
