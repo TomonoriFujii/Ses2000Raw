@@ -135,6 +135,7 @@ namespace Ses2000Raw
 
         private readonly ToolTip m_addContactToolTip = new();
         private string? m_addContactTooltipText = null;
+        private Point? m_addContactTooltipPosition = null;
 
         // プロパティ
         public FileHeader FileHeader
@@ -260,10 +261,12 @@ namespace Ses2000Raw
         {
             InitializeComponent();
 
-            m_addContactToolTip.AutoPopDelay = 5000;
+            m_addContactToolTip.AutoPopDelay = int.MaxValue;
             m_addContactToolTip.InitialDelay = 0;
             m_addContactToolTip.ReshowDelay = 0;
             m_addContactToolTip.ShowAlways = true;
+
+            toolStripButtonAddContact.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
 
             m_frmMain = (MainForm)parent;
 
@@ -786,9 +789,6 @@ namespace Ses2000Raw
                     break;
                 case "SaveImage":
                     SaveImageProcess();
-                    break;
-                case "AddContact":
-                    AddContactProcess();
                     break;
             }
         }
@@ -2320,29 +2320,39 @@ namespace Ses2000Raw
             }
         }
 
+        private void toolStripButtonAddContact_CheckedChanged(object sender, EventArgs e)
+        {
+            AddContactProcess();
+        }
+
         private void ShowAddContactInstruction(string message)
         {
-            m_addContactTooltipText = message;
-            Point clientPosition = glControl2D.PointToClient(Cursor.Position);
-            bool inBounds = glControl2D.ClientRectangle.Contains(clientPosition);
-
-            if (!inBounds)
-            {
-                clientPosition = new Point(glControl2D.ClientSize.Width / 2, glControl2D.ClientSize.Height / 2);
-            }
+            Control hostControl = this;
+            Point clientPosition = hostControl.PointToClient(Cursor.Position);
 
             clientPosition.Offset(12, 12);
             clientPosition = new Point(
-                Math.Clamp(clientPosition.X, 0, Math.Max(0, glControl2D.ClientSize.Width - 1)),
-                Math.Clamp(clientPosition.Y, 0, Math.Max(0, glControl2D.ClientSize.Height - 1)));
+                Math.Clamp(clientPosition.X, 0, Math.Max(0, hostControl.ClientSize.Width - 1)),
+                Math.Clamp(clientPosition.Y, 0, Math.Max(0, hostControl.ClientSize.Height - 1)));
 
-            m_addContactToolTip.Show(message, glControl2D, clientPosition, m_addContactToolTip.AutoPopDelay);
+            bool needsUpdate =
+                m_addContactTooltipText != message ||
+                !m_addContactTooltipPosition.HasValue ||
+                m_addContactTooltipPosition.Value != clientPosition;
+
+            if (needsUpdate)
+            {
+                m_addContactTooltipText = message;
+                m_addContactTooltipPosition = clientPosition;
+                m_addContactToolTip.Show(message, hostControl, clientPosition, m_addContactToolTip.AutoPopDelay);
+            }
         }
 
         private void HideAddContactInstruction()
         {
             m_addContactTooltipText = null;
-            m_addContactToolTip.Hide(glControl2D);
+            m_addContactTooltipPosition = null;
+            m_addContactToolTip.Hide(this);
         }
         /// <summary>
         /// 次の描画フレームで GL 内容を PNG 保存します。
@@ -3281,7 +3291,7 @@ namespace Ses2000Raw
             m_mouseContentX = null;
             m_mouseContentY = null;
             glControl2D.Cursor = Cursors.Cross;
-            ShowAddContactInstruction("音響異常をクリックしてください。");
+            ShowAddContactInstruction("音響異常の位置をクリックしてください");
         }
 
         private void ResetAddContactState()
