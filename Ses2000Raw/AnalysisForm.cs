@@ -133,6 +133,9 @@ namespace Ses2000Raw
         private System.Drawing.Color m_colDistScaleColor = System.Drawing.Color.White;
         private System.Drawing.Color m_colDepScaleColor = System.Drawing.Color.White;
 
+        private readonly ToolTip m_addContactToolTip = new();
+        private string? m_addContactTooltipText = null;
+
         // プロパティ
         public FileHeader FileHeader
         {
@@ -256,6 +259,11 @@ namespace Ses2000Raw
         public AnalysisForm(string title, Channel channel, string RawFileName, Form parent)
         {
             InitializeComponent();
+
+            m_addContactToolTip.AutoPopDelay = 5000;
+            m_addContactToolTip.InitialDelay = 0;
+            m_addContactToolTip.ReshowDelay = 0;
+            m_addContactToolTip.ShowAlways = true;
 
             m_frmMain = (MainForm)parent;
 
@@ -565,7 +573,13 @@ namespace Ses2000Raw
                 m_dScrollY = m_dScrollStartY - dy;
                 UpdateScrollRanges();
                 glControl2D.Refresh();
-                m_bDraggingAddContact = true; //1119
+
+                // ドラッグ判定は一定距離動いた場合のみ true にする
+                if (!m_bDraggingAddContact)
+                {
+                    const int dragThreshold = 2;
+                    m_bDraggingAddContact = Math.Abs(dx) > dragThreshold || Math.Abs(dy) > dragThreshold;
+                }
                 m_mouseContentY = null;
                 return;
             }
@@ -625,12 +639,18 @@ namespace Ses2000Raw
                 glControl2D.Refresh();
             }
 
+            if (toolStripButtonAddContact.Checked && m_addContactTooltipText != null)
+            {
+                ShowAddContactInstruction(m_addContactTooltipText);
+            }
+
         }
         private void glControl2D_MouseLeave(object sender, EventArgs e)
         {
             if (m_mouseDepthMeters.HasValue)
                 ClearWaveformDepthGuide();
             UpdateMapCursorMarker(-1);
+            HideAddContactInstruction();
             if (m_mouseContentX.HasValue)
             {
                 m_mouseContentX = null;
@@ -643,6 +663,7 @@ namespace Ses2000Raw
             if (e.Button != MouseButtons.Left) return;
             m_bDragging = false;
             Cursor = toolStripButtonAddContact.Checked ? Cursors.Cross : Cursors.Default;
+            m_bDraggingAddContact = false;
         }
 
         private void cmbColor_SelectedIndexChanged(object sender, EventArgs e)
@@ -2298,6 +2319,31 @@ namespace Ses2000Raw
                 ResetAddContactState();
             }
         }
+
+        private void ShowAddContactInstruction(string message)
+        {
+            m_addContactTooltipText = message;
+            Point clientPosition = glControl2D.PointToClient(Cursor.Position);
+            bool inBounds = glControl2D.ClientRectangle.Contains(clientPosition);
+
+            if (!inBounds)
+            {
+                clientPosition = new Point(glControl2D.ClientSize.Width / 2, glControl2D.ClientSize.Height / 2);
+            }
+
+            clientPosition.Offset(12, 12);
+            clientPosition = new Point(
+                Math.Clamp(clientPosition.X, 0, Math.Max(0, glControl2D.ClientSize.Width - 1)),
+                Math.Clamp(clientPosition.Y, 0, Math.Max(0, glControl2D.ClientSize.Height - 1)));
+
+            m_addContactToolTip.Show(message, glControl2D, clientPosition, m_addContactToolTip.AutoPopDelay);
+        }
+
+        private void HideAddContactInstruction()
+        {
+            m_addContactTooltipText = null;
+            m_addContactToolTip.Hide(glControl2D);
+        }
         /// <summary>
         /// 次の描画フレームで GL 内容を PNG 保存します。
         /// 画像サイズは現在の glControl2D のピクセルサイズになります。
@@ -3193,7 +3239,7 @@ namespace Ses2000Raw
                 m_selectedAnomalyContentY = GetContentYFromDepth(ping, depth);
                 m_clickStep = 1;
                 this.toolStripButtonAddContact.Enabled = false;
-                MessageBox.Show("海底面の位置をクリックしてください", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShowAddContactInstruction("海底面をクリックしてください");
                 glControl2D.Cursor = Cursors.Cross;
                 m_mouseContentX = MapXByPing(ping);
                 glControl2D.Refresh();
@@ -3235,7 +3281,7 @@ namespace Ses2000Raw
             m_mouseContentX = null;
             m_mouseContentY = null;
             glControl2D.Cursor = Cursors.Cross;
-            MessageBox.Show("対象の音響異常の位置をクリックしてください", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ShowAddContactInstruction("音響異常をクリックしてください。");
         }
 
         private void ResetAddContactState()
@@ -3253,6 +3299,7 @@ namespace Ses2000Raw
             toolStripButtonAddContact.Enabled = true;
             toolStripButtonAddContact.Checked = false;
             glControl2D.Cursor = Cursors.Default;
+            HideAddContactInstruction();
             glControl2D.Refresh();
         }
 
