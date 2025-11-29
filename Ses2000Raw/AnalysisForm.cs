@@ -140,6 +140,7 @@ namespace Ses2000Raw
         private readonly ToolTip m_addContactToolTip = new();
         private string? m_addContactTooltipText = null;
         private Point? m_addContactTooltipPosition = null;
+        private bool m_addContactTooltipShown = false;
 
         // プロパティ
         public FileHeader FileHeader
@@ -299,7 +300,7 @@ namespace Ses2000Raw
             KeyPreview = true;
             KeyDown += AnalysisForm_KeyDown;
 
-            m_addContactToolTip.AutoPopDelay = int.MaxValue;
+            m_addContactToolTip.AutoPopDelay = 1000; // 約1秒のみ表示
             m_addContactToolTip.InitialDelay = 0;
             m_addContactToolTip.ReshowDelay = 0;
             m_addContactToolTip.ShowAlways = true;
@@ -2474,6 +2475,16 @@ namespace Ses2000Raw
         private void ShowAddContactInstruction(string message)
         {
             Control hostControl = this;
+            if (m_addContactTooltipText != message)
+            {
+                m_addContactTooltipText = message;
+                m_addContactTooltipShown = false;
+            }
+
+            if (m_addContactTooltipShown)
+            {
+                return;
+            }
             Point clientPosition = hostControl.PointToClient(Cursor.Position);
 
             clientPosition.Offset(12, 12);
@@ -2481,23 +2492,16 @@ namespace Ses2000Raw
                 Math.Clamp(clientPosition.X, 0, Math.Max(0, hostControl.ClientSize.Width - 1)),
                 Math.Clamp(clientPosition.Y, 0, Math.Max(0, hostControl.ClientSize.Height - 1)));
 
-            bool needsUpdate =
-                m_addContactTooltipText != message ||
-                !m_addContactTooltipPosition.HasValue ||
-                m_addContactTooltipPosition.Value != clientPosition;
-
-            if (needsUpdate)
-            {
-                m_addContactTooltipText = message;
-                m_addContactTooltipPosition = clientPosition;
-                m_addContactToolTip.Show(message, hostControl, clientPosition, m_addContactToolTip.AutoPopDelay);
-            }
+            m_addContactTooltipPosition = clientPosition;
+            m_addContactToolTip.Show(message, hostControl, clientPosition, m_addContactToolTip.AutoPopDelay);
+            m_addContactTooltipShown = true;
         }
 
         private void HideAddContactInstruction()
         {
             m_addContactTooltipText = null;
             m_addContactTooltipPosition = null;
+            m_addContactTooltipShown = false;
             m_addContactToolTip.Hide(this);
         }
         /// <summary>
@@ -3459,8 +3463,6 @@ namespace Ses2000Raw
             glControl2D.Refresh();
         }
 
-
-
         #region クリックイベントなど
         private void glControl2D_MouseClick(object sender, MouseEventArgs e)
         {
@@ -3516,12 +3518,13 @@ namespace Ses2000Raw
                         Screenshot1 = Path.GetFileName(noCurSorFilePath),
                         Screenshot2 = Path.GetFileName(withCurSorFilePath),
                     };
+
                     m_frmMap.AnomaryList.Add(anomary); // AnomaryList
                     m_frmMap.UpdateDataGridView();
                     m_frmMap.AddClickedCurSor(targetPing, this);
 
                     CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
-                    CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
+                    //CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
                     ResetAddContactState();
 
                     m_frmMain.PendingCsvData = true;
@@ -3541,7 +3544,27 @@ namespace Ses2000Raw
         #region スクリーンショット保存関連 ファイルパス生成など
         private (string noCursorFilePath, string withCursorFilePath) GenerateScreenshotFilePath(int anomaryNo)
         {
-            string dir = Properties.Settings.Default.RawDir + @"\Anomary";
+            string dir = Properties.Settings.Default.RawDir + @"\Anomary" + DateTime.Now.ToString("yyyyMMdd");
+
+            if(!m_frmMain.CreateAnomaryDir)
+            {
+                bool bExist = true;
+                int iIndex = 1;
+                while (bExist)
+                {
+                    if(Directory.Exists(dir))
+                    {
+                        dir += "-" + iIndex.ToString();
+                        iIndex++;
+                    }
+                    else
+                    {
+                        bExist = false;
+                    }
+                }
+                Directory.CreateDirectory(dir);
+                m_frmMain.CreateAnomaryDir = true;
+            }
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             string noCursorFilePath = Path.Combine(dir, $"anomary{anomaryNo.ToString("D2")}.png");
