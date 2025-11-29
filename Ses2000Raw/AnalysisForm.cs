@@ -3544,23 +3544,16 @@ namespace Ses2000Raw
         #region スクリーンショット保存関連 ファイルパス生成など
         private (string noCursorFilePath, string withCursorFilePath) GenerateScreenshotFilePath(int anomaryNo)
         {
-            string dir = Properties.Settings.Default.RawDir + @"\Anomary" + DateTime.Now.ToString("yyyyMMdd");
+            string baseDir = Properties.Settings.Default.RawDir + @"\Anomary" + DateTime.Now.ToString("yyyyMMdd");
+            string dir = baseDir;
 
-            if(!m_frmMain.CreateAnomaryDir)
+            if (!m_frmMain.CreateAnomaryDir)
             {
-                bool bExist = true;
                 int iIndex = 1;
-                while (bExist)
+                while (Directory.Exists(dir))
                 {
-                    if(Directory.Exists(dir))
-                    {
-                        dir += "-" + iIndex.ToString();
-                        iIndex++;
-                    }
-                    else
-                    {
-                        bExist = false;
-                    }
+                    dir = $"{baseDir}-{iIndex}";
+                    iIndex++;
                 }
                 Directory.CreateDirectory(dir);
                 m_frmMain.CreateAnomaryDir = true;
