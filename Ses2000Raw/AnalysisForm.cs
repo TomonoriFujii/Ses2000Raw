@@ -3519,12 +3519,40 @@ namespace Ses2000Raw
                         Screenshot2 = Path.GetFileName(withCurSorFilePath),
                     };
 
+                    Form? parentForm = m_frmMain ?? this.FindForm();
+
+                    bool selectionMarkerVisible = tsBtnMarkAnomary.Checked;
+
+                    if (selectionMarkerVisible)
+                    {
+                        tsBtnMarkAnomary.Checked = false;
+                        glControl2D?.Refresh();
+                        Application.DoEvents();
+                    }
+
+                    if (parentForm != null)
+                    {
+                        CaptureWindowClientArea(parentForm, noCurSorFilePath);
+                    }
+
+                    if (selectionMarkerVisible)
+                    {
+                        tsBtnMarkAnomary.Checked = true;
+                        glControl2D?.Refresh();
+                        Application.DoEvents();
+                    }
+
                     m_frmMap.AnomaryList.Add(anomary); // AnomaryList
                     m_frmMap.UpdateDataGridView();
                     m_frmMap.AddClickedCurSor(targetPing, this);
 
-                    CaptureWindowWithFrame(this.ParentForm, noCurSorFilePath);
-                    //CaptureWindowWithFrameWithCursor(this.ParentForm, withCurSorFilePath);
+                    glControl2D?.Refresh();
+                    Application.DoEvents();
+
+                    if (parentForm != null)
+                    {
+                        CaptureWindowWithFrameWithCursor(parentForm, withCurSorFilePath);
+                    }
                     ResetAddContactState();
 
                     m_frmMain.PendingCsvData = true;
@@ -3565,25 +3593,28 @@ namespace Ses2000Raw
 
             return (noCursorFilePath, withCurSorFilePath);
         }
-        private void CaptureWindowWithFrame(Form targetForm, string filePath)
+        private void CaptureWindowClientArea(Form targetForm, string filePath)
         {
 
             glControl2D.Refresh();
             Application.DoEvents();
-            // フォームの位置とサイズを取得
-            Rectangle formRect = new Rectangle(targetForm.Location, targetForm.Size);
+            Rectangle screenRect = targetForm.Bounds;
 
-            using (Bitmap bmp = new Bitmap(formRect.Width, formRect.Height))
+            using (Bitmap bmp = new Bitmap(screenRect.Width, screenRect.Height))
             {
                 using (Graphics g = Graphics.FromImage(bmp))
                 {
-                    // フォームの左上座標からフォームサイズ分だけキャプチャ
-                    g.CopyFromScreen(formRect.Location, Point.Empty, formRect.Size);
+                    g.CopyFromScreen(screenRect.Location, Point.Empty, screenRect.Size);
                 }
 
+                string? dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
                 bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
             }
-        }//マウスカーソルなしウィンドウすべて
+        }//マウスカーソルなしウィンドウ内部
 
 
         /*
@@ -3654,36 +3685,17 @@ namespace Ses2000Raw
             glControl2D.Refresh();
             Application.DoEvents();
 
-            Rectangle screenRect = targetForm.RectangleToScreen(targetForm.ClientRectangle);
+            Rectangle screenRect = targetForm.Bounds;
 
             using (Bitmap bmp = new Bitmap(screenRect.Width, screenRect.Height))
             using (Graphics g = Graphics.FromImage(bmp))
             {
-                // 画面キャプチャ
                 g.CopyFromScreen(screenRect.Location, Point.Empty, screenRect.Size);
-
-                // カーソル位置計算
-                Point absPos = Cursor.Position;
-                Point relPos = new Point(absPos.X - screenRect.Left, absPos.Y - screenRect.Top);
-
-
-
-                using (Bitmap crossBmp = new Bitmap(32, 32))
-                using (Graphics cg = Graphics.FromImage(crossBmp))
+                string? dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir))
                 {
-                    cg.Clear(System.Drawing.Color.Transparent);
-                    using (Pen pen = new Pen(System.Drawing.Color.OrangeRed, 5))
-                    {
-                        cg.DrawLine(pen, 16, 0, 16, 32);
-                        cg.DrawLine(pen, 0, 16, 32, 16);
-                    }
-                    // relPosが画像内なら描画
-                    if (relPos.X >= 0 && relPos.X < bmp.Width && relPos.Y >= 0 && relPos.Y < bmp.Height)
-                    {
-                        g.DrawImage(crossBmp, new Rectangle(relPos, crossBmp.Size));
-                    }
+                    Directory.CreateDirectory(dir);
                 }
-
                 bmp.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
             }
         }
