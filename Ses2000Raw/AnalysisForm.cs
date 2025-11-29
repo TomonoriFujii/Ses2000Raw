@@ -239,6 +239,8 @@ namespace Ses2000Raw
                         this.lblDemodulate.Text = Properties.Resources.DeconvEnvelope;
                         break;
                 }
+
+                UpdateDeconvolutionDisplay();
             }
         }
         public int Hpf_kHz
@@ -265,13 +267,33 @@ namespace Ses2000Raw
         public double SigmaTimeSamples
         {
             get => m_sigmaTimeSamples;
-            set => m_sigmaTimeSamples = value;
+            set
+            {
+                m_sigmaTimeSamples = value;
+                UpdateDeconvolutionDisplay();
+            }
         }
 
         public double GammaTime
         {
             get => m_gammaTime;
-            set => m_gammaTime = value;
+            set
+            {
+                m_gammaTime = value;
+                UpdateDeconvolutionDisplay();
+            }
+        }
+
+        private void UpdateDeconvolutionDisplay()
+        {
+            bool isDeconvolutionSelected = DemodulateMode == DemodulationMode.Deconvolution ||
+                                           DemodulateMode == DemodulationMode.DeconvoEnvelope;
+
+            this.lblDeconvSigma.Text = m_sigmaTimeSamples.ToString("G", CultureInfo.InvariantCulture);
+            this.lblDeconvGamma.Text = m_gammaTime.ToString("G", CultureInfo.InvariantCulture);
+
+            this.lblDeconvSigma.Enabled = isDeconvolutionSelected;
+            this.lblDeconvGamma.Enabled = isDeconvolutionSelected;
         }
 
         public string? CSVFilePath
@@ -416,14 +438,7 @@ namespace Ses2000Raw
             this.lblDemodulate.Text = Convert.ToInt32(this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope ?
                     Properties.Resources.Envelope : Properties.Resources.FullWave;
 
-            this.lblDeconvSigma.Text = m_sigmaTimeSamples.ToString("G", CultureInfo.InvariantCulture);
-            this.label.Text = m_gammaTime.ToString("G", CultureInfo.InvariantCulture);
-            if (Convert.ToInt32(this.lblDemodulate.Tag) != (int)DemodulationMode.Deconvolution &&
-               Convert.ToInt32(this.lblDemodulate.Tag) != (int)DemodulationMode.DeconvoEnvelope)
-            {
-                this.lblDeconvSigma.Enabled = false;
-                this.lblDeconvGamma.Enabled = false;
-            }
+            UpdateDeconvolutionDisplay();
             this.lblHPF.Text = "0 kHz";
             this.lblLPF.Text = $"{(int)(m_dSampleFreqHz / 1000 * 0.5)} kHz";
             this.lblHPF.Enabled = this.lblLPF.Enabled = m_bApplyBpf;
