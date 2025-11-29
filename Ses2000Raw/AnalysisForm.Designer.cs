@@ -33,19 +33,6 @@
             splitContainer1 = new SplitContainer();
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
-            grpBox3DFrustum = new GroupBox();
-            numNear = new NumericUpDown();
-            label20 = new Label();
-            numFov = new NumericUpDown();
-            label1 = new Label();
-            label2 = new Label();
-            label3 = new Label();
-            numViewX = new NumericUpDown();
-            numFar = new NumericUpDown();
-            label4 = new Label();
-            numViewY = new NumericUpDown();
-            label5 = new Label();
-            numViewZ = new NumericUpDown();
             grpBox3DMoving = new GroupBox();
             label41 = new Label();
             numScaleX = new NumericUpDown();
@@ -66,6 +53,10 @@
             label11 = new Label();
             numRotateZ = new NumericUpDown();
             grpBoxSignal = new GroupBox();
+            lblDeconvGamma = new Label();
+            lblDeconvSigma = new Label();
+            label = new Label();
+            label4 = new Label();
             lblLPF = new Label();
             lblHPF = new Label();
             label23 = new Label();
@@ -191,13 +182,6 @@
             splitContainer1.SuspendLayout();
             tabControl1.SuspendLayout();
             tabPage1.SuspendLayout();
-            grpBox3DFrustum.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)numNear).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numFov).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numViewX).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numFar).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numViewY).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numViewZ).BeginInit();
             grpBox3DMoving.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numScaleX).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScaleY).BeginInit();
@@ -276,7 +260,6 @@
             // tabPage1
             // 
             tabPage1.AutoScroll = true;
-            tabPage1.Controls.Add(grpBox3DFrustum);
             tabPage1.Controls.Add(grpBox3DMoving);
             tabPage1.Controls.Add(grpBoxSignal);
             tabPage1.Controls.Add(grpBoxDisplay);
@@ -288,155 +271,6 @@
             tabPage1.TabIndex = 0;
             tabPage1.Text = "Setting";
             tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // grpBox3DFrustum
-            // 
-            grpBox3DFrustum.Controls.Add(numNear);
-            grpBox3DFrustum.Controls.Add(label20);
-            grpBox3DFrustum.Controls.Add(numFov);
-            grpBox3DFrustum.Controls.Add(label1);
-            grpBox3DFrustum.Controls.Add(label2);
-            grpBox3DFrustum.Controls.Add(label3);
-            grpBox3DFrustum.Controls.Add(numViewX);
-            grpBox3DFrustum.Controls.Add(numFar);
-            grpBox3DFrustum.Controls.Add(label4);
-            grpBox3DFrustum.Controls.Add(numViewY);
-            grpBox3DFrustum.Controls.Add(label5);
-            grpBox3DFrustum.Controls.Add(numViewZ);
-            grpBox3DFrustum.Location = new Point(4, 733);
-            grpBox3DFrustum.Name = "grpBox3DFrustum";
-            grpBox3DFrustum.Size = new Size(241, 113);
-            grpBox3DFrustum.TabIndex = 7;
-            grpBox3DFrustum.TabStop = false;
-            grpBox3DFrustum.Text = "3D View Frustum";
-            // 
-            // numNear
-            // 
-            numNear.Location = new Point(90, 35);
-            numNear.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-            numNear.Minimum = new decimal(new int[] { 360, 0, 0, int.MinValue });
-            numNear.Name = "numNear";
-            numNear.Size = new Size(65, 23);
-            numNear.TabIndex = 3;
-            numNear.Tag = "Near";
-            numNear.Value = new decimal(new int[] { 2, 0, 0, 0 });
-            numNear.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label20
-            // 
-            label20.AutoSize = true;
-            label20.Location = new Point(90, 20);
-            label20.Name = "label20";
-            label20.Size = new Size(32, 15);
-            label20.TabIndex = 2;
-            label20.Text = "Near";
-            // 
-            // numFov
-            // 
-            numFov.Location = new Point(12, 35);
-            numFov.Maximum = new decimal(new int[] { 360, 0, 0, 0 });
-            numFov.Minimum = new decimal(new int[] { 360, 0, 0, int.MinValue });
-            numFov.Name = "numFov";
-            numFov.Size = new Size(65, 23);
-            numFov.TabIndex = 1;
-            numFov.Tag = "Fov";
-            numFov.Value = new decimal(new int[] { 150, 0, 0, 0 });
-            numFov.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(12, 20);
-            label1.Name = "label1";
-            label1.Size = new Size(26, 15);
-            label1.TabIndex = 0;
-            label1.Text = "Fov";
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(165, 20);
-            label2.Name = "label2";
-            label2.Size = new Size(22, 15);
-            label2.TabIndex = 4;
-            label2.Text = "Far";
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(12, 61);
-            label3.Name = "label3";
-            label3.Size = new Size(39, 15);
-            label3.TabIndex = 6;
-            label3.Text = "ViewX";
-            // 
-            // numViewX
-            // 
-            numViewX.Increment = new decimal(new int[] { 50, 0, 0, 0 });
-            numViewX.Location = new Point(12, 76);
-            numViewX.Maximum = new decimal(new int[] { 2000000, 0, 0, 0 });
-            numViewX.Minimum = new decimal(new int[] { 1600000, 0, 0, int.MinValue });
-            numViewX.Name = "numViewX";
-            numViewX.Size = new Size(65, 23);
-            numViewX.TabIndex = 7;
-            numViewX.Tag = "ViewX";
-            numViewX.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // numFar
-            // 
-            numFar.Increment = new decimal(new int[] { 100, 0, 0, 0 });
-            numFar.Location = new Point(165, 35);
-            numFar.Maximum = new decimal(new int[] { 1500000, 0, 0, 0 });
-            numFar.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            numFar.Name = "numFar";
-            numFar.Size = new Size(65, 23);
-            numFar.TabIndex = 5;
-            numFar.Tag = "Far";
-            numFar.Value = new decimal(new int[] { 15000, 0, 0, 0 });
-            numFar.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Location = new Point(90, 61);
-            label4.Name = "label4";
-            label4.Size = new Size(39, 15);
-            label4.TabIndex = 8;
-            label4.Text = "ViewY";
-            // 
-            // numViewY
-            // 
-            numViewY.Increment = new decimal(new int[] { 50, 0, 0, 0 });
-            numViewY.Location = new Point(90, 76);
-            numViewY.Maximum = new decimal(new int[] { 1600000, 0, 0, 0 });
-            numViewY.Minimum = new decimal(new int[] { 16000000, 0, 0, int.MinValue });
-            numViewY.Name = "numViewY";
-            numViewY.Size = new Size(65, 23);
-            numViewY.TabIndex = 9;
-            numViewY.Tag = "ViewY";
-            numViewY.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label5
-            // 
-            label5.AutoSize = true;
-            label5.Location = new Point(165, 61);
-            label5.Name = "label5";
-            label5.Size = new Size(39, 15);
-            label5.TabIndex = 10;
-            label5.Text = "ViewZ";
-            // 
-            // numViewZ
-            // 
-            numViewZ.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-            numViewZ.Location = new Point(165, 76);
-            numViewZ.Maximum = new decimal(new int[] { 1600000, 0, 0, 0 });
-            numViewZ.Minimum = new decimal(new int[] { 16000000, 0, 0, int.MinValue });
-            numViewZ.Name = "numViewZ";
-            numViewZ.Size = new Size(65, 23);
-            numViewZ.TabIndex = 11;
-            numViewZ.Tag = "ViewZ";
-            numViewZ.Value = new decimal(new int[] { 1300, 0, 0, 0 });
-            numViewZ.ValueChanged += numericUpDown_ValueChanged;
             // 
             // grpBox3DMoving
             // 
@@ -458,9 +292,9 @@
             grpBox3DMoving.Controls.Add(numRotateY);
             grpBox3DMoving.Controls.Add(label11);
             grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(4, 576);
+            grpBox3DMoving.Location = new Point(4, 631);
             grpBox3DMoving.Name = "grpBox3DMoving";
-            grpBox3DMoving.Size = new Size(241, 151);
+            grpBox3DMoving.Size = new Size(241, 154);
             grpBox3DMoving.TabIndex = 5;
             grpBox3DMoving.TabStop = false;
             grpBox3DMoving.Text = "3D View Moving";
@@ -668,6 +502,10 @@
             // 
             // grpBoxSignal
             // 
+            grpBoxSignal.Controls.Add(lblDeconvGamma);
+            grpBoxSignal.Controls.Add(lblDeconvSigma);
+            grpBoxSignal.Controls.Add(label);
+            grpBoxSignal.Controls.Add(label4);
             grpBoxSignal.Controls.Add(lblLPF);
             grpBoxSignal.Controls.Add(lblHPF);
             grpBoxSignal.Controls.Add(label23);
@@ -676,15 +514,53 @@
             grpBoxSignal.Controls.Add(label12);
             grpBoxSignal.Location = new Point(4, 8);
             grpBoxSignal.Name = "grpBoxSignal";
-            grpBoxSignal.Size = new Size(241, 115);
+            grpBoxSignal.Size = new Size(241, 170);
             grpBoxSignal.TabIndex = 6;
             grpBoxSignal.TabStop = false;
             grpBoxSignal.Text = "Signal Processing";
             // 
+            // lblDeconvGamma
+            // 
+            lblDeconvGamma.BorderStyle = BorderStyle.FixedSingle;
+            lblDeconvGamma.Location = new Point(129, 81);
+            lblDeconvGamma.Name = "lblDeconvGamma";
+            lblDeconvGamma.Size = new Size(100, 23);
+            lblDeconvGamma.TabIndex = 19;
+            lblDeconvGamma.Text = "0.00001";
+            lblDeconvGamma.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // lblDeconvSigma
+            // 
+            lblDeconvSigma.BorderStyle = BorderStyle.FixedSingle;
+            lblDeconvSigma.Location = new Point(11, 81);
+            lblDeconvSigma.Name = "lblDeconvSigma";
+            lblDeconvSigma.Size = new Size(100, 23);
+            lblDeconvSigma.TabIndex = 18;
+            lblDeconvSigma.Text = "1.5";
+            lblDeconvSigma.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // label
+            // 
+            label.AutoSize = true;
+            label.Location = new Point(129, 66);
+            label.Name = "label";
+            label.Size = new Size(75, 15);
+            label.TabIndex = 17;
+            label.Text = "Gamma Time";
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(11, 66);
+            label4.Name = "label4";
+            label4.Size = new Size(113, 15);
+            label4.TabIndex = 16;
+            label4.Text = "Sigma Time Samples";
+            // 
             // lblLPF
             // 
             lblLPF.BorderStyle = BorderStyle.FixedSingle;
-            lblLPF.Location = new Point(129, 78);
+            lblLPF.Location = new Point(129, 129);
             lblLPF.Name = "lblLPF";
             lblLPF.Size = new Size(100, 23);
             lblLPF.TabIndex = 15;
@@ -694,7 +570,7 @@
             // lblHPF
             // 
             lblHPF.BorderStyle = BorderStyle.FixedSingle;
-            lblHPF.Location = new Point(11, 78);
+            lblHPF.Location = new Point(11, 129);
             lblHPF.Name = "lblHPF";
             lblHPF.Size = new Size(100, 23);
             lblHPF.TabIndex = 14;
@@ -704,7 +580,7 @@
             // label23
             // 
             label23.AutoSize = true;
-            label23.Location = new Point(129, 63);
+            label23.Location = new Point(129, 114);
             label23.Name = "label23";
             label23.Size = new Size(84, 15);
             label23.TabIndex = 13;
@@ -713,7 +589,7 @@
             // label22
             // 
             label22.AutoSize = true;
-            label22.Location = new Point(11, 63);
+            label22.Location = new Point(11, 114);
             label22.Name = "label22";
             label22.Size = new Size(88, 15);
             label22.TabIndex = 12;
@@ -759,7 +635,7 @@
             grpBoxDisplay.Controls.Add(label13);
             grpBoxDisplay.Controls.Add(numIntensity);
             grpBoxDisplay.Controls.Add(label19);
-            grpBoxDisplay.Location = new Point(4, 302);
+            grpBoxDisplay.Location = new Point(4, 357);
             grpBoxDisplay.Name = "grpBoxDisplay";
             grpBoxDisplay.Size = new Size(241, 268);
             grpBoxDisplay.TabIndex = 3;
@@ -985,7 +861,7 @@
             grpBoxColor.Controls.Add(label28);
             grpBoxColor.Controls.Add(numG);
             grpBoxColor.Controls.Add(label26);
-            grpBoxColor.Location = new Point(4, 129);
+            grpBoxColor.Location = new Point(4, 184);
             grpBoxColor.Name = "grpBoxColor";
             grpBoxColor.Size = new Size(241, 167);
             grpBoxColor.TabIndex = 2;
@@ -2128,14 +2004,6 @@
             splitContainer1.ResumeLayout(false);
             tabControl1.ResumeLayout(false);
             tabPage1.ResumeLayout(false);
-            grpBox3DFrustum.ResumeLayout(false);
-            grpBox3DFrustum.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)numNear).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numFov).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numViewX).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numFar).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numViewY).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numViewZ).EndInit();
             grpBox3DMoving.ResumeLayout(false);
             grpBox3DMoving.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numScaleX).EndInit();
@@ -2219,13 +2087,6 @@
         private Label label9;
         private Label label10;
         private Label label11;
-        private GroupBox grpBox3DFrustum;
-        private Label label20;
-        private Label label1;
-        private Label label2;
-        private Label label3;
-        private Label label4;
-        private Label label5;
         private CheckBox chkHeaveCorrection;
         private CheckBox chkDrawDistScale;
         private CheckBox chkDrawDepthScale;
@@ -2250,12 +2111,6 @@
         private NumericUpDown numRotateX;
         private NumericUpDown numRotateY;
         private NumericUpDown numRotateZ;
-        private NumericUpDown numNear;
-        private NumericUpDown numFov;
-        private NumericUpDown numViewX;
-        private NumericUpDown numFar;
-        private NumericUpDown numViewY;
-        private NumericUpDown numViewZ;
         private ColorDialog colorDialog1;
         private Label label41;
         private NumericUpDown numScaleX;
@@ -2346,5 +2201,9 @@
         private Label labelPingNumber;
         private Label label32;
         private CheckBox chkShowBtk;
+        private Label lblDeconvGamma;
+        private Label lblDeconvSigma;
+        private Label label;
+        private Label label4;
     }
 }

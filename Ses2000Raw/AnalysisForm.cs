@@ -19,6 +19,7 @@ using ScottPlot.Rendering;
 using DotSpatial.Topology.Operation.Valid;
 using PointShape = DotSpatial.Symbology.PointShape;
 using ScottPlot.TickGenerators;
+using System.Globalization;
 
 namespace Ses2000Raw
 {
@@ -191,17 +192,7 @@ namespace Ses2000Raw
             set { m_colDepScaleColor = value; }
         }
 
-        public double SigmaTimeSamples
-        {
-            get => m_sigmaTimeSamples;
-            set => m_sigmaTimeSamples = value;
-        }
 
-        public double GammaTime
-        {
-            get => m_gammaTime;
-            set => m_gammaTime = value;
-        }
 
         public bool ToolStripButtonAddContactChecked
         {
@@ -270,6 +261,19 @@ namespace Ses2000Raw
                 this.lblLPF.Enabled = m_bApplyBpf;
             }
         }
+
+        public double SigmaTimeSamples
+        {
+            get => m_sigmaTimeSamples;
+            set => m_sigmaTimeSamples = value;
+        }
+
+        public double GammaTime
+        {
+            get => m_gammaTime;
+            set => m_gammaTime = value;
+        }
+
         public string? CSVFilePath
         {
             get => m_CSVFilePath;
@@ -349,7 +353,6 @@ namespace Ses2000Raw
                 tab.BackColor = Constant.BACKCOLOR;
             }
             this.grpBoxSignal.ForeColor = Constant.FORECOLOR;
-            this.grpBox3DFrustum.ForeColor = Constant.FORECOLOR;
             this.grpBox3DMoving.ForeColor = Constant.FORECOLOR;
             //this.groupBox3.ForeColor = Constant.FORECOLOR;
             this.grpBoxColor.ForeColor = Constant.FORECOLOR;
@@ -413,6 +416,14 @@ namespace Ses2000Raw
             this.lblDemodulate.Text = Convert.ToInt32(this.lblDemodulate.Tag) == (int)DemodulationMode.Envelope ?
                     Properties.Resources.Envelope : Properties.Resources.FullWave;
 
+            this.lblDeconvSigma.Text = m_sigmaTimeSamples.ToString("G", CultureInfo.InvariantCulture);
+            this.label.Text = m_gammaTime.ToString("G", CultureInfo.InvariantCulture);
+            if (Convert.ToInt32(this.lblDemodulate.Tag) != (int)DemodulationMode.Deconvolution &&
+               Convert.ToInt32(this.lblDemodulate.Tag) != (int)DemodulationMode.DeconvoEnvelope)
+            {
+                this.lblDeconvSigma.Enabled = false;
+                this.lblDeconvGamma.Enabled = false;
+            }
             this.lblHPF.Text = "0 kHz";
             this.lblLPF.Text = $"{(int)(m_dSampleFreqHz / 1000 * 0.5)} kHz";
             this.lblHPF.Enabled = this.lblLPF.Enabled = m_bApplyBpf;
