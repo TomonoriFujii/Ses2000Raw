@@ -176,7 +176,7 @@
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
             tsBtnMarkAnomary = new ToolStripButton();
-            checkBox1 = new CheckBox();
+            chkShowAnomaryMarker = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -618,7 +618,7 @@
             // 
             // grpBoxDisplay
             // 
-            grpBoxDisplay.Controls.Add(checkBox1);
+            grpBoxDisplay.Controls.Add(chkShowAnomaryMarker);
             grpBoxDisplay.Controls.Add(chkShowBtk);
             grpBoxDisplay.Controls.Add(chkFlipX);
             grpBoxDisplay.Controls.Add(btnScaleSetting);
@@ -1990,16 +1990,16 @@
             tsBtnMarkAnomary.Text = "Mark Anomary";
             tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
             // 
-            // checkBox1
+            // chkShowAnomaryMarker
             // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(12, 265);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(146, 19);
-            checkBox1.TabIndex = 19;
-            checkBox1.Tag = "ShowAnomaryMarker";
-            checkBox1.Text = "Show Anomary Marker";
-            checkBox1.UseVisualStyleBackColor = true;
+            chkShowAnomaryMarker.AutoSize = true;
+            chkShowAnomaryMarker.Location = new Point(12, 265);
+            chkShowAnomaryMarker.Name = "chkShowAnomaryMarker";
+            chkShowAnomaryMarker.Size = new Size(146, 19);
+            chkShowAnomaryMarker.TabIndex = 19;
+            chkShowAnomaryMarker.Tag = "ShowAnomaryMarker";
+            chkShowAnomaryMarker.Text = "Show Anomary Marker";
+            chkShowAnomaryMarker.UseVisualStyleBackColor = true;
             // 
             // AnalysisForm
             // 
@@ -2219,6 +2219,6 @@
         private Label lblDeconvSigma;
         private Label label;
         private Label label4;
-        private CheckBox checkBox1;
+        private CheckBox chkShowAnomaryMarker;
     }
 }
