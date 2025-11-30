@@ -63,6 +63,9 @@ namespace Ses2000Raw
         private double m_dRatioY = 1.0; // 縦方向の相対倍率（numScaleZ）
         private double m_dScaleX => m_dZoom * m_dRatioX;
         private double m_dScaleY => m_dZoom * m_dRatioY;
+        private readonly HashSet<int> m_anomaryNosAddedThisSession = new();
+        private bool m_forceHideRegisteredAnomaryMarkers = false;
+        private bool m_forceShowOnlyCurrentSessionMarkers = false;
 
         // 距離（進行方向）
         private double[] m_cumDistM;  // 累積距離[m]
@@ -835,6 +838,8 @@ namespace Ses2000Raw
                     m_bFlipX = ((CheckBox)sender).Checked;
                     break;
                 case "ShowBottomTrack":
+                    break;
+                case "ShowAnomaryMarker":
                     break;
                 default:
                     return;
@@ -1685,6 +1690,27 @@ namespace Ses2000Raw
             GL.Disable(EnableCap.Blend);
         }
 
+        private IEnumerable<Anomary> GetRenderableAnomaryMarkers()
+        {
+            var anomaryList = m_frmMap?.AnomaryList;
+            if (anomaryList == null || m_forceHideRegisteredAnomaryMarkers)
+            {
+                return Enumerable.Empty<Anomary>();
+            }
+
+            if (chkShowAnomaryMarker.Checked && !m_forceShowOnlyCurrentSessionMarkers)
+            {
+                return anomaryList;
+            }
+
+            if (tsBtnMarkAnomary.Checked || m_forceShowOnlyCurrentSessionMarkers)
+            {
+                return anomaryList.Where(anomary => m_anomaryNosAddedThisSession.Contains(anomary.AnonaryNo));
+            }
+
+            return Enumerable.Empty<Anomary>();
+        }
+
         private void DrawAnomaryMarker()
         {
             if (!tsBtnMarkAnomary.Checked) return;
@@ -1715,8 +1741,8 @@ namespace Ses2000Raw
 
         private void DrawRegisteredAnomaryMarkers()
         {
-            var anomaryList = m_frmMap?.AnomaryList;
-            if (anomaryList == null || anomaryList.Count == 0) return;
+            var anomariesToRender = GetRenderableAnomaryMarkers().ToList();
+            if (anomariesToRender.Count == 0) return;
 
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -1728,7 +1754,7 @@ namespace Ses2000Raw
             GL.PointSize(markerPointSize);
             GL.Begin(PrimitiveType.Points);
 
-            foreach (var anomary in anomaryList)
+            foreach (var anomary in anomariesToRender)
             {
                 int pingIndex = anomary.PingNo;
                 if (pingIndex < 0 || pingIndex >= m_iPingNo) continue;
@@ -1745,7 +1771,7 @@ namespace Ses2000Raw
             GL.LineWidth(2f);
             GL.Begin(PrimitiveType.Lines);
 
-            foreach (var anomary in anomaryList)
+            foreach (var anomary in anomariesToRender)
             {
                 int pingIndex = anomary.PingNo;
                 if (pingIndex < 0 || pingIndex >= m_iPingNo) continue;
@@ -3466,6 +3492,7 @@ namespace Ses2000Raw
             m_dBottomDepth = null;
             m_mouseContentX = null;
             m_mouseContentY = null;
+            m_anomaryNosAddedThisSession.Clear();
             glControl2D.Cursor = Cursors.Cross;
             ShowAddContactInstruction("音響異常の位置をクリックしてください");
         }
@@ -3545,7 +3572,33 @@ namespace Ses2000Raw
                         Screenshot2 = Path.GetFileName(withCurSorFilePath),
                     };
 
+                    m_anomaryNosAddedThisSession.Add(iAnomaryNo);
+
+                    m_frmMap.AnomaryList.Add(anomary); // AnomaryList
+                    m_frmMap.UpdateDataGridView();
+                    m_frmMap.AddClickedCurSor(targetPing, this);
+
                     Form? parentForm = m_frmMain ?? this.FindForm();
+
+                    glControl2D?.Refresh();
+                    Application.DoEvents();
+
+                    bool previousHideRegisteredMarkers = m_forceHideRegisteredAnomaryMarkers;
+                    bool previousShowOnlyCurrentSessionMarkers = m_forceShowOnlyCurrentSessionMarkers;
+                    m_forceHideRegisteredAnomaryMarkers = false;
+                    m_forceShowOnlyCurrentSessionMarkers = true;
+                    try
+                    {
+                        if (parentForm != null)
+                        {
+                            CaptureWindowWithFrameWithCursor(parentForm, withCurSorFilePath);
+                        }
+                    }
+                    finally
+                    {
+                        m_forceHideRegisteredAnomaryMarkers = previousHideRegisteredMarkers;
+                        m_forceShowOnlyCurrentSessionMarkers = previousShowOnlyCurrentSessionMarkers;
+                    }
 
                     bool selectionMarkerVisible = tsBtnMarkAnomary.Checked;
 
@@ -3556,9 +3609,21 @@ namespace Ses2000Raw
                         Application.DoEvents();
                     }
 
-                    if (parentForm != null)
+                    previousHideRegisteredMarkers = m_forceHideRegisteredAnomaryMarkers;
+                    previousShowOnlyCurrentSessionMarkers = m_forceShowOnlyCurrentSessionMarkers;
+                    m_forceHideRegisteredAnomaryMarkers = true;
+                    m_forceShowOnlyCurrentSessionMarkers = true;
+                    try
                     {
-                        CaptureWindowClientArea(parentForm, noCurSorFilePath);
+                        if (parentForm != null)
+                        {
+                            CaptureWindowClientArea(parentForm, noCurSorFilePath);
+                        }
+                    }
+                    finally
+                    {
+                        m_forceHideRegisteredAnomaryMarkers = previousHideRegisteredMarkers;
+                        m_forceShowOnlyCurrentSessionMarkers = previousShowOnlyCurrentSessionMarkers;
                     }
 
                     if (selectionMarkerVisible)
@@ -3568,17 +3633,6 @@ namespace Ses2000Raw
                         Application.DoEvents();
                     }
 
-                    m_frmMap.AnomaryList.Add(anomary); // AnomaryList
-                    m_frmMap.UpdateDataGridView();
-                    m_frmMap.AddClickedCurSor(targetPing, this);
-
-                    glControl2D?.Refresh();
-                    Application.DoEvents();
-
-                    if (parentForm != null)
-                    {
-                        CaptureWindowWithFrameWithCursor(parentForm, withCurSorFilePath);
-                    }
                     ResetAddContactState();
 
                     m_frmMain.PendingCsvData = true;

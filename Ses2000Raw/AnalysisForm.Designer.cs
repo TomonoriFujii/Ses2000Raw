@@ -64,6 +64,7 @@
             lblDemodulate = new Label();
             label12 = new Label();
             grpBoxDisplay = new GroupBox();
+            chkShowAnomaryMarker = new CheckBox();
             chkShowBtk = new CheckBox();
             chkFlipX = new CheckBox();
             btnScaleSetting = new Button();
@@ -176,7 +177,6 @@
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
             tsBtnMarkAnomary = new ToolStripButton();
-            chkShowAnomaryMarker = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -643,6 +643,20 @@
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
+            // 
+            // chkShowAnomaryMarker
+            // 
+            chkShowAnomaryMarker.AutoSize = true;
+            chkShowAnomaryMarker.Checked = true;
+            chkShowAnomaryMarker.CheckState = CheckState.Checked;
+            chkShowAnomaryMarker.Location = new Point(12, 265);
+            chkShowAnomaryMarker.Name = "chkShowAnomaryMarker";
+            chkShowAnomaryMarker.Size = new Size(146, 19);
+            chkShowAnomaryMarker.TabIndex = 19;
+            chkShowAnomaryMarker.Tag = "ShowAnomaryMarker";
+            chkShowAnomaryMarker.Text = "Show Anomary Marker";
+            chkShowAnomaryMarker.UseVisualStyleBackColor = true;
+            chkShowAnomaryMarker.CheckedChanged += chkBox_CheckedChanged;
             // 
             // chkShowBtk
             // 
@@ -1989,17 +2003,6 @@
             tsBtnMarkAnomary.Tag = "MarkAnomary";
             tsBtnMarkAnomary.Text = "Mark Anomary";
             tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
-            // 
-            // chkShowAnomaryMarker
-            // 
-            chkShowAnomaryMarker.AutoSize = true;
-            chkShowAnomaryMarker.Location = new Point(12, 265);
-            chkShowAnomaryMarker.Name = "chkShowAnomaryMarker";
-            chkShowAnomaryMarker.Size = new Size(146, 19);
-            chkShowAnomaryMarker.TabIndex = 19;
-            chkShowAnomaryMarker.Tag = "ShowAnomaryMarker";
-            chkShowAnomaryMarker.Text = "Show Anomary Marker";
-            chkShowAnomaryMarker.UseVisualStyleBackColor = true;
             // 
             // AnalysisForm
             // 
