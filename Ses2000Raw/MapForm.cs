@@ -447,13 +447,13 @@ namespace Ses2000Raw
                 return;
             }
 
-            string dir = Properties.Settings.Default.RawDir + @"\Anomary";
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            if (!Directory.Exists(m_frmMain.OutputDir)) Directory.CreateDirectory(m_frmMain.OutputDir);
 
             using (var sfd = new SaveFileDialog()
             {
                 Filter = "CSVファイル|*.csv",
-                InitialDirectory = dir,
+                InitialDirectory = m_frmMain.OutputDir,
                 FileName = DateTime.Now.ToString("yyyyMMddHHmmss_") + "Anomary.csv"
                 //AutoUpgradeEnabled = false
             })

@@ -21,7 +21,8 @@ namespace Ses2000Raw
         private const int OFF_HF_SAMPLES = 272;
 
         private MapForm m_frmMap;
-        private bool mbCreateAnomaryDir = false;
+        private bool m_bCreateAnomaryDir = false;
+        private string m_strOutputDir = string.Empty;
 
         private bool m_bPendingCsvData = false;
         public bool PendingCsvData
@@ -31,8 +32,13 @@ namespace Ses2000Raw
         }
         public bool CreateAnomaryDir
         {
-            get { return mbCreateAnomaryDir; }
-            set { mbCreateAnomaryDir = value; }
+            get { return m_bCreateAnomaryDir; }
+            set { m_bCreateAnomaryDir = value; }
+        }
+        public string OutputDir
+        {
+            get { return m_strOutputDir; }
+            set { m_strOutputDir = value; }
         }
 
         public MainForm()

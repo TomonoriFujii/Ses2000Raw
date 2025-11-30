@@ -176,6 +176,7 @@
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
             tsBtnMarkAnomary = new ToolStripButton();
+            checkBox1 = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -292,7 +293,7 @@
             grpBox3DMoving.Controls.Add(numRotateY);
             grpBox3DMoving.Controls.Add(label11);
             grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(4, 631);
+            grpBox3DMoving.Location = new Point(3, 662);
             grpBox3DMoving.Name = "grpBox3DMoving";
             grpBox3DMoving.Size = new Size(241, 154);
             grpBox3DMoving.TabIndex = 5;
@@ -617,6 +618,7 @@
             // 
             // grpBoxDisplay
             // 
+            grpBoxDisplay.Controls.Add(checkBox1);
             grpBoxDisplay.Controls.Add(chkShowBtk);
             grpBoxDisplay.Controls.Add(chkFlipX);
             grpBoxDisplay.Controls.Add(btnScaleSetting);
@@ -637,7 +639,7 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(4, 357);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 268);
+            grpBoxDisplay.Size = new Size(241, 299);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
@@ -1986,6 +1988,18 @@
             tsBtnMarkAnomary.Size = new Size(113, 28);
             tsBtnMarkAnomary.Tag = "MarkAnomary";
             tsBtnMarkAnomary.Text = "Mark Anomary";
+            tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
+            // 
+            // checkBox1
+            // 
+            checkBox1.AutoSize = true;
+            checkBox1.Location = new Point(12, 265);
+            checkBox1.Name = "checkBox1";
+            checkBox1.Size = new Size(146, 19);
+            checkBox1.TabIndex = 19;
+            checkBox1.Tag = "ShowAnomaryMarker";
+            checkBox1.Text = "Show Anomary Marker";
+            checkBox1.UseVisualStyleBackColor = true;
             // 
             // AnalysisForm
             // 
@@ -2205,5 +2219,6 @@
         private Label lblDeconvSigma;
         private Label label;
         private Label label4;
+        private CheckBox checkBox1;
     }
 }

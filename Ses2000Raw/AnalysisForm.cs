@@ -331,7 +331,7 @@ namespace Ses2000Raw
             m_addContactToolTip.ReshowDelay = 0;
             m_addContactToolTip.ShowAlways = true;
 
-            tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
+            //tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
 
             m_frmMain = (MainForm)parent;
 
@@ -3599,7 +3599,7 @@ namespace Ses2000Raw
         private (string noCursorFilePath, string withCursorFilePath) GenerateScreenshotFilePath(int anomaryNo)
         {
             string baseDir = Properties.Settings.Default.RawDir + @"\Anomary" + DateTime.Now.ToString("yyyyMMdd");
-            string dir = baseDir;
+            string dir = !m_frmMain.CreateAnomaryDir ? baseDir : m_frmMain.OutputDir;
 
             if (!m_frmMain.CreateAnomaryDir)
             {
@@ -3611,8 +3611,9 @@ namespace Ses2000Raw
                 }
                 Directory.CreateDirectory(dir);
                 m_frmMain.CreateAnomaryDir = true;
+                m_frmMain.OutputDir = dir;
             }
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+            //if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             string noCursorFilePath = Path.Combine(dir, $"anomary{anomaryNo.ToString("D2")}.png");
             string withCurSorFilePath = Path.Combine(dir, $"anomary{anomaryNo.ToString("D2")}_cursor.png");
