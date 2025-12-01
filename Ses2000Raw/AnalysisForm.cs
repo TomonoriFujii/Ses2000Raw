@@ -20,6 +20,7 @@ using DotSpatial.Topology.Operation.Valid;
 using PointShape = DotSpatial.Symbology.PointShape;
 using ScottPlot.TickGenerators;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Ses2000Raw
 {
@@ -3556,9 +3557,7 @@ namespace Ses2000Raw
                 if (dBurialDepth.HasValue && m_selectedAnomalyDepthMeters.HasValue && m_dBottomDepth.HasValue)
                 {
                     int targetPing = m_selectedAnomalyPing ?? pingNo;
-                    int iAnomaryNo = m_anomaryList.Any()
-                        ? m_anomaryList.Max(anomary => anomary.AnonaryNo) + 1
-                        : 1;
+                    int iAnomaryNo = GetNextAnomaryNo();
                     var (noCurSorFilePath, withCurSorFilePath) = GenerateScreenshotFilePath(iAnomaryNo);//filepath作成
 
                     Anomary anomary = new Anomary()
@@ -3657,6 +3656,37 @@ namespace Ses2000Raw
         #endregion
 
         #region スクリーンショット保存関連 ファイルパス生成など
+        private int GetNextAnomaryNo()
+        {
+            int maxAnomaryNo = 0;
+
+            if (m_frmMap?.AnomaryList != null && m_frmMap.AnomaryList.Any())
+            {
+                maxAnomaryNo = Math.Max(maxAnomaryNo, m_frmMap.AnomaryList.Max(anomary => anomary.AnonaryNo));
+            }
+
+            if (m_anomaryList.Any())
+            {
+                maxAnomaryNo = Math.Max(maxAnomaryNo, m_anomaryList.Max(anomary => anomary.AnonaryNo));
+            }
+
+            string? outputDir = m_frmMain?.OutputDir;
+            if (!string.IsNullOrWhiteSpace(outputDir) && Directory.Exists(outputDir))
+            {
+                var regex = new Regex(@"anomary(?<no>\d+)", RegexOptions.IgnoreCase);
+                foreach (string filePath in Directory.EnumerateFiles(outputDir, "anomary*.png"))
+                {
+                    Match match = regex.Match(Path.GetFileNameWithoutExtension(filePath));
+                    if (match.Success && int.TryParse(match.Groups["no"].Value, out int fileAnomaryNo))
+                    {
+                        maxAnomaryNo = Math.Max(maxAnomaryNo, fileAnomaryNo);
+                    }
+                }
+            }
+
+            return maxAnomaryNo + 1;
+        }
+
         private (string noCursorFilePath, string withCursorFilePath) GenerateScreenshotFilePath(int anomaryNo)
         {
             string baseDir = Properties.Settings.Default.RawDir + @"\Anomary" + DateTime.Now.ToString("yyyyMMdd");
