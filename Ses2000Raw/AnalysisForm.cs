@@ -227,7 +227,7 @@ namespace Ses2000Raw
             set
             {
                 this.lblDemodulate.Tag = value;
-                switch(value)
+                switch (value)
                 {
                     case DemodulationMode.None:
                         this.lblDemodulate.Text = Properties.Resources.FullWave;
@@ -761,6 +761,9 @@ namespace Ses2000Raw
 
             switch (tag)
             {
+                case "Blanking":
+                    m_bBottomDirty = true;
+                    break;
                 case "R":
                 case "G":
                 case "B":
@@ -873,7 +876,7 @@ namespace Ses2000Raw
         private void btnScaleSetting_Click(object sender, EventArgs e)
         {
             ScaleSettingForm frm = new ScaleSettingForm(this);
-            if(frm.ShowDialog(this) == DialogResult.OK)
+            if (frm.ShowDialog(this) == DialogResult.OK)
             {
                 glControl2D.Refresh();
             }
@@ -2067,12 +2070,13 @@ namespace Ses2000Raw
 
                     /* これが一番まし*/
                     ComputeBottomIndicesByDerivativeEdge(
-                                                            startSkipM: 0.20,   // 表層回避
+                                                            //startSkipM: 0.20,   // 表層回避
+                                                            startSkipM: (double)this.numBlankingM.Value,   // 表層回避
                                                             endGuardM: 0.50,   // 末尾ガード
                                                             smoothWin: 25,     // 15〜31 で調整
                                                             kMad: 3.0,    // 厳しめにしたい時は 4.5〜5.0
                                                             ampPct: 0.85,   // 誤検知多いなら 0.75〜0.85
-                                                            refineWinM: 0.30,   // 到来点の直下0.3mでピークへ寄せる
+                                                            refineWinM: 0.10,   // 到来点の直下0.3mでピークへ寄せる
                                                             useAbsLF: true,
                                                             applyHeaveInDetection: this.chkHeaveCorrection.Checked
                                                         );
@@ -3150,7 +3154,6 @@ namespace Ses2000Raw
             if (smoothWin % 2 == 0) smoothWin++;
             int half = smoothWin / 2;
 
-            int startSkip = (int)Math.Round((startSkipM * 100.0) / m_dZDistance);
             int endGuard = (int)Math.Round((endGuardM * 100.0) / m_dZDistance);
             int refineN = Math.Max(5, (int)Math.Round((refineWinM * 100.0) / m_dZDistance));
 
@@ -3173,6 +3176,11 @@ namespace Ses2000Raw
                 // 有効な「表示z」範囲（z+heaveOffset が [0,H-1] になる区間）
                 int validMin = Math.Max(0, -heaveOffset);
                 int validMax = Math.Min(H - 1, H - 1 - heaveOffset);
+
+                // MeasureStart 分だけ既に進んでいる場合に表層スキップを短縮
+                double measureStartM = m_blockHeaderList[y].MeasureStart;
+                int startSkip = (int)Math.Round(((startSkipM - measureStartM) * 100.0) / m_dZDistance);
+                if (startSkip < 0) startSkip = 0;
 
                 // 平滑窓・微分を安全にするための余白を考慮
                 int zMin = Math.Max(validMin + half + 1, startSkip + half + 1);
@@ -3636,7 +3644,7 @@ namespace Ses2000Raw
                     ResetAddContactState();
 
                     m_frmMain.PendingCsvData = true;
-                    
+
                 }
                 return;
             }
@@ -3916,7 +3924,5 @@ namespace Ses2000Raw
             UnsubscribeAnomaryList();
             base.OnFormClosed(e);
         }
-
-
     }
 }

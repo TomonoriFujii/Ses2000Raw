@@ -34,24 +34,8 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             grpBox3DMoving = new GroupBox();
-            label41 = new Label();
-            numScaleX = new NumericUpDown();
-            label42 = new Label();
-            numScaleY = new NumericUpDown();
-            label43 = new Label();
-            numScaleZ = new NumericUpDown();
-            label6 = new Label();
-            numTranX = new NumericUpDown();
-            label7 = new Label();
-            numTranY = new NumericUpDown();
-            label8 = new Label();
-            numTranZ = new NumericUpDown();
-            label9 = new Label();
-            numRotateX = new NumericUpDown();
-            label10 = new Label();
-            numRotateY = new NumericUpDown();
-            label11 = new Label();
-            numRotateZ = new NumericUpDown();
+            numBlankingM = new NumericUpDown();
+            label1 = new Label();
             grpBoxSignal = new GroupBox();
             lblDeconvGamma = new Label();
             lblDeconvSigma = new Label();
@@ -64,11 +48,17 @@
             lblDemodulate = new Label();
             label12 = new Label();
             grpBoxDisplay = new GroupBox();
+            label41 = new Label();
             chkShowAnomaryMarker = new CheckBox();
+            numScaleX = new NumericUpDown();
             chkShowBtk = new CheckBox();
+            label42 = new Label();
             chkFlipX = new CheckBox();
+            numScaleY = new NumericUpDown();
             btnScaleSetting = new Button();
+            label43 = new Label();
             chkHeaveCorrection = new CheckBox();
+            numScaleZ = new NumericUpDown();
             chkDrawDistScale = new CheckBox();
             chkDrawDepthScale = new CheckBox();
             cmbAttenuationModel = new ComboBox();
@@ -184,17 +174,12 @@
             tabControl1.SuspendLayout();
             tabPage1.SuspendLayout();
             grpBox3DMoving.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numBlankingM).BeginInit();
+            grpBoxSignal.SuspendLayout();
+            grpBoxDisplay.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numScaleX).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScaleY).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScaleZ).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numTranX).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numTranY).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numTranZ).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numRotateX).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numRotateY).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numRotateZ).BeginInit();
-            grpBoxSignal.SuspendLayout();
-            grpBoxDisplay.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numAttDistanceCm).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numAttDb).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numAlpha).BeginInit();
@@ -275,231 +260,35 @@
             // 
             // grpBox3DMoving
             // 
-            grpBox3DMoving.Controls.Add(label41);
-            grpBox3DMoving.Controls.Add(numScaleX);
-            grpBox3DMoving.Controls.Add(label42);
-            grpBox3DMoving.Controls.Add(numScaleY);
-            grpBox3DMoving.Controls.Add(label43);
-            grpBox3DMoving.Controls.Add(numScaleZ);
-            grpBox3DMoving.Controls.Add(label6);
-            grpBox3DMoving.Controls.Add(numTranX);
-            grpBox3DMoving.Controls.Add(label7);
-            grpBox3DMoving.Controls.Add(numTranY);
-            grpBox3DMoving.Controls.Add(label8);
-            grpBox3DMoving.Controls.Add(numTranZ);
-            grpBox3DMoving.Controls.Add(label9);
-            grpBox3DMoving.Controls.Add(numRotateX);
-            grpBox3DMoving.Controls.Add(label10);
-            grpBox3DMoving.Controls.Add(numRotateY);
-            grpBox3DMoving.Controls.Add(label11);
-            grpBox3DMoving.Controls.Add(numRotateZ);
-            grpBox3DMoving.Location = new Point(3, 662);
+            grpBox3DMoving.Controls.Add(numBlankingM);
+            grpBox3DMoving.Controls.Add(label1);
+            grpBox3DMoving.Location = new Point(4, 184);
             grpBox3DMoving.Name = "grpBox3DMoving";
-            grpBox3DMoving.Size = new Size(241, 154);
+            grpBox3DMoving.Size = new Size(241, 114);
             grpBox3DMoving.TabIndex = 5;
             grpBox3DMoving.TabStop = false;
-            grpBox3DMoving.Text = "3D View Moving";
+            grpBox3DMoving.Text = "Bottom Track";
             // 
-            // label41
+            // numBlankingM
             // 
-            label41.AutoSize = true;
-            label41.Location = new Point(13, 102);
-            label41.Name = "label41";
-            label41.Size = new Size(41, 15);
-            label41.TabIndex = 12;
-            label41.Text = "ScaleX";
+            numBlankingM.DecimalPlaces = 2;
+            numBlankingM.Increment = new decimal(new int[] { 5, 0, 0, 65536 });
+            numBlankingM.Location = new Point(12, 38);
+            numBlankingM.Name = "numBlankingM";
+            numBlankingM.Size = new Size(74, 23);
+            numBlankingM.TabIndex = 3;
+            numBlankingM.Tag = "Blanking";
+            numBlankingM.Value = new decimal(new int[] { 3, 0, 0, 0 });
+            numBlankingM.ValueChanged += numericUpDown_ValueChanged;
             // 
-            // numScaleX
+            // label1
             // 
-            numScaleX.DecimalPlaces = 2;
-            numScaleX.Enabled = false;
-            numScaleX.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numScaleX.Location = new Point(13, 117);
-            numScaleX.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numScaleX.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
-            numScaleX.Name = "numScaleX";
-            numScaleX.Size = new Size(65, 23);
-            numScaleX.TabIndex = 13;
-            numScaleX.Tag = "ScaleX";
-            numScaleX.Value = new decimal(new int[] { 1, 0, 0, 0 });
-            numScaleX.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label42
-            // 
-            label42.AutoSize = true;
-            label42.Location = new Point(90, 102);
-            label42.Name = "label42";
-            label42.Size = new Size(41, 15);
-            label42.TabIndex = 14;
-            label42.Text = "ScaleY";
-            // 
-            // numScaleY
-            // 
-            numScaleY.DecimalPlaces = 2;
-            numScaleY.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numScaleY.Location = new Point(90, 117);
-            numScaleY.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numScaleY.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
-            numScaleY.Name = "numScaleY";
-            numScaleY.Size = new Size(65, 23);
-            numScaleY.TabIndex = 15;
-            numScaleY.Tag = "ScaleY";
-            numScaleY.Value = new decimal(new int[] { 1, 0, 0, 0 });
-            numScaleY.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label43
-            // 
-            label43.AutoSize = true;
-            label43.Location = new Point(165, 102);
-            label43.Name = "label43";
-            label43.Size = new Size(41, 15);
-            label43.TabIndex = 16;
-            label43.Text = "ScaleZ";
-            // 
-            // numScaleZ
-            // 
-            numScaleZ.DecimalPlaces = 2;
-            numScaleZ.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numScaleZ.Location = new Point(165, 117);
-            numScaleZ.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numScaleZ.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
-            numScaleZ.Name = "numScaleZ";
-            numScaleZ.Size = new Size(65, 23);
-            numScaleZ.TabIndex = 17;
-            numScaleZ.Tag = "ScaleZ";
-            numScaleZ.Value = new decimal(new int[] { 1, 0, 0, 0 });
-            numScaleZ.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new Point(13, 20);
-            label6.Name = "label6";
-            label6.Size = new Size(36, 15);
-            label6.TabIndex = 0;
-            label6.Text = "TranX";
-            // 
-            // numTranX
-            // 
-            numTranX.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-            numTranX.Location = new Point(13, 35);
-            numTranX.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numTranX.Minimum = new decimal(new int[] { 2000, 0, 0, int.MinValue });
-            numTranX.Name = "numTranX";
-            numTranX.Size = new Size(65, 23);
-            numTranX.TabIndex = 1;
-            numTranX.Tag = "TranX";
-            numTranX.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(90, 20);
-            label7.Name = "label7";
-            label7.Size = new Size(36, 15);
-            label7.TabIndex = 2;
-            label7.Text = "TranY";
-            // 
-            // numTranY
-            // 
-            numTranY.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-            numTranY.Location = new Point(90, 35);
-            numTranY.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numTranY.Minimum = new decimal(new int[] { 2000, 0, 0, int.MinValue });
-            numTranY.Name = "numTranY";
-            numTranY.Size = new Size(65, 23);
-            numTranY.TabIndex = 3;
-            numTranY.Tag = "TranY";
-            numTranY.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.Location = new Point(165, 19);
-            label8.Name = "label8";
-            label8.Size = new Size(36, 15);
-            label8.TabIndex = 4;
-            label8.Text = "TranZ";
-            // 
-            // numTranZ
-            // 
-            numTranZ.Increment = new decimal(new int[] { 10, 0, 0, 0 });
-            numTranZ.Location = new Point(165, 35);
-            numTranZ.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
-            numTranZ.Minimum = new decimal(new int[] { 2000, 0, 0, int.MinValue });
-            numTranZ.Name = "numTranZ";
-            numTranZ.Size = new Size(65, 23);
-            numTranZ.TabIndex = 5;
-            numTranZ.Tag = "TranZ";
-            numTranZ.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.Location = new Point(13, 61);
-            label9.Name = "label9";
-            label9.Size = new Size(48, 15);
-            label9.TabIndex = 6;
-            label9.Text = "RotateX";
-            // 
-            // numRotateX
-            // 
-            numRotateX.DecimalPlaces = 1;
-            numRotateX.Increment = new decimal(new int[] { 25, 0, 0, 65536 });
-            numRotateX.Location = new Point(13, 76);
-            numRotateX.Maximum = new decimal(new int[] { 180, 0, 0, 0 });
-            numRotateX.Minimum = new decimal(new int[] { 180, 0, 0, int.MinValue });
-            numRotateX.Name = "numRotateX";
-            numRotateX.Size = new Size(65, 23);
-            numRotateX.TabIndex = 7;
-            numRotateX.Tag = "RotateX";
-            numRotateX.Value = new decimal(new int[] { 125, 0, 0, int.MinValue });
-            numRotateX.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label10
-            // 
-            label10.AutoSize = true;
-            label10.Location = new Point(90, 61);
-            label10.Name = "label10";
-            label10.Size = new Size(48, 15);
-            label10.TabIndex = 8;
-            label10.Text = "RotateY";
-            // 
-            // numRotateY
-            // 
-            numRotateY.DecimalPlaces = 1;
-            numRotateY.Increment = new decimal(new int[] { 25, 0, 0, 65536 });
-            numRotateY.Location = new Point(90, 76);
-            numRotateY.Maximum = new decimal(new int[] { 180, 0, 0, 0 });
-            numRotateY.Minimum = new decimal(new int[] { 180, 0, 0, int.MinValue });
-            numRotateY.Name = "numRotateY";
-            numRotateY.Size = new Size(65, 23);
-            numRotateY.TabIndex = 9;
-            numRotateY.Tag = "RotateY";
-            numRotateY.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // label11
-            // 
-            label11.AutoSize = true;
-            label11.Location = new Point(165, 61);
-            label11.Name = "label11";
-            label11.Size = new Size(48, 15);
-            label11.TabIndex = 10;
-            label11.Text = "RotateZ";
-            // 
-            // numRotateZ
-            // 
-            numRotateZ.DecimalPlaces = 1;
-            numRotateZ.Increment = new decimal(new int[] { 25, 0, 0, 65536 });
-            numRotateZ.Location = new Point(165, 79);
-            numRotateZ.Maximum = new decimal(new int[] { 180, 0, 0, 0 });
-            numRotateZ.Minimum = new decimal(new int[] { 180, 0, 0, int.MinValue });
-            numRotateZ.Name = "numRotateZ";
-            numRotateZ.Size = new Size(65, 23);
-            numRotateZ.TabIndex = 11;
-            numRotateZ.Tag = "RotateZ";
-            numRotateZ.Value = new decimal(new int[] { 70, 0, 0, int.MinValue });
-            numRotateZ.ValueChanged += numericUpDown_ValueChanged;
+            label1.AutoSize = true;
+            label1.Location = new Point(12, 20);
+            label1.Name = "label1";
+            label1.Size = new Size(74, 15);
+            label1.TabIndex = 2;
+            label1.Text = "Blanking [m]";
             // 
             // grpBoxSignal
             // 
@@ -618,11 +407,17 @@
             // 
             // grpBoxDisplay
             // 
+            grpBoxDisplay.Controls.Add(label41);
             grpBoxDisplay.Controls.Add(chkShowAnomaryMarker);
+            grpBoxDisplay.Controls.Add(numScaleX);
             grpBoxDisplay.Controls.Add(chkShowBtk);
+            grpBoxDisplay.Controls.Add(label42);
             grpBoxDisplay.Controls.Add(chkFlipX);
+            grpBoxDisplay.Controls.Add(numScaleY);
             grpBoxDisplay.Controls.Add(btnScaleSetting);
+            grpBoxDisplay.Controls.Add(label43);
             grpBoxDisplay.Controls.Add(chkHeaveCorrection);
+            grpBoxDisplay.Controls.Add(numScaleZ);
             grpBoxDisplay.Controls.Add(chkDrawDistScale);
             grpBoxDisplay.Controls.Add(chkDrawDepthScale);
             grpBoxDisplay.Controls.Add(cmbAttenuationModel);
@@ -637,19 +432,28 @@
             grpBoxDisplay.Controls.Add(label13);
             grpBoxDisplay.Controls.Add(numIntensity);
             grpBoxDisplay.Controls.Add(label19);
-            grpBoxDisplay.Location = new Point(4, 357);
+            grpBoxDisplay.Location = new Point(4, 477);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 299);
+            grpBoxDisplay.Size = new Size(241, 367);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
+            // 
+            // label41
+            // 
+            label41.AutoSize = true;
+            label41.Location = new Point(11, 140);
+            label41.Name = "label41";
+            label41.Size = new Size(41, 15);
+            label41.TabIndex = 12;
+            label41.Text = "ScaleX";
             // 
             // chkShowAnomaryMarker
             // 
             chkShowAnomaryMarker.AutoSize = true;
             chkShowAnomaryMarker.Checked = true;
             chkShowAnomaryMarker.CheckState = CheckState.Checked;
-            chkShowAnomaryMarker.Location = new Point(12, 265);
+            chkShowAnomaryMarker.Location = new Point(12, 325);
             chkShowAnomaryMarker.Name = "chkShowAnomaryMarker";
             chkShowAnomaryMarker.Size = new Size(146, 19);
             chkShowAnomaryMarker.TabIndex = 19;
@@ -658,10 +462,25 @@
             chkShowAnomaryMarker.UseVisualStyleBackColor = true;
             chkShowAnomaryMarker.CheckedChanged += chkBox_CheckedChanged;
             // 
+            // numScaleX
+            // 
+            numScaleX.DecimalPlaces = 2;
+            numScaleX.Enabled = false;
+            numScaleX.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numScaleX.Location = new Point(12, 158);
+            numScaleX.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
+            numScaleX.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
+            numScaleX.Name = "numScaleX";
+            numScaleX.Size = new Size(65, 23);
+            numScaleX.TabIndex = 13;
+            numScaleX.Tag = "ScaleX";
+            numScaleX.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            numScaleX.ValueChanged += numericUpDown_ValueChanged;
+            // 
             // chkShowBtk
             // 
             chkShowBtk.AutoSize = true;
-            chkShowBtk.Location = new Point(12, 240);
+            chkShowBtk.Location = new Point(12, 300);
             chkShowBtk.Name = "chkShowBtk";
             chkShowBtk.Size = new Size(152, 19);
             chkShowBtk.TabIndex = 17;
@@ -670,10 +489,19 @@
             chkShowBtk.UseVisualStyleBackColor = true;
             chkShowBtk.CheckedChanged += chkBox_CheckedChanged;
             // 
+            // label42
+            // 
+            label42.AutoSize = true;
+            label42.Location = new Point(83, 140);
+            label42.Name = "label42";
+            label42.Size = new Size(41, 15);
+            label42.TabIndex = 14;
+            label42.Text = "ScaleY";
+            // 
             // chkFlipX
             // 
             chkFlipX.AutoSize = true;
-            chkFlipX.Location = new Point(12, 215);
+            chkFlipX.Location = new Point(12, 275);
             chkFlipX.Name = "chkFlipX";
             chkFlipX.Size = new Size(140, 19);
             chkFlipX.TabIndex = 16;
@@ -682,11 +510,25 @@
             chkFlipX.UseVisualStyleBackColor = true;
             chkFlipX.CheckedChanged += chkBox_CheckedChanged;
             // 
+            // numScaleY
+            // 
+            numScaleY.DecimalPlaces = 2;
+            numScaleY.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numScaleY.Location = new Point(83, 158);
+            numScaleY.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
+            numScaleY.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
+            numScaleY.Name = "numScaleY";
+            numScaleY.Size = new Size(65, 23);
+            numScaleY.TabIndex = 15;
+            numScaleY.Tag = "ScaleY";
+            numScaleY.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            numScaleY.ValueChanged += numericUpDown_ValueChanged;
+            // 
             // btnScaleSetting
             // 
             btnScaleSetting.BackColor = Color.Transparent;
             btnScaleSetting.FlatStyle = FlatStyle.Flat;
-            btnScaleSetting.Location = new Point(151, 140);
+            btnScaleSetting.Location = new Point(151, 200);
             btnScaleSetting.Name = "btnScaleSetting";
             btnScaleSetting.Size = new Size(84, 44);
             btnScaleSetting.TabIndex = 14;
@@ -694,12 +536,21 @@
             btnScaleSetting.UseVisualStyleBackColor = false;
             btnScaleSetting.Click += btnScaleSetting_Click;
             // 
+            // label43
+            // 
+            label43.AutoSize = true;
+            label43.Location = new Point(154, 140);
+            label43.Name = "label43";
+            label43.Size = new Size(41, 15);
+            label43.TabIndex = 16;
+            label43.Text = "ScaleZ";
+            // 
             // chkHeaveCorrection
             // 
             chkHeaveCorrection.AutoSize = true;
             chkHeaveCorrection.Checked = true;
             chkHeaveCorrection.CheckState = CheckState.Checked;
-            chkHeaveCorrection.Location = new Point(12, 190);
+            chkHeaveCorrection.Location = new Point(12, 250);
             chkHeaveCorrection.Name = "chkHeaveCorrection";
             chkHeaveCorrection.Size = new Size(151, 19);
             chkHeaveCorrection.TabIndex = 15;
@@ -708,12 +559,26 @@
             chkHeaveCorrection.UseVisualStyleBackColor = true;
             chkHeaveCorrection.CheckedChanged += chkBox_CheckedChanged;
             // 
+            // numScaleZ
+            // 
+            numScaleZ.DecimalPlaces = 2;
+            numScaleZ.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numScaleZ.Location = new Point(154, 158);
+            numScaleZ.Maximum = new decimal(new int[] { 2000, 0, 0, 0 });
+            numScaleZ.Minimum = new decimal(new int[] { 1, 0, 0, 65536 });
+            numScaleZ.Name = "numScaleZ";
+            numScaleZ.Size = new Size(65, 23);
+            numScaleZ.TabIndex = 17;
+            numScaleZ.Tag = "ScaleZ";
+            numScaleZ.Value = new decimal(new int[] { 1, 0, 0, 0 });
+            numScaleZ.ValueChanged += numericUpDown_ValueChanged;
+            // 
             // chkDrawDistScale
             // 
             chkDrawDistScale.AutoSize = true;
             chkDrawDistScale.Checked = true;
             chkDrawDistScale.CheckState = CheckState.Checked;
-            chkDrawDistScale.Location = new Point(12, 140);
+            chkDrawDistScale.Location = new Point(12, 200);
             chkDrawDistScale.Name = "chkDrawDistScale";
             chkDrawDistScale.Size = new Size(131, 19);
             chkDrawDistScale.TabIndex = 12;
@@ -727,7 +592,7 @@
             chkDrawDepthScale.AutoSize = true;
             chkDrawDepthScale.Checked = true;
             chkDrawDepthScale.CheckState = CheckState.Checked;
-            chkDrawDepthScale.Location = new Point(12, 165);
+            chkDrawDepthScale.Location = new Point(12, 225);
             chkDrawDepthScale.Name = "chkDrawDepthScale";
             chkDrawDepthScale.Size = new Size(118, 19);
             chkDrawDepthScale.TabIndex = 13;
@@ -750,7 +615,7 @@
             // labelAttDistance
             // 
             labelAttDistance.AutoSize = true;
-            labelAttDistance.Location = new Point(12, 109);
+            labelAttDistance.Location = new Point(11, 109);
             labelAttDistance.Name = "labelAttDistance";
             labelAttDistance.Size = new Size(135, 15);
             labelAttDistance.TabIndex = 18;
@@ -767,11 +632,11 @@
             // 
             // numAttDistanceCm
             // 
-            numAttDistanceCm.Location = new Point(170, 107);
+            numAttDistanceCm.Location = new Point(154, 107);
             numAttDistanceCm.Maximum = new decimal(new int[] { 10000, 0, 0, 0 });
             numAttDistanceCm.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numAttDistanceCm.Name = "numAttDistanceCm";
-            numAttDistanceCm.Size = new Size(65, 23);
+            numAttDistanceCm.Size = new Size(81, 23);
             numAttDistanceCm.TabIndex = 11;
             numAttDistanceCm.Tag = "AttDistanceCm";
             numAttDistanceCm.Value = new decimal(new int[] { 667, 0, 0, 0 });
@@ -877,7 +742,7 @@
             grpBoxColor.Controls.Add(label28);
             grpBoxColor.Controls.Add(numG);
             grpBoxColor.Controls.Add(label26);
-            grpBoxColor.Location = new Point(4, 184);
+            grpBoxColor.Location = new Point(4, 304);
             grpBoxColor.Name = "grpBoxColor";
             grpBoxColor.Size = new Size(241, 167);
             grpBoxColor.TabIndex = 2;
@@ -2023,19 +1888,14 @@
             tabPage1.ResumeLayout(false);
             grpBox3DMoving.ResumeLayout(false);
             grpBox3DMoving.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)numScaleX).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numScaleY).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numScaleZ).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numTranX).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numTranY).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numTranZ).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numRotateX).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numRotateY).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numRotateZ).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numBlankingM).EndInit();
             grpBoxSignal.ResumeLayout(false);
             grpBoxSignal.PerformLayout();
             grpBoxDisplay.ResumeLayout(false);
             grpBoxDisplay.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numScaleX).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numScaleY).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numScaleZ).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAttDistanceCm).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAttDb).EndInit();
             ((System.ComponentModel.ISupportInitialize)numAlpha).EndInit();
@@ -2098,12 +1958,6 @@
         private GroupBox grpBox3DMoving;
         private Label label42;
         private Label label43;
-        private Label label6;
-        private Label label7;
-        private Label label8;
-        private Label label9;
-        private Label label10;
-        private Label label11;
         private CheckBox chkHeaveCorrection;
         private CheckBox chkDrawDistScale;
         private CheckBox chkDrawDepthScale;
@@ -2122,12 +1976,6 @@
         private NumericUpDown numG;
         private NumericUpDown numScaleY;
         private NumericUpDown numScaleZ;
-        private NumericUpDown numTranX;
-        private NumericUpDown numTranY;
-        private NumericUpDown numTranZ;
-        private NumericUpDown numRotateX;
-        private NumericUpDown numRotateY;
-        private NumericUpDown numRotateZ;
         private ColorDialog colorDialog1;
         private Label label41;
         private NumericUpDown numScaleX;
@@ -2223,5 +2071,7 @@
         private Label label;
         private Label label4;
         private CheckBox chkShowAnomaryMarker;
+        private NumericUpDown numBlankingM;
+        private Label label1;
     }
 }
