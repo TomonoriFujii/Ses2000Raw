@@ -35,12 +35,8 @@ namespace Ses2000Raw
         private FeatureSet? m_contactFeatureSet;//クリックした点を残すレイヤー
         private IMapPointLayer? m_contactLayer;
 
-        private BindingList<Anomary> m_anomaryList;
-        public BindingList<Anomary> AnomaryList
-        {
-            get { return m_anomaryList; }
-            set { m_anomaryList = value; }
-        }
+        private readonly BindingList<Anomary> m_anomaryList;
+        public BindingList<Anomary> AnomaryList => m_anomaryList;
 
         MainForm? m_frmMain;
 
@@ -64,6 +60,17 @@ namespace Ses2000Raw
 
             m_anomaryList = new BindingList<Anomary>();
             this.dataGridViewAnomary.DataSource = m_anomaryList;
+        }
+        public void AddAnomary(Anomary anomary)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => AddAnomary(anomary)));
+                return;
+            }
+
+            m_anomaryList.Add(anomary);
+            UpdateDataGridView();
         }
         /// <summary>
         /// Form Load Event

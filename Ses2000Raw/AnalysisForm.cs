@@ -91,6 +91,8 @@ namespace Ses2000Raw
         private (double X, double Y)?[]? m_pingPositions;
         private int m_lastMapCursorPing = -1;
 
+        private readonly BindingList<Anomary> m_anomaryList = new();
+
         // FFT 表示のスケール固定用
         private double m_fftPowerAxisMax = double.NaN;
         private double m_fftFreqAxisMaxKHz = double.NaN;
@@ -167,9 +169,7 @@ namespace Ses2000Raw
             get { return m_frmMap; }
             set
             {
-                UnsubscribeAnomaryList();
                 m_frmMap = value;
-                SubscribeAnomaryList();
                 glControl2D?.Refresh();
             }
         }
@@ -387,6 +387,8 @@ namespace Ses2000Raw
             this.cmbColor.ForeColor = Constant.COMBO_FORECOLOR;
             this.btnChooseColor.BackColor = Constant.BUTTON_BACKCOLOR;
             this.btnScaleSetting.BackColor = Constant.BUTTON_BACKCOLOR;
+
+            SubscribeAnomaryList();
 
             // 1) 線色のパレットをダーク向けに
             formsPlot1.Plot.Add.Palette = new ScottPlot.Palettes.Penumbra();
@@ -1332,18 +1334,12 @@ namespace Ses2000Raw
 
         private void SubscribeAnomaryList()
         {
-            if (m_frmMap?.AnomaryList != null)
-            {
-                m_frmMap.AnomaryList.ListChanged += OnAnomaryListChanged;
-            }
+            m_anomaryList.ListChanged += OnAnomaryListChanged;
         }
 
         private void UnsubscribeAnomaryList()
         {
-            if (m_frmMap?.AnomaryList != null)
-            {
-                m_frmMap.AnomaryList.ListChanged -= OnAnomaryListChanged;
-            }
+            m_anomaryList.ListChanged -= OnAnomaryListChanged;
         }
 
         private void OnAnomaryListChanged(object? sender, ListChangedEventArgs e)
@@ -1698,7 +1694,7 @@ namespace Ses2000Raw
 
         private IEnumerable<Anomary> GetRenderableAnomaryMarkers()
         {
-            var anomaryList = m_frmMap?.AnomaryList;
+            var anomaryList = m_anomaryList;
             if (anomaryList == null || m_forceHideRegisteredAnomaryMarkers)
             {
                 return Enumerable.Empty<Anomary>();
@@ -3560,8 +3556,8 @@ namespace Ses2000Raw
                 if (dBurialDepth.HasValue && m_selectedAnomalyDepthMeters.HasValue && m_dBottomDepth.HasValue)
                 {
                     int targetPing = m_selectedAnomalyPing ?? pingNo;
-                    int iAnomaryNo = m_frmMap.AnomaryList.Any()
-                        ? m_frmMap.AnomaryList.Max(anomary => anomary.AnonaryNo) + 1
+                    int iAnomaryNo = m_anomaryList.Any()
+                        ? m_anomaryList.Max(anomary => anomary.AnonaryNo) + 1
                         : 1;
                     var (noCurSorFilePath, withCurSorFilePath) = GenerateScreenshotFilePath(iAnomaryNo);//filepath作成
 
@@ -3585,9 +3581,9 @@ namespace Ses2000Raw
 
                     m_anomaryNosAddedThisSession.Add(iAnomaryNo);
 
-                    m_frmMap.AnomaryList.Add(anomary); // AnomaryList
-                    m_frmMap.UpdateDataGridView();
-                    m_frmMap.AddClickedCurSor(targetPing, this);
+                    m_anomaryList.Add(anomary); // AnomaryList
+                    m_frmMap?.AddAnomary(anomary);
+                    m_frmMap?.AddClickedCurSor(targetPing, this);
 
                     Form? parentForm = m_frmMain ?? this.FindForm();
 
