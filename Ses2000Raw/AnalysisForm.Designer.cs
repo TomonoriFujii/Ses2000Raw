@@ -34,6 +34,12 @@
             tabControl1 = new TabControl();
             tabPage1 = new TabPage();
             grpBox3DMoving = new GroupBox();
+            numBottomRefineWindow = new NumericUpDown();
+            labelBottomRefineWindow = new Label();
+            numBottomAmplitudeFloor = new NumericUpDown();
+            labelBottomAmplitudeFloor = new Label();
+            numBottomThreshold = new NumericUpDown();
+            labelBottomThreshold = new Label();
             numBlankingM = new NumericUpDown();
             label1 = new Label();
             grpBoxSignal = new GroupBox();
@@ -161,6 +167,7 @@
             glControl2D = new OpenTK.GLControl.GLControl();
             contextMenuStrip1 = new ContextMenuStrip(components);
             toolStripMenuItem1 = new ToolStripMenuItem();
+            toolTipBottom = new ToolTip(components);
             colorDialog1 = new ColorDialog();
             toolStrip1 = new ToolStrip();
             toolStripAddContact = new ToolStripButton();
@@ -174,6 +181,9 @@
             tabControl1.SuspendLayout();
             tabPage1.SuspendLayout();
             grpBox3DMoving.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numBottomRefineWindow).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numBottomAmplitudeFloor).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)numBottomThreshold).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numBlankingM).BeginInit();
             grpBoxSignal.SuspendLayout();
             grpBoxDisplay.SuspendLayout();
@@ -221,7 +231,7 @@
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.Controls.Add(glControl2D);
-            splitContainer1.Size = new Size(1219, 862);
+            splitContainer1.Size = new Size(1219, 1022);
             splitContainer1.SplitterDistance = 296;
             splitContainer1.SplitterWidth = 5;
             splitContainer1.TabIndex = 0;
@@ -239,7 +249,7 @@
             tabControl1.Multiline = true;
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(296, 862);
+            tabControl1.Size = new Size(296, 1022);
             tabControl1.SizeMode = TabSizeMode.Fixed;
             tabControl1.TabIndex = 0;
             // 
@@ -253,21 +263,102 @@
             tabPage1.Location = new Point(27, 4);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(265, 854);
+            tabPage1.Size = new Size(265, 1014);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "Setting";
             tabPage1.UseVisualStyleBackColor = true;
             // 
             // grpBox3DMoving
             // 
+            grpBox3DMoving.Controls.Add(numBottomRefineWindow);
+            grpBox3DMoving.Controls.Add(labelBottomRefineWindow);
+            grpBox3DMoving.Controls.Add(numBottomAmplitudeFloor);
+            grpBox3DMoving.Controls.Add(chkShowBtk);
+            grpBox3DMoving.Controls.Add(labelBottomAmplitudeFloor);
+            grpBox3DMoving.Controls.Add(numBottomThreshold);
+            grpBox3DMoving.Controls.Add(labelBottomThreshold);
             grpBox3DMoving.Controls.Add(numBlankingM);
             grpBox3DMoving.Controls.Add(label1);
             grpBox3DMoving.Location = new Point(4, 184);
             grpBox3DMoving.Name = "grpBox3DMoving";
-            grpBox3DMoving.Size = new Size(241, 114);
+            grpBox3DMoving.Size = new Size(241, 157);
             grpBox3DMoving.TabIndex = 5;
             grpBox3DMoving.TabStop = false;
             grpBox3DMoving.Text = "Bottom Track";
+            // 
+            // numBottomRefineWindow
+            // 
+            numBottomRefineWindow.DecimalPlaces = 2;
+            numBottomRefineWindow.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+            numBottomRefineWindow.Location = new Point(129, 82);
+            numBottomRefineWindow.Maximum = new decimal(new int[] { 3, 0, 0, 0 });
+            numBottomRefineWindow.Name = "numBottomRefineWindow";
+            numBottomRefineWindow.Size = new Size(100, 23);
+            numBottomRefineWindow.TabIndex = 9;
+            numBottomRefineWindow.Tag = "BottomRefineWindow";
+            toolTipBottom.SetToolTip(numBottomRefineWindow, "反射の近傍でピークに寄せる深さ幅 (m)");
+            numBottomRefineWindow.Value = new decimal(new int[] { 10, 0, 0, 131072 });
+            numBottomRefineWindow.ValueChanged += numericUpDown_ValueChanged;
+            // 
+            // labelBottomRefineWindow
+            // 
+            labelBottomRefineWindow.AutoSize = true;
+            labelBottomRefineWindow.Location = new Point(129, 64);
+            labelBottomRefineWindow.Name = "labelBottomRefineWindow";
+            labelBottomRefineWindow.Size = new Size(107, 15);
+            labelBottomRefineWindow.TabIndex = 8;
+            labelBottomRefineWindow.Text = "Refine Window [m]";
+            toolTipBottom.SetToolTip(labelBottomRefineWindow, "反射の近傍でピークに寄せる深さ幅 (m)");
+            // 
+            // numBottomAmplitudeFloor
+            // 
+            numBottomAmplitudeFloor.DecimalPlaces = 2;
+            numBottomAmplitudeFloor.Increment = new decimal(new int[] { 1, 0, 0, 131072 });
+            numBottomAmplitudeFloor.Location = new Point(12, 82);
+            numBottomAmplitudeFloor.Maximum = new decimal(new int[] { 1, 0, 0, 0 });
+            numBottomAmplitudeFloor.Minimum = new decimal(new int[] { 50, 0, 0, 131072 });
+            numBottomAmplitudeFloor.Name = "numBottomAmplitudeFloor";
+            numBottomAmplitudeFloor.Size = new Size(99, 23);
+            numBottomAmplitudeFloor.TabIndex = 7;
+            numBottomAmplitudeFloor.Tag = "BottomAmplitudeFloor";
+            toolTipBottom.SetToolTip(numBottomAmplitudeFloor, "包絡強度の最低ライン (0-1)。ノイズを除きたいときに上げる");
+            numBottomAmplitudeFloor.Value = new decimal(new int[] { 85, 0, 0, 131072 });
+            numBottomAmplitudeFloor.ValueChanged += numericUpDown_ValueChanged;
+            // 
+            // labelBottomAmplitudeFloor
+            // 
+            labelBottomAmplitudeFloor.AutoSize = true;
+            labelBottomAmplitudeFloor.Location = new Point(12, 64);
+            labelBottomAmplitudeFloor.Name = "labelBottomAmplitudeFloor";
+            labelBottomAmplitudeFloor.Size = new Size(92, 15);
+            labelBottomAmplitudeFloor.TabIndex = 6;
+            labelBottomAmplitudeFloor.Text = "Amplitude Floor";
+            toolTipBottom.SetToolTip(labelBottomAmplitudeFloor, "包絡強度の最低ライン (0-1)。ノイズを除きたいときに上げる");
+            // 
+            // numBottomThreshold
+            // 
+            numBottomThreshold.DecimalPlaces = 1;
+            numBottomThreshold.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numBottomThreshold.Location = new Point(129, 38);
+            numBottomThreshold.Maximum = new decimal(new int[] { 10, 0, 0, 0 });
+            numBottomThreshold.Minimum = new decimal(new int[] { 5, 0, 0, 65536 });
+            numBottomThreshold.Name = "numBottomThreshold";
+            numBottomThreshold.Size = new Size(100, 23);
+            numBottomThreshold.TabIndex = 5;
+            numBottomThreshold.Tag = "BottomThreshold";
+            toolTipBottom.SetToolTip(numBottomThreshold, "微分エッジのしきい値スケール。大きいほど検出を厳しく");
+            numBottomThreshold.Value = new decimal(new int[] { 30, 0, 0, 65536 });
+            numBottomThreshold.ValueChanged += numericUpDown_ValueChanged;
+            // 
+            // labelBottomThreshold
+            // 
+            labelBottomThreshold.AutoSize = true;
+            labelBottomThreshold.Location = new Point(129, 20);
+            labelBottomThreshold.Name = "labelBottomThreshold";
+            labelBottomThreshold.Size = new Size(59, 15);
+            labelBottomThreshold.TabIndex = 4;
+            labelBottomThreshold.Text = "Threshold";
+            toolTipBottom.SetToolTip(labelBottomThreshold, "微分エッジのしきい値スケール。大きいほど検出を厳しく");
             // 
             // numBlankingM
             // 
@@ -275,7 +366,7 @@
             numBlankingM.Increment = new decimal(new int[] { 5, 0, 0, 65536 });
             numBlankingM.Location = new Point(12, 38);
             numBlankingM.Name = "numBlankingM";
-            numBlankingM.Size = new Size(74, 23);
+            numBlankingM.Size = new Size(99, 23);
             numBlankingM.TabIndex = 3;
             numBlankingM.Tag = "Blanking";
             numBlankingM.Value = new decimal(new int[] { 3, 0, 0, 0 });
@@ -410,7 +501,6 @@
             grpBoxDisplay.Controls.Add(label41);
             grpBoxDisplay.Controls.Add(chkShowAnomaryMarker);
             grpBoxDisplay.Controls.Add(numScaleX);
-            grpBoxDisplay.Controls.Add(chkShowBtk);
             grpBoxDisplay.Controls.Add(label42);
             grpBoxDisplay.Controls.Add(chkFlipX);
             grpBoxDisplay.Controls.Add(numScaleY);
@@ -432,9 +522,9 @@
             grpBoxDisplay.Controls.Add(label13);
             grpBoxDisplay.Controls.Add(numIntensity);
             grpBoxDisplay.Controls.Add(label19);
-            grpBoxDisplay.Location = new Point(4, 477);
+            grpBoxDisplay.Location = new Point(4, 520);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 367);
+            grpBoxDisplay.Size = new Size(241, 339);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
@@ -453,7 +543,7 @@
             chkShowAnomaryMarker.AutoSize = true;
             chkShowAnomaryMarker.Checked = true;
             chkShowAnomaryMarker.CheckState = CheckState.Checked;
-            chkShowAnomaryMarker.Location = new Point(12, 325);
+            chkShowAnomaryMarker.Location = new Point(12, 300);
             chkShowAnomaryMarker.Name = "chkShowAnomaryMarker";
             chkShowAnomaryMarker.Size = new Size(146, 19);
             chkShowAnomaryMarker.TabIndex = 19;
@@ -480,7 +570,7 @@
             // chkShowBtk
             // 
             chkShowBtk.AutoSize = true;
-            chkShowBtk.Location = new Point(12, 300);
+            chkShowBtk.Location = new Point(12, 122);
             chkShowBtk.Name = "chkShowBtk";
             chkShowBtk.Size = new Size(152, 19);
             chkShowBtk.TabIndex = 17;
@@ -742,7 +832,7 @@
             grpBoxColor.Controls.Add(label28);
             grpBoxColor.Controls.Add(numG);
             grpBoxColor.Controls.Add(label26);
-            grpBoxColor.Location = new Point(4, 304);
+            grpBoxColor.Location = new Point(4, 347);
             grpBoxColor.Name = "grpBoxColor";
             grpBoxColor.Size = new Size(241, 167);
             grpBoxColor.TabIndex = 2;
@@ -886,7 +976,7 @@
             tabPage2.Location = new Point(27, 4);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(265, 854);
+            tabPage2.Size = new Size(265, 1014);
             tabPage2.TabIndex = 1;
             tabPage2.Text = "Signal";
             tabPage2.UseVisualStyleBackColor = true;
@@ -897,7 +987,7 @@
             formsPlot1.Dock = DockStyle.Fill;
             formsPlot1.Location = new Point(3, 3);
             formsPlot1.Name = "formsPlot1";
-            formsPlot1.Size = new Size(259, 848);
+            formsPlot1.Size = new Size(259, 1008);
             formsPlot1.TabIndex = 0;
             // 
             // tabPage3
@@ -905,7 +995,7 @@
             tabPage3.Controls.Add(formsPlotFFT);
             tabPage3.Location = new Point(27, 4);
             tabPage3.Name = "tabPage3";
-            tabPage3.Size = new Size(265, 854);
+            tabPage3.Size = new Size(265, 1014);
             tabPage3.TabIndex = 2;
             tabPage3.Text = "FFT";
             tabPage3.UseVisualStyleBackColor = true;
@@ -916,7 +1006,7 @@
             formsPlotFFT.Dock = DockStyle.Fill;
             formsPlotFFT.Location = new Point(0, 0);
             formsPlotFFT.Name = "formsPlotFFT";
-            formsPlotFFT.Size = new Size(265, 854);
+            formsPlotFFT.Size = new Size(265, 1014);
             formsPlotFFT.TabIndex = 0;
             // 
             // tabPage4
@@ -934,7 +1024,7 @@
             tabPage4.Location = new Point(27, 4);
             tabPage4.Margin = new Padding(3, 4, 3, 4);
             tabPage4.Name = "tabPage4";
-            tabPage4.Size = new Size(265, 854);
+            tabPage4.Size = new Size(265, 1014);
             tabPage4.TabIndex = 2;
             tabPage4.Text = "Ping Info";
             tabPage4.UseVisualStyleBackColor = true;
@@ -1797,7 +1887,7 @@
             glControl2D.Name = "glControl2D";
             glControl2D.Profile = OpenTK.Windowing.Common.ContextProfile.Compatability;
             glControl2D.SharedContext = null;
-            glControl2D.Size = new Size(918, 862);
+            glControl2D.Size = new Size(918, 1022);
             glControl2D.TabIndex = 0;
             glControl2D.Visible = false;
             glControl2D.Load += glControl2D_Load;
@@ -1873,7 +1963,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1219, 893);
+            ClientSize = new Size(1219, 1053);
             Controls.Add(splitContainer1);
             Controls.Add(toolStrip1);
             Name = "AnalysisForm";
@@ -1888,6 +1978,9 @@
             tabPage1.ResumeLayout(false);
             grpBox3DMoving.ResumeLayout(false);
             grpBox3DMoving.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numBottomRefineWindow).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numBottomAmplitudeFloor).EndInit();
+            ((System.ComponentModel.ISupportInitialize)numBottomThreshold).EndInit();
             ((System.ComponentModel.ISupportInitialize)numBlankingM).EndInit();
             grpBoxSignal.ResumeLayout(false);
             grpBoxSignal.PerformLayout();
@@ -2073,5 +2166,12 @@
         private CheckBox chkShowAnomaryMarker;
         private NumericUpDown numBlankingM;
         private Label label1;
+        private NumericUpDown numBottomRefineWindow;
+        private Label labelBottomRefineWindow;
+        private NumericUpDown numBottomAmplitudeFloor;
+        private Label labelBottomAmplitudeFloor;
+        private NumericUpDown numBottomThreshold;
+        private Label labelBottomThreshold;
+        private ToolTip toolTipBottom;
     }
 }

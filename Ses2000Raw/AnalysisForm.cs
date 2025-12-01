@@ -762,6 +762,9 @@ namespace Ses2000Raw
             switch (tag)
             {
                 case "Blanking":
+                case "BottomThreshold":
+                case "BottomAmplitudeFloor":
+                case "BottomRefineWindow":
                     m_bBottomDirty = true;
                     break;
                 case "R":
@@ -1663,7 +1666,7 @@ namespace Ses2000Raw
             // 線のスタイル
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.LineWidth(2f);
+            GL.LineWidth(3f);
             GL.Color4(1f, 0.6f, 0f, 0.95f); // 暖色で視認性（必要ならUIで変更可）
 
             // MeasureStart 段差を考慮した座標に変換
@@ -2074,9 +2077,9 @@ namespace Ses2000Raw
                                                             startSkipM: (double)this.numBlankingM.Value,   // 表層回避
                                                             endGuardM: 0.50,   // 末尾ガード
                                                             smoothWin: 25,     // 15〜31 で調整
-                                                            kMad: 3.0,    // 厳しめにしたい時は 4.5〜5.0
-                                                            ampPct: 0.85,   // 誤検知多いなら 0.75〜0.85
-                                                            refineWinM: 0.10,   // 到来点の直下0.3mでピークへ寄せる
+                                                            kMad: (double)numBottomThreshold.Value,    // 厳しめにしたい時は 4.5〜5.0
+                                                            ampPct: (double)numBottomAmplitudeFloor.Value,   // 誤検知多いなら 0.75〜0.85
+                                                            refineWinM: (double)numBottomRefineWindow.Value,   // 到来点の直下0.3mでピークへ寄せる
                                                             useAbsLF: true,
                                                             applyHeaveInDetection: this.chkHeaveCorrection.Checked
                                                         );
