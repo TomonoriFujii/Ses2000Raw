@@ -555,6 +555,7 @@
             chkHideReflectionsAboveBottom.Tag = "HideReflectionsAboveBottom";
             chkHideReflectionsAboveBottom.Text = "Hide Reflections Above Bottom";
             chkHideReflectionsAboveBottom.UseVisualStyleBackColor = true;
+            chkHideReflectionsAboveBottom.CheckedChanged += chkBox_CheckedChanged;
             // 
             // label41
             // 

@@ -843,6 +843,9 @@ namespace Ses2000Raw
                     m_bTextureDirty = true;
                     m_bBottomDirty = true;
                     break;
+                case "HideReflectionsAboveBottom":
+                    m_bTextureDirty = true;
+                    break;
                 case "FlipX":
                     m_bFlipX = ((CheckBox)sender).Checked;
                     break;
@@ -2408,15 +2411,20 @@ namespace Ses2000Raw
                         continue;
                     }
 
-                    double s = wave[zShifted];
-                    if (Math.Abs(s) < thr) s = 0.0;
-
-                    // --- ★ここが重要：ボトムから下だけ減衰補正 ---
                     int bottom = (m_bottomIdx != null && y < m_bottomIdx.Length) ? m_bottomIdx[y] : 0;
                     // 画素側でヒーブを適用したなら、ボトム側も同じだけシフトして整合
                     bottom += heaveOffset;
                     bottom = Math.Clamp(bottom, 0, h - 1);
 
+                    double s = wave[zShifted];
+                    if (Math.Abs(s) < thr) s = 0.0;
+
+                    if (chkHideReflectionsAboveBottom.Checked && zShifted < bottom)
+                    {
+                        s = 0.0;
+                    }
+
+                    // --- ★ここが重要：ボトムから下だけ減衰補正 ---
                     int delta = zShifted - bottom; // ボトムからのサンプル差
                     double att = ComputeAttenuation(delta, attCoef, attenuationModel);
 
