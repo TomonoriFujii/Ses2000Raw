@@ -175,6 +175,8 @@
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
             tsBtnMarkAnomary = new ToolStripButton();
+            checkBox1 = new CheckBox();
+            numHideReflectionsDepth = new NumericUpDown();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -214,6 +216,7 @@
             tableLayoutPanel1.SuspendLayout();
             contextMenuStrip1.SuspendLayout();
             toolStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numHideReflectionsDepth).BeginInit();
             SuspendLayout();
             // 
             // splitContainer1
@@ -298,7 +301,7 @@
             numBottomRefineWindow.TabIndex = 9;
             numBottomRefineWindow.Tag = "BottomRefineWindow";
             toolTipBottom.SetToolTip(numBottomRefineWindow, "反射の近傍でピークに寄せる深さ幅 (m)");
-            numBottomRefineWindow.Value = new decimal(new int[] { 10, 0, 0, 131072 });
+            numBottomRefineWindow.Value = new decimal(new int[] { 5, 0, 0, 131072 });
             numBottomRefineWindow.ValueChanged += numericUpDown_ValueChanged;
             // 
             // labelBottomRefineWindow
@@ -323,7 +326,7 @@
             numBottomAmplitudeFloor.TabIndex = 7;
             numBottomAmplitudeFloor.Tag = "BottomAmplitudeFloor";
             toolTipBottom.SetToolTip(numBottomAmplitudeFloor, "包絡強度の最低ライン (0-1)。ノイズを除きたいときに上げる");
-            numBottomAmplitudeFloor.Value = new decimal(new int[] { 85, 0, 0, 131072 });
+            numBottomAmplitudeFloor.Value = new decimal(new int[] { 9, 0, 0, 65536 });
             numBottomAmplitudeFloor.ValueChanged += numericUpDown_ValueChanged;
             // 
             // chkShowBtk
@@ -382,7 +385,7 @@
             numBlankingM.Size = new Size(99, 23);
             numBlankingM.TabIndex = 3;
             numBlankingM.Tag = "Blanking";
-            numBlankingM.Value = new decimal(new int[] { 3, 0, 0, 0 });
+            numBlankingM.Value = new decimal(new int[] { 13, 0, 0, 65536 });
             numBlankingM.ValueChanged += numericUpDown_ValueChanged;
             // 
             // label1
@@ -511,6 +514,8 @@
             // 
             // grpBoxDisplay
             // 
+            grpBoxDisplay.Controls.Add(numHideReflectionsDepth);
+            grpBoxDisplay.Controls.Add(checkBox1);
             grpBoxDisplay.Controls.Add(chkHideReflectionsAboveBottom);
             grpBoxDisplay.Controls.Add(label41);
             grpBoxDisplay.Controls.Add(chkShowAnomaryMarker);
@@ -538,7 +543,7 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(4, 520);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 371);
+            grpBoxDisplay.Size = new Size(241, 443);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
@@ -1973,6 +1978,30 @@
             tsBtnMarkAnomary.Text = "Mark Anomary";
             tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
             // 
+            // checkBox1
+            // 
+            checkBox1.AutoSize = true;
+            checkBox1.Location = new Point(11, 350);
+            checkBox1.Name = "checkBox1";
+            checkBox1.Size = new Size(125, 34);
+            checkBox1.TabIndex = 21;
+            checkBox1.Tag = "HideReflectionsAboveBottom";
+            checkBox1.Text = "Hide Reflections \r\nBeyond This Depth";
+            checkBox1.UseVisualStyleBackColor = true;
+            // 
+            // numHideReflectionsDepth
+            // 
+            numHideReflectionsDepth.DecimalPlaces = 2;
+            numHideReflectionsDepth.Enabled = false;
+            numHideReflectionsDepth.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numHideReflectionsDepth.Location = new Point(151, 357);
+            numHideReflectionsDepth.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numHideReflectionsDepth.Name = "numHideReflectionsDepth";
+            numHideReflectionsDepth.Size = new Size(65, 23);
+            numHideReflectionsDepth.TabIndex = 22;
+            numHideReflectionsDepth.Tag = "HideReflectionsDepth";
+            numHideReflectionsDepth.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            // 
             // AnalysisForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -2037,6 +2066,7 @@
             contextMenuStrip1.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numHideReflectionsDepth).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -2188,5 +2218,7 @@
         private Label labelBottomThreshold;
         private ToolTip toolTipBottom;
         private CheckBox chkHideReflectionsAboveBottom;
+        private CheckBox checkBox1;
+        private NumericUpDown numHideReflectionsDepth;
     }
 }
