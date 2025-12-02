@@ -782,6 +782,7 @@ namespace Ses2000Raw
                 case "Bottom":
                 case "AttDb":
                 case "AttDistanceCm":
+                case "ReflectionsDepthLimit":
                     break;
 
                 case "ScaleY":
@@ -844,6 +845,10 @@ namespace Ses2000Raw
                     m_bBottomDirty = true;
                     break;
                 case "HideReflectionsAboveBottom":
+                    m_bTextureDirty = true;
+                    break;
+                case "HideReflectionsDepth":
+                    numReflectionsDepthLimit.Enabled = ((CheckBox)sender).Checked;
                     m_bTextureDirty = true;
                     break;
                 case "FlipX":
@@ -2381,6 +2386,9 @@ namespace Ses2000Raw
             var attenuationModel = (AttenuationModel)cmbAttenuationModel.SelectedIndex;
 
             double sampleIntervalCm = m_dZDistance;
+            double sampleIntervalM = sampleIntervalCm / 100.0;
+            bool hideReflectionsByDepth = chkBoxHideReflectionsDepth.Checked;
+            double depthLimitM = Convert.ToDouble(numReflectionsDepthLimit.Value);
 
             Parallel.For(0, h, z =>
             {
@@ -2420,6 +2428,19 @@ namespace Ses2000Raw
                     if (Math.Abs(s) < thr) s = 0.0;
 
                     if (chkHideReflectionsAboveBottom.Checked && zShifted < bottom)
+                    {
+                        s = 0.0;
+                    }
+
+                    // 深度の判定は表示上のヒーブ補正後の位置で行う
+                    int depthIndex = zShifted;
+                    if (chkHeaveCorrection.Checked)
+                    {
+                        depthIndex -= heaveOffset; // 表示z (= zShifted - heaveOffset) に対応
+                    }
+
+                    double depthM = m_blockHeaderList[y].MeasureStart + depthIndex * sampleIntervalM;
+                    if (hideReflectionsByDepth && depthM >= depthLimitM)
                     {
                         s = 0.0;
                     }

@@ -558,11 +558,12 @@
             numReflectionsDepthLimit.Name = "numReflectionsDepthLimit";
             numReflectionsDepthLimit.Size = new Size(65, 23);
             numReflectionsDepthLimit.TabIndex = 22;
-            numReflectionsDepthLimit.Tag = "";
+            numReflectionsDepthLimit.Tag = "ReflectionsDepthLimit";
+            numReflectionsDepthLimit.ValueChanged += numericUpDown_ValueChanged;
             numReflectionsDepthLimit.Value = new decimal(new int[] { 5, 0, 0, 0 });
-            // 
+            //
             // chkBoxHideReflectionsDepth
-            // 
+            //
             chkBoxHideReflectionsDepth.AutoSize = true;
             chkBoxHideReflectionsDepth.Location = new Point(12, 350);
             chkBoxHideReflectionsDepth.Name = "chkBoxHideReflectionsDepth";
@@ -571,6 +572,7 @@
             chkBoxHideReflectionsDepth.Tag = "HideReflectionsDepth";
             chkBoxHideReflectionsDepth.Text = "Hide Reflections \r\nBeyond This Depth";
             chkBoxHideReflectionsDepth.UseVisualStyleBackColor = true;
+            chkBoxHideReflectionsDepth.CheckedChanged += chkBox_CheckedChanged;
             // 
             // chkHideReflectionsAboveBottom
             // 
