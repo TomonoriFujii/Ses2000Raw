@@ -37,6 +37,7 @@
             numBottomRefineWindow = new NumericUpDown();
             labelBottomRefineWindow = new Label();
             numBottomAmplitudeFloor = new NumericUpDown();
+            chkShowBtk = new CheckBox();
             labelBottomAmplitudeFloor = new Label();
             numBottomThreshold = new NumericUpDown();
             labelBottomThreshold = new Label();
@@ -54,10 +55,10 @@
             lblDemodulate = new Label();
             label12 = new Label();
             grpBoxDisplay = new GroupBox();
+            chkHideReflectionsAboveBottom = new CheckBox();
             label41 = new Label();
             chkShowAnomaryMarker = new CheckBox();
             numScaleX = new NumericUpDown();
-            chkShowBtk = new CheckBox();
             label42 = new Label();
             chkFlipX = new CheckBox();
             numScaleY = new NumericUpDown();
@@ -325,6 +326,18 @@
             numBottomAmplitudeFloor.Value = new decimal(new int[] { 85, 0, 0, 131072 });
             numBottomAmplitudeFloor.ValueChanged += numericUpDown_ValueChanged;
             // 
+            // chkShowBtk
+            // 
+            chkShowBtk.AutoSize = true;
+            chkShowBtk.Location = new Point(12, 122);
+            chkShowBtk.Name = "chkShowBtk";
+            chkShowBtk.Size = new Size(152, 19);
+            chkShowBtk.TabIndex = 17;
+            chkShowBtk.Tag = "ShowBottomTrack";
+            chkShowBtk.Text = "Show Bottom Track Line";
+            chkShowBtk.UseVisualStyleBackColor = true;
+            chkShowBtk.CheckedChanged += chkBox_CheckedChanged;
+            // 
             // labelBottomAmplitudeFloor
             // 
             labelBottomAmplitudeFloor.AutoSize = true;
@@ -498,6 +511,7 @@
             // 
             // grpBoxDisplay
             // 
+            grpBoxDisplay.Controls.Add(chkHideReflectionsAboveBottom);
             grpBoxDisplay.Controls.Add(label41);
             grpBoxDisplay.Controls.Add(chkShowAnomaryMarker);
             grpBoxDisplay.Controls.Add(numScaleX);
@@ -524,10 +538,23 @@
             grpBoxDisplay.Controls.Add(label19);
             grpBoxDisplay.Location = new Point(4, 520);
             grpBoxDisplay.Name = "grpBoxDisplay";
-            grpBoxDisplay.Size = new Size(241, 339);
+            grpBoxDisplay.Size = new Size(241, 371);
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
+            // 
+            // chkHideReflectionsAboveBottom
+            // 
+            chkHideReflectionsAboveBottom.AutoSize = true;
+            chkHideReflectionsAboveBottom.Checked = true;
+            chkHideReflectionsAboveBottom.CheckState = CheckState.Checked;
+            chkHideReflectionsAboveBottom.Location = new Point(12, 325);
+            chkHideReflectionsAboveBottom.Name = "chkHideReflectionsAboveBottom";
+            chkHideReflectionsAboveBottom.Size = new Size(190, 19);
+            chkHideReflectionsAboveBottom.TabIndex = 20;
+            chkHideReflectionsAboveBottom.Tag = "HideReflectionsAboveBottom";
+            chkHideReflectionsAboveBottom.Text = "Hide Reflections Above Bottom";
+            chkHideReflectionsAboveBottom.UseVisualStyleBackColor = true;
             // 
             // label41
             // 
@@ -566,18 +593,6 @@
             numScaleX.Tag = "ScaleX";
             numScaleX.Value = new decimal(new int[] { 1, 0, 0, 0 });
             numScaleX.ValueChanged += numericUpDown_ValueChanged;
-            // 
-            // chkShowBtk
-            // 
-            chkShowBtk.AutoSize = true;
-            chkShowBtk.Location = new Point(12, 122);
-            chkShowBtk.Name = "chkShowBtk";
-            chkShowBtk.Size = new Size(152, 19);
-            chkShowBtk.TabIndex = 17;
-            chkShowBtk.Tag = "ShowBottomTrack";
-            chkShowBtk.Text = "Show Bottom Track Line";
-            chkShowBtk.UseVisualStyleBackColor = true;
-            chkShowBtk.CheckedChanged += chkBox_CheckedChanged;
             // 
             // label42
             // 
@@ -2173,5 +2188,6 @@
         private NumericUpDown numBottomThreshold;
         private Label labelBottomThreshold;
         private ToolTip toolTipBottom;
+        private CheckBox chkHideReflectionsAboveBottom;
     }
 }

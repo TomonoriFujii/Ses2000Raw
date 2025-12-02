@@ -125,7 +125,7 @@
             spatialToolStrip1.ApplicationManager = null;
             spatialToolStrip1.ImageScalingSize = new Size(20, 20);
             spatialToolStrip1.Location = new Point(0, 0);
-            spatialToolStrip1.Map = null;
+            spatialToolStrip1.Map = map1;
             spatialToolStrip1.Name = "spatialToolStrip1";
             spatialToolStrip1.Size = new Size(800, 27);
             spatialToolStrip1.TabIndex = 2;
@@ -137,7 +137,7 @@
             appManager1.DockManager = null;
             appManager1.HeaderControl = null;
             appManager1.Legend = null;
-            appManager1.Map = null;
+            appManager1.Map = map1;
             appManager1.ProgressHandler = null;
             // 
             // splitContainer1
