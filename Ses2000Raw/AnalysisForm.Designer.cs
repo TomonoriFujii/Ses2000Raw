@@ -55,6 +55,8 @@
             lblDemodulate = new Label();
             label12 = new Label();
             grpBoxDisplay = new GroupBox();
+            numReflectionsDepthLimit = new NumericUpDown();
+            chkBoxHideReflectionsDepth = new CheckBox();
             chkHideReflectionsAboveBottom = new CheckBox();
             label41 = new Label();
             chkShowAnomaryMarker = new CheckBox();
@@ -175,8 +177,6 @@
             toolStripSeparator1 = new ToolStripSeparator();
             tsBtnSaveImage = new ToolStripButton();
             tsBtnMarkAnomary = new ToolStripButton();
-            checkBox1 = new CheckBox();
-            numHideReflectionsDepth = new NumericUpDown();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -190,6 +190,7 @@
             ((System.ComponentModel.ISupportInitialize)numBlankingM).BeginInit();
             grpBoxSignal.SuspendLayout();
             grpBoxDisplay.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numReflectionsDepthLimit).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScaleX).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScaleY).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScaleZ).BeginInit();
@@ -216,7 +217,6 @@
             tableLayoutPanel1.SuspendLayout();
             contextMenuStrip1.SuspendLayout();
             toolStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)numHideReflectionsDepth).BeginInit();
             SuspendLayout();
             // 
             // splitContainer1
@@ -514,8 +514,8 @@
             // 
             // grpBoxDisplay
             // 
-            grpBoxDisplay.Controls.Add(numHideReflectionsDepth);
-            grpBoxDisplay.Controls.Add(checkBox1);
+            grpBoxDisplay.Controls.Add(numReflectionsDepthLimit);
+            grpBoxDisplay.Controls.Add(chkBoxHideReflectionsDepth);
             grpBoxDisplay.Controls.Add(chkHideReflectionsAboveBottom);
             grpBoxDisplay.Controls.Add(label41);
             grpBoxDisplay.Controls.Add(chkShowAnomaryMarker);
@@ -547,6 +547,30 @@
             grpBoxDisplay.TabIndex = 3;
             grpBoxDisplay.TabStop = false;
             grpBoxDisplay.Text = "Display";
+            // 
+            // numReflectionsDepthLimit
+            // 
+            numReflectionsDepthLimit.DecimalPlaces = 2;
+            numReflectionsDepthLimit.Enabled = false;
+            numReflectionsDepthLimit.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
+            numReflectionsDepthLimit.Location = new Point(151, 357);
+            numReflectionsDepthLimit.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numReflectionsDepthLimit.Name = "numReflectionsDepthLimit";
+            numReflectionsDepthLimit.Size = new Size(65, 23);
+            numReflectionsDepthLimit.TabIndex = 22;
+            numReflectionsDepthLimit.Tag = "";
+            numReflectionsDepthLimit.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            // 
+            // chkBoxHideReflectionsDepth
+            // 
+            chkBoxHideReflectionsDepth.AutoSize = true;
+            chkBoxHideReflectionsDepth.Location = new Point(12, 350);
+            chkBoxHideReflectionsDepth.Name = "chkBoxHideReflectionsDepth";
+            chkBoxHideReflectionsDepth.Size = new Size(125, 34);
+            chkBoxHideReflectionsDepth.TabIndex = 21;
+            chkBoxHideReflectionsDepth.Tag = "HideReflectionsDepth";
+            chkBoxHideReflectionsDepth.Text = "Hide Reflections \r\nBeyond This Depth";
+            chkBoxHideReflectionsDepth.UseVisualStyleBackColor = true;
             // 
             // chkHideReflectionsAboveBottom
             // 
@@ -1978,30 +2002,6 @@
             tsBtnMarkAnomary.Text = "Mark Anomary";
             tsBtnMarkAnomary.CheckedChanged += toolStripButtonAddContact_CheckedChanged;
             // 
-            // checkBox1
-            // 
-            checkBox1.AutoSize = true;
-            checkBox1.Location = new Point(11, 350);
-            checkBox1.Name = "checkBox1";
-            checkBox1.Size = new Size(125, 34);
-            checkBox1.TabIndex = 21;
-            checkBox1.Tag = "HideReflectionsAboveBottom";
-            checkBox1.Text = "Hide Reflections \r\nBeyond This Depth";
-            checkBox1.UseVisualStyleBackColor = true;
-            // 
-            // numHideReflectionsDepth
-            // 
-            numHideReflectionsDepth.DecimalPlaces = 2;
-            numHideReflectionsDepth.Enabled = false;
-            numHideReflectionsDepth.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
-            numHideReflectionsDepth.Location = new Point(151, 357);
-            numHideReflectionsDepth.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            numHideReflectionsDepth.Name = "numHideReflectionsDepth";
-            numHideReflectionsDepth.Size = new Size(65, 23);
-            numHideReflectionsDepth.TabIndex = 22;
-            numHideReflectionsDepth.Tag = "HideReflectionsDepth";
-            numHideReflectionsDepth.Value = new decimal(new int[] { 5, 0, 0, 0 });
-            // 
             // AnalysisForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -2029,6 +2029,7 @@
             grpBoxSignal.PerformLayout();
             grpBoxDisplay.ResumeLayout(false);
             grpBoxDisplay.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numReflectionsDepthLimit).EndInit();
             ((System.ComponentModel.ISupportInitialize)numScaleX).EndInit();
             ((System.ComponentModel.ISupportInitialize)numScaleY).EndInit();
             ((System.ComponentModel.ISupportInitialize)numScaleZ).EndInit();
@@ -2066,7 +2067,6 @@
             contextMenuStrip1.ResumeLayout(false);
             toolStrip1.ResumeLayout(false);
             toolStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)numHideReflectionsDepth).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -2218,7 +2218,7 @@
         private Label labelBottomThreshold;
         private ToolTip toolTipBottom;
         private CheckBox chkHideReflectionsAboveBottom;
-        private CheckBox checkBox1;
-        private NumericUpDown numHideReflectionsDepth;
+        private CheckBox chkBoxHideReflectionsDepth;
+        private NumericUpDown numReflectionsDepthLimit;
     }
 }
