@@ -123,13 +123,13 @@ namespace Ses2000Raw
         /// Ping位置の航跡を線で表示する。
         /// </summary>
         /// <param name="coordinates">描画するXY座標（m単位想定）</param>
-        public void SetTrack(IEnumerable<(double X, double Y)> coordinates)
+        public void SetTrack(string rawFilePath, IEnumerable<(double X, double Y)> coordinates)
         {
             var points = coordinates?.ToList() ?? new List<(double X, double Y)>();
 
             if (InvokeRequired)
             {
-                BeginInvoke(new Action(() => SetTrack(points)));
+                BeginInvoke(new Action(() => SetTrack(rawFilePath, points)));
                 return;
             }
 
@@ -162,6 +162,12 @@ namespace Ses2000Raw
                 m_trackLayer.Symbolizer = new LineSymbolizer(Color.WhiteSmoke, 1f);
                 m_trackLayer.LegendText = "Track";
             }
+
+
+            // GNSS航跡
+            string strLineShpName =  Path.GetDirectoryName(rawFilePath) + @"\" + Path.GetFileNameWithoutExtension(rawFilePath) + "_Track.shp";
+            m_trackFeatureSet.SaveAs(strLineShpName, true);
+
 
             map1.ZoomToMaxExtent();
 

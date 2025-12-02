@@ -470,7 +470,7 @@ namespace Ses2000Raw
             m_dZoom = 0.7;
 
             RebuildPingPositionsFromHeaders();
-            UpdateMapTrack();
+            //UpdateMapTrack();
 
         }
         /// <summary>
@@ -1284,7 +1284,7 @@ namespace Ses2000Raw
 
             if (m_pingPositions == null)
             {
-                m_frmMap.SetTrack(Array.Empty<(double X, double Y)>());
+                m_frmMap.SetTrack(m_rawFileName, Array.Empty<(double X, double Y)>());
                 return;
             }
 
@@ -1295,7 +1295,7 @@ namespace Ses2000Raw
                     points.Add(pos.Value);
             }
 
-            m_frmMap.SetTrack(points);
+            m_frmMap.SetTrack(m_rawFileName, points);
 
             if (m_lastMapCursorPing >= 0)
             {
