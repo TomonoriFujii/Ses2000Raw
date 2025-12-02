@@ -546,8 +546,6 @@
             // chkHideReflectionsAboveBottom
             // 
             chkHideReflectionsAboveBottom.AutoSize = true;
-            chkHideReflectionsAboveBottom.Checked = true;
-            chkHideReflectionsAboveBottom.CheckState = CheckState.Checked;
             chkHideReflectionsAboveBottom.Location = new Point(12, 325);
             chkHideReflectionsAboveBottom.Name = "chkHideReflectionsAboveBottom";
             chkHideReflectionsAboveBottom.Size = new Size(190, 19);
