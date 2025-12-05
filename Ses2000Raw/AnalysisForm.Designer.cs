@@ -169,7 +169,7 @@
             labelTime = new Label();
             glControl2D = new OpenTK.GLControl.GLControl();
             contextMenuStrip1 = new ContextMenuStrip(components);
-            toolStripMenuItem1 = new ToolStripMenuItem();
+            tsMenuMarkPing = new ToolStripMenuItem();
             toolTipBottom = new ToolTip(components);
             colorDialog1 = new ColorDialog();
             toolStrip1 = new ToolStrip();
@@ -1947,16 +1947,17 @@
             // contextMenuStrip1
             // 
             contextMenuStrip1.ImageScalingSize = new Size(20, 20);
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1 });
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { tsMenuMarkPing });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(180, 26);
+            contextMenuStrip1.Size = new Size(129, 26);
             contextMenuStrip1.ItemClicked += contextMenuStrip1_ItemClicked;
             // 
-            // toolStripMenuItem1
+            // tsMenuMarkPing
             // 
-            toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(179, 22);
-            toolStripMenuItem1.Text = "toolStripMenuItem1";
+            tsMenuMarkPing.Name = "tsMenuMarkPing";
+            tsMenuMarkPing.Size = new Size(128, 22);
+            tsMenuMarkPing.Tag = "MarkPing";
+            tsMenuMarkPing.Text = "Mark Ping";
             // 
             // toolStrip1
             // 
@@ -2200,7 +2201,7 @@
         private Label labelHeadingMotionSensor;
         private Label label52;
         private ContextMenuStrip contextMenuStrip1;
-        private ToolStripMenuItem toolStripMenuItem1;
+        private ToolStripMenuItem tsMenuMarkPing;
         private ToolStripButton tsBtnMarkAnomary;
         private Label labelPingNumber;
         private Label label32;

@@ -67,6 +67,8 @@ namespace Ses2000Raw
         private readonly HashSet<int> m_anomaryNosAddedThisSession = new();
         private bool m_forceHideRegisteredAnomaryMarkers = false;
         private bool m_forceShowOnlyCurrentSessionMarkers = false;
+        private readonly SortedSet<int> m_markedPingIndices = new();
+        private int? m_contextMenuPingIndex;
 
         // 距離（進行方向）
         private double[] m_cumDistM;  // 累積距離[m]
@@ -433,6 +435,7 @@ namespace Ses2000Raw
             m_dZDistance = Method.CalcSampleInterval(m_dSampleFreqHz, dSV);
             m_iSampleNo = (m_channel == Channel.LF) ? m_blockHeaderList[0].LfDataLength : m_blockHeaderList[0].HfDataLength;
             m_iPingNo = m_blockHeaderList.Count;
+            m_markedPingIndices.Clear();
             m_fftFreqAxisMaxKHz = (m_dSampleFreqHz / 1000.0) * 0.5; // ナイキスト
             m_sFullWaveAmpMax = (short)m_dataBlockList
                                     .Where(b => b.Lf != null && b.Lf.Length > 0)
@@ -623,6 +626,11 @@ namespace Ses2000Raw
 
         private void glControl2D_MouseDown(object sender, MouseEventArgs e)
         {
+            if (e.Button == MouseButtons.Right)
+            {
+                m_contextMenuPingIndex = GetPingIndexAtMouseX(e.X);
+                return;
+            }
             if (e.Button != MouseButtons.Left) return;
             m_bDraggingAddContact = false; //1119
             m_bDragging = true;
@@ -1666,7 +1674,6 @@ namespace Ses2000Raw
 
             double pxPerM_X = GetPixelsPerMeterX();
             int w = m_iTexWidth;
-            int h = m_iTexHeight;
 
             // 線のスタイル
             GL.Enable(EnableCap.Blend);
@@ -1681,20 +1688,43 @@ namespace Ses2000Raw
                 //double x = (m_dTotalDistM > 0.0) ? m_cumDistM[i] * pxPerM_X : i * m_dScaleX;
                 double x = MapXByPing(i);
 
-                // 画像上のY：各Pingの縦オフセット + ボトムサンプル * 縦スケール
-                int b = m_bottomIdx[i];
+                double? y = GetBottomTrackY(i);
+                if (y is not double bottomY) continue;
+                GL.Vertex2(x, bottomY);
+            }
+            GL.End();
 
-                // 表示はヒーブの有無どちらでもよいが、画像と整合を取るならオフセット
-                if (chkHeaveCorrection.Checked)
-                {
-                    double sampleIntervalCm = m_dZDistance;
-                    double heave_cm = m_blockHeaderList[i].HeaveFromMotionSensor / 10.0;
-                    int heaveOffset = (int)Math.Round((-1.0 * heave_cm) / sampleIntervalCm);
-                    b = Math.Clamp(b + heaveOffset, 0, h - 1);
-                }
+            GL.Disable(EnableCap.Blend);
+        }
 
-                double y = (m_offsetPxPerPing[i]) + m_bottomIdx[i] * m_dScaleY;
-                GL.Vertex2(x, y);
+        private double? GetBottomTrackY(int pingIndex)
+        {
+            if (m_bottomIdx == null || m_bottomIdx.Length != m_iPingNo) return null;
+            if (m_offsetPxPerPing == null || pingIndex < 0 || pingIndex >= m_offsetPxPerPing.Length) return null;
+
+            return m_offsetPxPerPing[pingIndex] + m_bottomIdx[pingIndex] * m_dScaleY;
+        }
+
+        private void DrawMarkedPingLines()
+        {
+            if (m_markedPingIndices.Count == 0) return;
+
+            GL.Enable(EnableCap.Blend);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.LineWidth(2f);
+            GL.Color4(0.7f, 1.0f, 0.2f, 0.9f);
+
+            GL.Begin(PrimitiveType.Lines);
+            foreach (int pingIndex in m_markedPingIndices)
+            {
+                if (pingIndex < 0 || pingIndex >= m_iPingNo) continue;
+
+                double x = MapXByPing(pingIndex);
+                double? yStart = GetBottomTrackY(pingIndex);
+                if (yStart is not double bottomY) continue;
+
+                GL.Vertex2(x, bottomY);
+                GL.Vertex2(x, 0.0);
             }
             GL.End();
 
@@ -2154,6 +2184,7 @@ namespace Ses2000Raw
             GL.Disable(EnableCap.Texture2D);
 
             if (this.chkShowBtk.Checked) DrawBottomLine();
+            DrawMarkedPingLines();
 
             if (drawLabels)
             {
@@ -3679,9 +3710,28 @@ namespace Ses2000Raw
 
         private void contextMenuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
+            if (e.ClickedItem.Tag == null) return;
 
+            string strTag = e.ClickedItem.Tag.ToString() ?? "";
+            switch (strTag)
+            {
+                case "MarkPing":
+                    if (m_contextMenuPingIndex is int pingNo)
+                    {
+                        MarkPingAtMouse(pingNo);
+                    }
+                    break;
+            }
         }
+        private void MarkPingAtMouse(int pingNo)
+        {
+            if (pingNo < 0 || pingNo >= m_iPingNo) return;
 
+            if (m_markedPingIndices.Add(pingNo))
+            {
+                glControl2D?.Refresh();
+            }
+        }
         #endregion
 
         #region スクリーンショット保存関連 ファイルパス生成など
