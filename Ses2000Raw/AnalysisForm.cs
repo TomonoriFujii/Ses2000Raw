@@ -3679,9 +3679,23 @@ namespace Ses2000Raw
 
         private void contextMenuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
+            if (e.ClickedItem.Tag == null) return;
 
+            string strTag = e.ClickedItem.Tag.ToString() ?? "";
+            switch (strTag)
+            {
+                case "Mark Ping":
+                    //int pingNo = GetPingIndexAtMouseX(e.X);
+                    //int pingNo = GetPingIndexAtMouseX(m_contextMenuMouseX);
+
+                    //MarkPingAtMouse(pingNo);
+                    break;
+            }
         }
-
+        private void MarkPingAtMouse(int pinNo)
+        {
+            
+        }
         #endregion
 
         #region スクリーンショット保存関連 ファイルパス生成など
