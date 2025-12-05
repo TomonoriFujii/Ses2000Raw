@@ -379,7 +379,7 @@
             // numBlankingM
             // 
             numBlankingM.DecimalPlaces = 2;
-            numBlankingM.Increment = new decimal(new int[] { 5, 0, 0, 65536 });
+            numBlankingM.Increment = new decimal(new int[] { 1, 0, 0, 65536 });
             numBlankingM.Location = new Point(12, 38);
             numBlankingM.Name = "numBlankingM";
             numBlankingM.Size = new Size(99, 23);
@@ -559,11 +559,11 @@
             numReflectionsDepthLimit.Size = new Size(65, 23);
             numReflectionsDepthLimit.TabIndex = 22;
             numReflectionsDepthLimit.Tag = "ReflectionsDepthLimit";
-            numReflectionsDepthLimit.ValueChanged += numericUpDown_ValueChanged;
             numReflectionsDepthLimit.Value = new decimal(new int[] { 5, 0, 0, 0 });
-            //
+            numReflectionsDepthLimit.ValueChanged += numericUpDown_ValueChanged;
+            // 
             // chkBoxHideReflectionsDepth
-            //
+            // 
             chkBoxHideReflectionsDepth.AutoSize = true;
             chkBoxHideReflectionsDepth.Location = new Point(12, 350);
             chkBoxHideReflectionsDepth.Name = "chkBoxHideReflectionsDepth";
