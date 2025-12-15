@@ -356,7 +356,7 @@
             numBottomThreshold.DecimalPlaces = 1;
             numBottomThreshold.Increment = new decimal(new int[] { 10, 0, 0, 0 });
             numBottomThreshold.Location = new Point(129, 38);
-            numBottomThreshold.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
+            numBottomThreshold.Maximum = new decimal(new int[] { 9999, 0, 0, 0 });
             numBottomThreshold.Minimum = new decimal(new int[] { 5, 0, 0, 65536 });
             numBottomThreshold.Name = "numBottomThreshold";
             numBottomThreshold.Size = new Size(100, 23);
